@@ -220,6 +220,85 @@ namespace Cronos.Tests
             Assert.True(result);
         }
 
+        [Fact]
+        public void Next_()
+        {
+            var expression = CronExpression.Parse("* * * * * *");
+            var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
+
+            var result = expression.Next(now);
+
+            Assert.Equal(now, result);
+        }
+
+        [Fact]
+        public void Next2()
+        {
+            var expression = CronExpression.Parse("00 05 * * * *");
+            var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
+
+            var result = expression.Next(now);
+
+            Assert.Equal(now.Plus(Duration.FromMinutes(5)), result);
+        }
+
+        private static readonly DateTimeZone TimeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull("America/New_York");
+
+        [Fact]
+        public void Next3()
+        {
+            var expression = CronExpression.Parse("00 30 02 * * *");
+            var now = new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next4()
+        {
+            var expression = CronExpression.Parse("00 */30 * * * *");
+            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next5()
+        {
+            var expression = CronExpression.Parse("00 30 02 13 03 *");
+            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next6()
+        {
+            var expression = CronExpression.Parse("00 30 02 13 03 *");
+            var now = new LocalDateTime(2016, 03, 13, 03, 00).InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 30), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next7()
+        {
+            var expression = CronExpression.Parse("00 */30 02 13 03 *");
+            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result.Value.LocalDateTime);
+        }
+
         private static IEnumerable<object> GetRandomDates()
         {
             return new[]

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.CompilerServices;
+using NodaTime;
 
 namespace Cronos
 {
@@ -19,6 +22,8 @@ namespace Cronos
         }
 
         public CronExpressionFlag Flags { get; private set; }
+
+        private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
 
         public static CronExpression Parse(string cronExpression)
         {
@@ -140,6 +145,283 @@ namespace Cronos
                    (((Flags & CronExpressionFlag.DayOfMonthStar) != 0) || ((Flags & CronExpressionFlag.DayOfWeekStar) != 0)
                        ? GetBit(_dayOfWeek, dayOfWeek) && GetBit(_dayOfMonth, dayOfMonth)
                        : GetBit(_dayOfWeek, dayOfWeek) || GetBit(_dayOfMonth, dayOfMonth));
+        }
+
+        public ZonedDateTime? Next(ZonedDateTime now)
+        {
+            return Next(now.LocalDateTime, now.Offset, now.Zone);
+        }
+
+        public ZonedDateTime? Next(LocalDateTime now, Offset currentOffset, DateTimeZone zone)
+        {
+            // TODO: add short path for UTC
+
+            var mapping = zone.MapLocal(now);
+
+            if (this.IsMatch(now))
+            {
+                switch (mapping.Count)
+                {
+                    case 0:
+                        // Invalid time
+                        // Interval jobs should be recalculated starting from next valid time (inclusive)
+                        if (Flags.HasFlag(CronExpressionFlag.MinuteStar))
+                        {
+                            return Next(now.InZoneLeniently(zone));
+                        }
+
+                        // Strict jobs should be shifted to next valid time.
+                        return now.InZoneLeniently(zone);
+                    case 1:
+                        // Strict
+                        return now.InZoneStrictly(zone);
+                    case 2:
+                        // Ambiguous
+
+                        // Interval jobs should be fired in both offsets
+
+                        if (Flags.HasFlag(CronExpressionFlag.MinuteStar))
+                        {
+                            return new ZonedDateTime(now, zone, currentOffset);
+                        }
+
+                        // Strict jobs should be fired in lowest offset only
+                        if (currentOffset == mapping.EarlyInterval.WallOffset)
+                        {
+                            return new ZonedDateTime(now, zone, currentOffset);
+                        }
+
+                        break;
+                    default:
+                        // TODO: or what?
+                        throw new InvalidOperationException();
+                }
+            }
+
+            if (mapping.Count == 2)
+            {
+                var early = mapping.EarlyInterval;
+                var late = mapping.LateInterval;
+
+                if (early.WallOffset == currentOffset)
+                {
+                    // Current period, try to find anything here
+                    var found = Next(now, early.IsoLocalEnd.PlusMinutes(-1));
+                    if (found.HasValue)
+                    {
+                        return Next(found.Value, currentOffset, zone);
+                    }
+
+                    // Try to find anything starting from late offset
+                    found = Next(late.IsoLocalStart, now.PlusMonths(24));
+                    if (found.HasValue)
+                    {
+                        return Next(found.Value, late.WallOffset, zone);
+                    }
+                }
+            }
+
+            // Does not match, find next
+            var nextFound = Next(now.PlusSeconds(1), now.PlusMonths(24));
+            if (nextFound == null) return null;
+
+            return Next(nextFound.Value, currentOffset, zone);
+        }
+
+        public LocalDateTime? Next(LocalDateTime baseTime, LocalDateTime endTime)
+        {
+            var baseYear = baseTime.Year;
+            var baseMonth = baseTime.Month;
+            var baseDay = baseTime.Day;
+            var baseHour = baseTime.Hour;
+            var baseMinute = baseTime.Minute;
+            var baseSecond = baseTime.Second;
+
+            var endYear = endTime.Year;
+            var endMonth = endTime.Month;
+            var endDay = endTime.Day;
+
+            var year = baseYear;
+            var month = baseMonth;
+            var day = baseDay;
+            var hour = baseHour;
+            var minute = baseMinute;
+            var second = baseSecond;
+
+            var seconds = GetSet(_second, Constants.FirstSecond, Constants.LastSecond);
+            var minutes = GetSet(_minute, Constants.FirstMinute, Constants.LastMinute);
+            var hours = GetSet(_hour, Constants.FirstHour, Constants.LastHour);
+            var days = GetSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+            var months = GetSet(_month, Constants.FirstMonth, Constants.LastMonth);
+            var daysOfWeek = GetSet(_dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek);
+
+            //
+            // Second
+            //
+
+            var secondsView = seconds.GetViewBetween(second, Constants.LastSecond);
+
+            if (secondsView.Count > 0)
+            {
+                second = secondsView.Min;
+            }
+            else
+            {
+                second = seconds.Min;
+                minute++;
+            }
+
+            //
+            // Minute
+            //
+
+            var minutesView = minutes.GetViewBetween(minute, Constants.LastMinute);
+
+            if (minutesView.Count > 0)
+            {
+                minute = minutesView.Min;
+            }
+            else
+            {
+                minute = minutes.Min;
+                hour++;
+            }
+
+            //
+            // Hour
+            //
+
+            if (hour <= Constants.LastHour)
+            {
+                var hoursView = hours.GetViewBetween(hour, Constants.LastHour);
+
+                if (hoursView.Count > 0)
+                {
+                    hour = hoursView.Min;
+
+                    if (hour > baseHour)
+                    {
+                        minute = minutes.Min;
+                    }
+                }
+                else
+                {
+                    minute = minutes.Min;
+                    hour = hours.Min;
+                    day++;
+                }
+            }
+            else
+            {
+                minute = minutes.Min;
+                hour = hours.Min;
+                day++;
+            }
+
+            //
+            // Day
+            //
+
+            var daysView = days.GetViewBetween(day, Constants.LastDayOfMonth);
+
+            if (daysView.Count > 0)
+            {
+                day = daysView.Min;
+            }
+
+            RetryDayMonth:
+
+            if (daysView.Count == 0 || day == -1)
+            {
+                minute = minutes.Min;
+                hour = hours.Min;
+                day = days.Min;
+                month++;
+            }
+            else if (day > baseDay)
+            {
+                minute = minutes.Min;
+                hour = hours.Min;
+            }
+
+            //
+            // Month
+            //
+
+            var monthsView = months.GetViewBetween(month, Constants.LastMonth);
+
+            if (monthsView.Count > 0)
+            {
+                month = monthsView.Min;
+            }
+
+            if (monthsView.Count == 0)
+            {
+                minute = minutes.Min;
+                hour = hours.Min;
+                day = days.Min;
+                month = months.Min;
+                year++;
+            }
+            else if (month > baseMonth)
+            {
+                minute = minutes.Min;
+                hour = hours.Min;
+                day = days.Min;
+            }
+
+            //
+            // The day field in a cron expression spans the entire range of days
+            // in a month, which is from 1 to 31. However, the number of days in
+            // a month tend to be variable depending on the month (and the year
+            // in case of February). So a check is needed here to see if the
+            // date is a border case. If the day happens to be beyond 28
+            // (meaning that we're dealing with the suspicious range of 29-31)
+            // and the date part has changed then we need to determine whether
+            // the day still makes sense for the given year and month. If the
+            // day is beyond the last possible value, then the day/month part
+            // for the schedule is re-evaluated. So an expression like "0 0
+            // 15,31 * *" will yield the following sequence starting on midnight
+            // of Jan 1, 2000:
+            //
+            //  Jan 15, Jan 31, Feb 15, Mar 15, Apr 15, Apr 31, ...
+            //
+
+            var dateChanged = day != baseDay || month != baseMonth || year != baseYear;
+
+            if (day > 28 && dateChanged && day > Calendar.GetDaysInMonth(year, month))
+            {
+                if (year >= endYear && month >= endMonth && day >= endDay)
+                    return endTime;
+
+                day = -1;
+                goto RetryDayMonth;
+            }
+
+            var nextTime = new LocalDateTime(year, month, day, hour, minute, second, 0);
+
+            if (nextTime > endTime)
+                return null;
+
+            //
+            // Day of week
+            //
+
+            if (daysOfWeek.Contains(nextTime.DayOfWeek))
+                return nextTime;
+
+            return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0), endTime);
+        }
+
+        private SortedSet<int> GetSet(long bits, int low, int high)
+        {
+            var result = new SortedSet<int>();
+            for (var i = low; i <= high; i++)
+            {
+                if (GetBit(bits, i)) result.Add(i);
+            }
+
+            return result;
         }
 
         private static unsafe char* GetList(
