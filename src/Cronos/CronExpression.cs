@@ -4,8 +4,10 @@ namespace Cronos
 {
     public class CronExpression
     {
-        public static CronExpression Parse(string s)
+        public static CronExpression Parse(string cronExpression)
         {
+            if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
+
             return new CronExpression();
         }
 
