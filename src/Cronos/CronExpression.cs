@@ -47,7 +47,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.SecondStar;
                     }
 
-                    if ((pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer)) == null)
+                    if ((pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second)) == null)
                     {
                         throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
                     }
@@ -59,7 +59,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.MinuteStar;
                     }
 
-                    if ((pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer)) == null)
+                    if ((pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute)) == null)
                     {
                         throw new ArgumentException($"minute '{cronExpression}'", nameof(cronExpression));
                     }
@@ -71,7 +71,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.HourStar;
                     }
 
-                    if ((pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer)) == null)
+                    if ((pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour)) == null)
                     {
                         throw new ArgumentException("hour", nameof(cronExpression));
                     }
@@ -83,14 +83,14 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.DayOfMonthStar;
                     }
 
-                    if ((pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer)) == null)
+                    if ((pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth)) == null)
                     {
                         throw new ArgumentException("day of month", nameof(cronExpression));
                     }
 
                     // Months
 
-                    if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer)) == null)
+                    if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month)) == null)
                     {
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
@@ -102,7 +102,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.DayOfWeekStar;
                     }
 
-                    if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer)) == null)
+                    if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek)) == null)
                     {
                         throw new ArgumentException("day of week", nameof(cronExpression));
                     }
@@ -451,11 +451,12 @@ namespace Cronos
           ref long bits, /* one bit per flag, default=FALSE */
           int low, int high, /* bounds, impl. offset for bitstr */
           int[] names, /* NULL or *[] of names for these elements */
-          char* pointer)
+          char* pointer,
+          CronFieldType cronFieldType)
         {
             while (true)
             {
-                if ((pointer = GetRange(ref bits, low, high, names, pointer)) == null)
+                if ((pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType)) == null)
                 {
                     return null;
                 }
@@ -485,7 +486,12 @@ namespace Cronos
         }
 
         private static unsafe char* GetRange(
-            ref long bits, int low, int high, int[] names, char* pointer)
+            ref long bits, 
+            int low, 
+            int high,
+            int[] names,
+            char* pointer,
+            CronFieldType cronFieldType)
         {
             int num1, num2, num3;
 
@@ -502,6 +508,20 @@ namespace Cronos
                     bits = ~0L;
                     return pointer;
                 }
+            }
+            else if(*pointer == '?')
+            {
+                if (cronFieldType != CronFieldType.DayOfMonth && cronFieldType != CronFieldType.DayOfWeek)
+                {
+                    return null;
+                }
+
+                pointer++;
+
+                if (*pointer == '/') return null;
+
+                bits = ~0L;
+                return pointer;
             }
             else
             {
@@ -522,38 +542,38 @@ namespace Cronos
                     return null;
                 }
 
-                if (*pointer != '-')
+                if (*pointer == '-')
                 {
-                    /* not a range, it's a single number. */
+                    // eat the dash
+                    pointer++;
 
-                    // Unsupported syntax: Step specified without range,
-                    // eg:   1/20 * * * *
-                    if (*pointer == '/') return null;
+                    // get the number following the dash
+                    if ((pointer = GetNumber(out num2, low, names, pointer)) == null)
+                    {
+                        return null;
+                    }
 
+                    // Explicitly check for sane values. Certain combinations of ranges and
+                    // steps which should return EOF don't get picked up by the code below,
+                    // eg:
+                    //     5-64/30 * * * *
+                    //
+                    // Code adapted from set_elements() where this error was probably intended
+                    // to be catched.
+                    if (num2 < low || num2 > high)
+                    {
+                        return null;
+                    }
+                }
+                else if(*pointer == '/')
+                {
+                    num2 = high;
+                }
+                else
+                {
                     SetBit(ref bits, num1);
 
                     return pointer;
-                }
-
-                // eat the dash
-                pointer++;
-
-                // get the number following the dash
-                if ((pointer = GetNumber(out num2, low, names, pointer)) == null)
-                {
-                    return null;
-                }
-
-                // Explicitly check for sane values. Certain combinations of ranges and
-                // steps which should return EOF don't get picked up by the code below,
-                // eg:
-                //     5-64/30 * * * *
-                //
-                // Code adapted from set_elements() where this error was probably intended
-                // to be catched.
-                if (num2 < low || num2 > high)
-                {
-                    return null;
                 }
             }
 

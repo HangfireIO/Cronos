@@ -50,6 +50,7 @@
     <Compile Include="CronExpression.cs" />
     <Compile Include="CronExpressionExtensions.cs" />
     <Compile Include="CronExpressionFlag.cs" />
+    <Compile Include="CronFieldType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

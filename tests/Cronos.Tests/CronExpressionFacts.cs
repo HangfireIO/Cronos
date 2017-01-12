@@ -156,6 +156,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * 3,5,7", true)]
         [InlineData("* * * * * 4-7", true)]
         [InlineData("* * * * * FRI", true)]
+        [InlineData("* * * * * FRI/3", true)]
         [InlineData("* * * * * thu-sat", true)]
         [InlineData("* * * * * */5", true)]
         [InlineData("* * * * * thu-sun", false)] // TODO: that's bad
@@ -163,6 +164,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * 1,3", false)]
         [InlineData("* * * * * 02-4", false)]
         [InlineData("* * * * * */3", false)]
+        [InlineData("* * * * * thu/2", false)]
         [InlineData("* * * * * mon-wed", false)]
         public void IsMatch_ReturnsCorrectResult_WhenOnlyDaysOfWeekAreSpecified(string cronExpression, bool shouldMatch)
         {
@@ -558,6 +560,48 @@ namespace Cronos.Tests
                 "00:00 DST",
                 //02:00 DST == 01:00 ST, one hour delay
                 "02:00 ST");
+        }
+
+        [Fact]
+        public void Fact1()
+        {
+            // TODO Why we can't support star for both DayOfMonth and DayOfWeek? 
+            Assert.Throws<ArgumentException>(() => CronExpression.Parse("0 12 12 * * *"));
+        }
+
+        [Theory]
+        [InlineData("0 12 12 * * ?")]
+        [InlineData("0 12 12 */2 * ?")]
+        [InlineData("0 12 12 11-18 * ?")]
+        [InlineData("0 12 12 * 1 ?")]
+        [InlineData("0 12 12 12 1 ?")]
+        public void IsMatch_ReturnCorrectValue_WhenDayOfWeekSpecifiedAsQuestion(string cronExpression)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            expression.IsMatch(new LocalDateTime(2017, 1, 12, 12, 12, 0));
+        }
+
+        [Theory]
+        [InlineData("0 12 12 ? * *", true)]
+        [InlineData("0 12 12 ? * TUE/3", false)]
+        [InlineData("0 12 12 ? * THU", true)]
+        public void IsMatch_ReturnCorrectValue_WhenDayOfMonthSpecifiedAsQuestion(string cronExpression, bool shouldMatch)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            expression.IsMatch(new LocalDateTime(2017, 1, 12, 12, 12, 0));
+        }
+
+        [Theory]
+        [InlineData("? * * * * *")]
+        [InlineData("* ? * * * *")]
+        [InlineData("* * ? * * *")]
+        [InlineData("* * * * ? *")]
+        public void IsMatch_HandlesQuestionMarkCantBeSpecfiedForDayOfMonthOrDayOfWeek(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+            Assert.Equal("cronExpression", exception.ParamName);
         }
 
         private CronExpression _expression;
