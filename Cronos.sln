@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos", "src\Cronos\Cronos.csproj", "{734A5EA7-D610-4EA1-B37E-A9D59C82B060}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos.Tests", "tests\Cronos.Tests\Cronos.Tests.csproj", "{BE2205CF-316A-4566-8538-3A2E48AC9003}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{734A5EA7-D610-4EA1-B37E-A9D59C82B060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{734A5EA7-D610-4EA1-B37E-A9D59C82B060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{734A5EA7-D610-4EA1-B37E-A9D59C82B060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{734A5EA7-D610-4EA1-B37E-A9D59C82B060}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
