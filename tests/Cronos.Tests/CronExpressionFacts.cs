@@ -56,14 +56,32 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("00 20 * * * *", true)]
-        [InlineData("00 19,20,21 * * * *", true)]
-        [InlineData("00 10-30 * * * *", true)]
-        [InlineData("00 */20 * * * *", true)]
-        [InlineData("00 10 * * * *", false)]
-        [InlineData("00 10,30 * * * *", false)]
-        [InlineData("00 10-19 * * * *", false)]
-        [InlineData("00 */30 * * * *", false)]
+        [InlineData("20 * * * * *", true)]
+        [InlineData("19,20,21 * * * * *", true)]
+        [InlineData("10-30 * * * * *", true)]
+        [InlineData("*/20 * * * * *", true)]
+        [InlineData("10 * * * * *", false)]
+        [InlineData("10,30 * * * * *", false)]
+        [InlineData("10-19 * * * * *", false)]
+        [InlineData("*/30 * * * * *", false)]
+        public void IsMatch_ReturnsCorrectResult_WhenOnlySecondsAreSpecified(string cronExpression, bool shouldMatch)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 35, 20));
+
+            Assert.Equal(shouldMatch, result);
+        }
+
+        [Theory]
+        [InlineData("* 20 * * * *", true)]
+        [InlineData("* 19,20,21 * * * *", true)]
+        [InlineData("* 10-30 * * * *", true)]
+        [InlineData("* */20 * * * *", true)]
+        [InlineData("* 10 * * * *", false)]
+        [InlineData("* 10,30 * * * *", false)]
+        [InlineData("* 10-19 * * * *", false)]
+        [InlineData("* */30 * * * *", false)]
         public void IsMatch_ReturnsCorrectResult_WhenOnlyMinutesAreSpecified(string cronExpression, bool shouldMatch)
         {
             var expression = CronExpression.Parse(cronExpression);
@@ -156,30 +174,31 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("00 47 17 09 12 5")]
-        [InlineData("00 47 17 09 DEC FRI")]
-        [InlineData("00 40-50 15-20 5-10 11,12 5,6,7")]
+        [InlineData("54 47 17 09 12 5")]
+        [InlineData("54 47 17 09 DEC FRI")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7")]
         public void IsMatch_ReturnsTrue_WhenAllFieldsMatchTheSpecifiedDate(string cronExpression)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47));
+            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47, 54));
 
             Assert.True(result);
         }
 
         [Theory]
-        [InlineData("00 47 17 09 12 5", true)] // For reference
-        [InlineData("00 40 17 09 12 5")]
-        [InlineData("00 47 15 09 12 5")]
-        [InlineData("00 47 17 12 12 *")]
-        [InlineData("00 47 17 09 3 5")]
-        [InlineData("00 47 17 * 12 4")]
+        [InlineData("54 47 17 09 12 5", true)] // For reference
+        [InlineData("50 47 17 09 12 5")]
+        [InlineData("54 40 17 09 12 5")]
+        [InlineData("54 47 15 09 12 5")]
+        [InlineData("54 47 17 12 12 *")]
+        [InlineData("54 47 17 09 3 5")]
+        [InlineData("54 47 17 * 12 4")]
         public void IsMatch_ReturnsFalse_WhenAnyFieldDoesNotMatchTheSpecifiedDate(string cronExpression, bool shouldMatch = false)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47));
+            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47, 54));
 
             Assert.Equal(shouldMatch, result);
         }

@@ -124,7 +124,7 @@ namespace Cronos
             }
         }
 
-        public bool IsMatch(int seconds, int minute, int hour, int dayOfMonth, int month, int dayOfWeek)
+        public bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek)
         {
             // Make 0-based values out of these so we can use them as indicies
             // minute -= Constants.FirstMinute;
@@ -139,7 +139,8 @@ namespace Cronos
             //     "* * 1,15 * *" will run *only * the 1st and 15th.
             // this is why we keep DayOfMonthStar and DayOfWeekStar.
             // Yes, it's bizarre. Like many bizarre things, it's the standard.
-            return GetBit(_minute, minute) &&
+            return GetBit(_second, second) &&
+                   GetBit(_minute, minute) &&
                    GetBit(_hour, hour) &&
                    GetBit(_month, month) &&
                    (((Flags & CronExpressionFlag.DayOfMonthStar) != 0) || ((Flags & CronExpressionFlag.DayOfWeekStar) != 0)
