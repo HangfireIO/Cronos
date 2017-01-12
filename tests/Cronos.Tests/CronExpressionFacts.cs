@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using NodaTime;
 using Xunit;
@@ -297,6 +298,288 @@ namespace Cronos.Tests
             var result = expression.Next(now);
 
             Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Dst()
+        {
+            CreateEntry("0 */30 * * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+            // Skipped due to intervals, no problems here
+
+            AssertExecutedAt(
+                "00:00 ST",
+                "00:30 ST",
+                "01:00 ST",
+                "01:30 ST",
+                //"02:00 ST" - invalid time
+                //"02:30 ST" - invalid time
+                "03:00 DST",
+                "03:30 DST",
+                "04:00 DST",
+                "04:30 DST");
+        }
+
+        [Fact]
+        public void Dst2()
+        {
+            CreateEntry("0 */30 */2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+            // Skipped due to intervals, can be avoided by enumerating hours and minutes
+            // "0,30 0-23/2 * * *"
+            AssertExecutedAt(
+                "00:00 ST",
+                "00:30 ST",
+                //"02:00 ST" - invalid time
+                //"02:30 ST" - invalid time
+                "04:00 DST",
+                "04:30 DST");
+        }
+
+        [Fact]
+        public void Dst21()
+        {
+            CreateEntry("0 0,30 0-23/2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // Run missed, strict
+            AssertExecutedAt(
+                "00:00 ST",
+                "00:30 ST",
+                //"02:00 ST" - invalid time
+                //"02:30 ST" - invalid time
+                "03:00 DST", // 02:30 equivalent skipped, but...
+                "04:00 DST",
+                "04:30 DST");
+        }
+
+        [Fact]
+        public void Dst312()
+        {
+            CreateEntry("0 0 * * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // Duplicates removed
+            AssertExecutedAt(
+                "00:00 ST",
+                "01:00 ST",
+                //"02:00 ST" - invalid time, skipped
+                "03:00 DST",
+                "04:00 DST");
+        }
+
+        [Fact]
+        public void Dst3()
+        {
+            CreateEntry("0 */30 2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // TODO: may be confusing!
+            // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
+            AssertExecutedAt(
+                //"02:00 ST" - invalid time
+                //"02:30 ST" - invalid time
+                new string[0]);
+        }
+
+        [Fact]
+        public void Dst4()
+        {
+            CreateEntry("0 0,30 2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // TODO: exclude duplicates
+            // Run missed
+            AssertExecutedAt(
+                //"02:00 ST" - invalid time
+                //"02:30 ST" - invalid time
+                "03:00 DST");
+        }
+
+        [Fact]
+        public void Dst5()
+        {
+            CreateEntry("0 30 2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // Run missed, delay
+            AssertExecutedAt(
+                //"02:30 ST" - invalid time
+                "03:00 DST");
+        }
+
+        [Fact]
+        public void Dst6()
+        {
+            CreateEntry("0 0 */2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
+            // TODO: differ from Linux Cron
+            AssertExecutedAt(
+                "00:00 ST",
+                //"02:00 ST" - invalid time
+                "03:00 DST",
+                "04:00 DST");
+        }
+
+        [Fact]
+        public void Dst61()
+        {
+            CreateEntry("0 0 0-23/2 * * *");
+
+            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+
+            // Run missed
+            AssertExecutedAt(
+                "00:00 ST",
+                "03:00 DST",
+                //"02:00 ST" - invalid time
+                "04:00 DST");
+        }
+
+        [Fact]
+        public void DstToSt1()
+        {
+            CreateEntry("0 */30 * * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // As usual due to intervals
+            AssertExecutedAt(
+                "00:00 DST",
+                "00:30 DST",
+                "01:00 DST",
+                "01:30 DST",
+                "01:00 ST",
+                "01:30 ST",
+                "02:00 ST",
+                "02:30 ST");
+        }
+
+        [Fact]
+        public void DstToSt2()
+        {
+            CreateEntry("0 */30 */2 * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // As usual due to intervals
+            AssertExecutedAt(
+                "00:00 DST",
+                "00:30 DST",
+                // 02:00 DST == 01:00 ST, one hour delay
+                "02:00 ST",
+                "02:30 ST");
+        }
+
+        [Fact]
+        public void DstToSt3()
+        {
+            CreateEntry("0 0 1 * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // Duplicates skipped, due to strict
+            AssertExecutedAt(
+                "01:00 DST"
+                //"01:00 ST" - ignore
+                );
+        }
+
+        [Fact]
+        public void DstToSt4()
+        {
+            CreateEntry("0 */30 1 * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // TODO: differ from Linux Cron
+            // Duplicates skipped due to non-wildcard hour
+            AssertExecutedAt(
+                "01:00 DST",
+                "01:30 DST",
+                "01:00 ST",
+                "01:30 ST");
+        }
+
+        [Fact]
+        public void DstToSt6()
+        {
+            CreateEntry("0 0,30 1 * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // Duplicates skipped due to non-wildcard
+            AssertExecutedAt(
+                "01:00 DST",
+                "01:30 DST"
+                //"01:00 ST"
+                //"01:30 ST"
+                );
+        }
+
+        [Fact]
+        public void DstToSt5()
+        {
+            CreateEntry("0 0 */2 * * *");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // Duplicates skipped due to non-wildcard minute
+            AssertExecutedAt(
+                "00:00 DST",
+                //02:00 DST == 01:00 ST, one hour delay
+                "02:00 ST");
+        }
+
+        private CronExpression _expression;
+        private ZonedDateTime[] _executed;
+        private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+        private readonly ZonedDateTime _start = new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(America);
+        private readonly ZonedDateTime _end = new LocalDateTime(2016, 03, 13, 04, 59).InZoneStrictly(America);
+
+        private void ExecuteSchedulerStandardTimeToDaylightSavingTime()
+        {
+            _executed = _expression.AllNext(_start, _end).ToArray();
+        }
+
+        private void ExecuteSchedulerDaylightSavingTimeToStandardTime()
+        {
+            _executed = _expression.AllNext(new LocalDateTime(2016, 11, 06, 00, 00).InZoneStrictly(America), new LocalDateTime(2016, 11, 06, 02, 59).InZoneStrictly(America)).ToArray();
+        }
+
+        private void CreateEntry(string expression)
+        {
+            _expression = CronExpression.Parse(expression);
+        }
+
+        private void AssertExecutedAt(params string[] expectedTimes)
+        {
+            var actualTimes = new List<string>();
+            for (var i = 0; i < _executed.Length; i++)
+            {
+                var time = _executed[i];
+                var sb = new StringBuilder();
+
+                sb.Append(time.ToString("HH:mm", CultureInfo.InvariantCulture));
+                sb.Append(" " + (time.IsDaylightSavingTime() ? "DST" : "ST"));
+
+                actualTimes.Add(sb.ToString());
+            }
+
+            var combinedExpectedTimes = String.Join(", ", expectedTimes);
+            var combinedActualTimes = String.Join(", ", actualTimes);
+
+            Assert.Equal(combinedExpectedTimes, combinedActualTimes);
         }
 
         private static IEnumerable<object> GetRandomDates()

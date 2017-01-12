@@ -413,6 +413,28 @@ namespace Cronos
             return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0), endTime);
         }
 
+        public IEnumerable<ZonedDateTime> AllNext(ZonedDateTime now, ZonedDateTime end)
+        {
+            ZonedDateTime? occurrence = now;
+
+            while (true)
+            {
+                occurrence = Next(occurrence.Value);
+                if (occurrence.HasValue)
+                {
+                    if (occurrence.Value > end) break;
+                    yield return occurrence.Value;
+                }
+                else
+                {
+                    break;
+                }
+
+                // TODO: Handle if second is specified as star.
+                occurrence = occurrence.Value.Plus(Duration.FromMinutes(1));
+            }
+        }
+
         private SortedSet<int> GetSet(long bits, int low, int high)
         {
             var result = new SortedSet<int>();
