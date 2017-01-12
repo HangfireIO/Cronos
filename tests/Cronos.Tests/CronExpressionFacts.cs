@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using NodaTime;
 using Xunit;
 
 namespace Cronos.Tests
 {
-    public class CronExpressionTests
+    public class CronExpressionFacts
     {
         [Fact]
         public void Parse_ThrowAnException_WhenCronExressionIsNull()
@@ -22,11 +23,17 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
+        [Fact]
+        public void Parse_ThrowAnException_WhenCronExpressionDoesNotContainSeconds()
+        {
+            var exception = Assert.Throws<FormatException>(() => CronExpression.Parse("* * * * *"));
+        }
+
         [Theory]
         [MemberData(nameof(GetRandomDates))]
-        public void IsMatch_ReturnsTrueForAnyDate_When5StarsWerePassed(DateTime dateTime)
+        public void IsMatch_ReturnsTrueForAnyDate_When6StarsWerePassed(LocalDateTime dateTime)
         {
-            var expression = CronExpression.Parse("* * * * *");
+            var expression = CronExpression.Parse("* * * * * *");
 
             var result = expression.IsMatch(dateTime);
 
@@ -37,15 +44,12 @@ namespace Cronos.Tests
         {
             return new[]
             {
-                new object[] { new DateTime(2017, 01, 12, 16, 59, 50) },
-                new object[] { new DateTime(2016, 03, 08, 11, 46, 15) },
-                new object[] { new DateTime(2017, 04, 12, 16, 46, 0) },
-                new object[] { new DateTime(2016, 2, 29, 02, 46, 0) },
-                new object[] { new DateTime(2016, 12, 31, 16, 09, 0) },
-                new object[] { new DateTime(2099, 12, 09, 16, 46, 57) },
-                new object[] { new DateTime(1970, 01, 01, 0, 0, 0) },
-                new object[] { DateTime.MinValue },
-                new object[] { DateTime.MaxValue }
+                new object[] { new LocalDateTime(2016, 12, 09, 16, 46) },
+                new object[] { new LocalDateTime(2016, 03, 09, 16, 46) },
+                new object[] { new LocalDateTime(2016, 12, 30, 16, 46) },
+                new object[] { new LocalDateTime(2016, 12, 09, 02, 46) },
+                new object[] { new LocalDateTime(2016, 12, 09, 16, 09) },
+                new object[] { new LocalDateTime(2099, 12, 09, 16, 46) }
             };
         }
     }
