@@ -446,6 +446,27 @@ namespace Cronos.Tests
             Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result.Value.LocalDateTime);
         }
 
+        [Theory]
+        [InlineData(2017, 01, 25, "* * * ? * 0#5", 2017, 01, 29)]
+        [InlineData(2017, 01, 30, "* * * ? * 0#5", 2017, 04, 30)]
+        public void Next_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(
+           int startYear,
+           int startMonth,
+           int startDay,
+           string cronExpression,
+           int expectedYear,
+           int expectedMonth,
+           int expectedDay)
+        {
+            var dateTime = new LocalDateTime(startYear, startMonth, startDay, 0, 0);
+            var expression = CronExpression.Parse(cronExpression);
+            var now = dateTime.InZoneStrictly(TimeZone);
+
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result.Value.LocalDateTime);
+        }
+
         [Fact]
         public void Dst()
         {
