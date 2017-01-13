@@ -282,15 +282,28 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData(2017, 1, 1, "* * * ? * SUN#1", true)]
-        [InlineData(2017, 1, 1, "* * * ? * 0#1", true)]
-        [InlineData(2017, 1, 8, "* * * ? * 0#2", true)]
-        [InlineData(2017, 1, 20, "* * * ? * 5#3", true)]
-        [InlineData(2017, 5, 19, "* * * ? * 5#3", true)]
-        [InlineData(2017, 1, 8, "* * * ? * 0#1", false)]
-        [InlineData(2017, 1, 1, "* * * ? * 0#2", false)]
-        [InlineData(2017, 1, 24, "* * * ? * 3#2", false)]
-        public void IsMatch_ReturnCorrectValue_WhenSharpIsUsedInDayOfMonth(int year, int month, int day, string cronExpression, bool shouldMatch)
+        [InlineData("* * * ? * SUN#1", 2017, 1, 1, true)]
+        [InlineData("* * * ? * 0#1", 2017, 1, 1, true)]
+        [InlineData("* * * ? * 0#2", 2017, 1, 8, true)]
+        [InlineData("* * * ? * 5#3", 2017, 1, 20,  true)]
+        [InlineData("* * * ? * 5#3", 2017, 5, 19,  true)]
+        [InlineData("* * * ? * 0#1", 2017, 1, 8,  false)]
+        [InlineData("* * * ? * 0#2", 2017, 1, 1,  false)]
+        [InlineData("* * * ? * 3#2", 2017, 1, 24, false)]
+        public void IsMatch_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, int year, int month, int day, bool shouldMatch)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var dateTime = new LocalDateTime(year, month, day, 0, 0);
+            var result = expression.IsMatch(dateTime);
+
+            Assert.Equal(shouldMatch, result);
+        }
+
+        [Theory]
+        [InlineData("* * * 1W * ?", 2017, 1, 2, true)]
+        [InlineData("* * * 1W * ?", 2017, 1, 1, false)]
+        public void IsMatch_ReturnCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, int year, int month, int day, bool shouldMatch)
         {
             var expression = CronExpression.Parse(cronExpression);
 

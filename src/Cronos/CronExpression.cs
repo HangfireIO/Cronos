@@ -16,6 +16,7 @@ namespace Cronos
         private long _dayOfWeek; // 8 bits -> 8 bits in byte
 
         private int _nthdayOfWeek;
+        private bool _nearestWeekday;
 
         // May be packed into 135 bits / 17 bytes, or 19 bytes unpacked + 4(2?) for Flags
         // Regular CRON string is 9 + 1(\0) bytes minimum
@@ -91,6 +92,16 @@ namespace Cronos
                         throw new ArgumentException("day of month", nameof(cronExpression));
                     }
 
+                    if (*pointer == 'W')
+                    {
+                        expression._nearestWeekday = true;
+                        pointer++;
+
+                        // TODO: Consider way when cronExpression contains '\t' symbols.
+                        // eat space
+                        pointer++;
+                    }
+
                     // Months
 
                     if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month)) == null)
@@ -148,6 +159,7 @@ namespace Cronos
 
         public bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
+            var isDayMatched = true;
             if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
                 if(dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
@@ -162,6 +174,15 @@ namespace Cronos
                 {
                     return false;
                 }
+            }
+            else if (_nearestWeekday)
+            {
+                isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
+                     GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
+                     GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
+                     GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
+
+                if (!isDayMatched) return false;
             }
 
             // Make 0-based values out of these so we can use them as indicies
@@ -180,8 +201,8 @@ namespace Cronos
                    GetBit(_minute, minute) &&
                    GetBit(_hour, hour) &&
                    GetBit(_month, month) &&
-                   GetBit(_dayOfWeek, dayOfWeek) && 
-                   GetBit(_dayOfMonth, dayOfMonth);
+                   GetBit(_dayOfWeek, dayOfWeek) &&
+                   (_nearestWeekday || GetBit(_dayOfMonth, dayOfMonth));
         }
 
         public ZonedDateTime? Next(ZonedDateTime now)
