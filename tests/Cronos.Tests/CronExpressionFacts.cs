@@ -44,19 +44,159 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
+        [Theory]
+        [InlineData("60 * * * * *")]
+        [InlineData("-1 * * * * *")]
+        [InlineData("- * * * * *")]
+        [InlineData(", * * * * *")]
+        // TODO
+        //[InlineData(",1 * * * * *")]
+        [InlineData("/ * * * * *")]
+        [InlineData("*/ * * * * *")]
+        [InlineData("1/ * * * * *")]
+        [InlineData("# * * * * *")]
+        [InlineData("*#1 * * * * *")]
+        [InlineData("0#2 * * * * *")]
+        [InlineData("L * * * * *")]
+        [InlineData("W * * * * *")]
+        [InlineData("LW * * * * *")]
+        // TODO: Consider support of '?' here.
+        [InlineData("? * * * * *")]
+        public void Parse_ThrowAnException_WhenSecondIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
+        [Theory]
+        [InlineData("* 60 * * * *")]
+        [InlineData("* -1 * * * *")]
+        [InlineData("* - * * * *")]
+        [InlineData("* , * * * *")]
+        // TODO
+        //[InlineData("* ,1 * * * *")]
+        [InlineData("* / * * * *")]
+        [InlineData("* # * * * *")]
+        [InlineData("* *#1 * * * *")]
+        [InlineData("* 5#3 * * * *")]
+        [InlineData("* L * * * *")]
+        [InlineData("* W * * * *")]
+        [InlineData("* LW * * * *")]
+        // TODO: Consider support of '?' here.
+        [InlineData("* ? * * * *")]
+        public void Parse_ThrowAnException_WhenMinuteIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
+        [Theory]
+        [InlineData("* * 25 * * *")]
+        [InlineData("* * -1 * * *")]
+        [InlineData("* * - * * *")]
+        [InlineData("* * , * * *")]
+        // TODO
+        //[InlineData("* * ,1 * * *")]
+        [InlineData("* * / * * *")]
+        [InlineData("* * # * * *")]
+        [InlineData("* * *#2 * * *")]
+        [InlineData("* * 10#1 * * *")]
+        [InlineData("* * L * * *")]
+        [InlineData("* * W * * *")]
+        [InlineData("* * LW * * *")]
+        // TODO: Consider support of '?' here.
+        [InlineData("* * ? * * *")]
+        public void Parse_ThrowAnException_WhenHourIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
+        [Theory]
+        [InlineData("* * * 32 * *")]
+        [InlineData("* * * 31 4 *")]
+        [InlineData("* * * 31 6 *")]
+        [InlineData("* * * 31 9 *")]
+        [InlineData("* * * 31 11 *")]
+        [InlineData("* * * 30 2 *")]
+        [InlineData("* * * 10-32 * *")]
+        [InlineData("* * * 31-32 * *")]
+        [InlineData("* * * 30-31 2 *")]
+        [InlineData("* * * 30-31 2 *")]
+        [InlineData("* * * -1 * *")]
+        [InlineData("* * * - * *")]
+        [InlineData("* * * , * *")]
+        // TODO
+        //[InlineData("* * ,1 * *")]
+        [InlineData("* * * / * *")]
+        [InlineData("* * * # * *")]
+        [InlineData("* * * *#3 * *")]
+        [InlineData("* * * 4#1 * *")]
+        [InlineData("* * * W * *")]
+        public void Parse_ThrowAnException_WhenDayOfMonthIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
+        [Theory]
+        [InlineData("* * * *  13 *")]
+        [InlineData("* * * *  -1 *")]
+        [InlineData("* * * *   - *")]
+        [InlineData("* * * *   , *")]
+        // TODO
+        //[InlineData(",1 * * * * *")]
+        [InlineData("* * * *   / *")]
+        [InlineData("* * * *  */ *")]
+        [InlineData("* * * *  1/ *")]
+        [InlineData("* * * *   # *")]
+        [InlineData("* * * * *#1 *")]
+        [InlineData("* * * * 2#2 *")]
+        [InlineData("* * * *   L *")]
+        [InlineData("* * * *   W *")]
+        [InlineData("* * * *  LW *")]
+        [InlineData("? * * *   ? *")]
+        public void Parse_ThrowAnException_WhenMonthIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
+        [Theory]
+        [InlineData("* * * * * 8")]
+        [InlineData("* * * * * -1")]
+        [InlineData("* * * * * -")]
+        [InlineData("* * * * * ,")]
+        // TODO
+        //[InlineData(",1 * * * * *")]
+        [InlineData("* * * * * /")]
+        [InlineData("* * * * * */")]
+        [InlineData("* * * * * 1/")]
+        [InlineData("* * * * * #")]
+        [InlineData("* * * * * 0#")]
+        [InlineData("* * * * * 5#6")]
+        [InlineData("* * * * * SUN#6")]
+        [InlineData("* * * * * 0#0")]
+        [InlineData("* * * * * SUT")]
+        [InlineData("* * * * * L")]
+        [InlineData("* * * * * W")]
+        [InlineData("* * * * * LW")]
+        public void Parse_ThrowAnException_WhenDayOfWeekIsInvalid(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
         [Fact]
         public void Parse_ThrowException_WhenBoth_DayOfMonth_And_DayOfWeek_IsStar()
         {
             Assert.Throws<ArgumentException>(() => CronExpression.Parse("0 12 12 * * *"));
-        }
-
-        [Theory]
-        [InlineData("* * * * * 0#0")]
-        [InlineData("* * * * * 0#6")]
-        [InlineData("* * * * * 1#8")]
-        public void Parse_ThrowException_When_NumberOfDayOfWeekIsInvalid(string cronExpression)
-        {
-            Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
         }
 
         [Theory]
@@ -84,6 +224,32 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 35, 20));
+
+            Assert.Equal(shouldMatch, result);
+        }
+
+        [Theory]
+        [InlineData("59 * * * * ?")]
+        [InlineData("40-59 * * * * ?")]
+        [InlineData("1,59 * * * * ?")]
+        public void IsMatch_ReturnsCorrectResult_WhenMaxSecondsAreSpecified(string cronExpression)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 17, 35, 59));
+
+            Assert.True(result);
+        }
+
+        [Theory]
+        [InlineData("0 * * * * ?", true)]
+        [InlineData("0-10 * * * * ?", true)]
+        [InlineData("0,14 * * * * ?", true)]
+        public void IsMatch_ReturnsCorrectResult_WhenMinSecondsAreSpecified(string cronExpression, bool shouldMatch)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 17, 35, 00));
 
             Assert.Equal(shouldMatch, result);
         }

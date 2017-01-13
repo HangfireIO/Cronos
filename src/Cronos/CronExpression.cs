@@ -377,7 +377,7 @@ namespace Cronos
             }
 
             //
-            // Day
+            // Day of month
             //
 
             var daysView = days.GetViewBetween(day, Constants.LastDayOfMonth);
