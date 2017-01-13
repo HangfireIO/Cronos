@@ -11,6 +11,8 @@ namespace Cronos
         WhenReboot = 0x4, // TODO: Remove this
         MinuteStar = 0x8,
         HourStar = 0x10,
-        SecondStar = 0x20
+        SecondStar = 0x20,
+        DayOfMonthLast = 0x40,
+        DayOfWeekLast = 0x80,
     }
 }

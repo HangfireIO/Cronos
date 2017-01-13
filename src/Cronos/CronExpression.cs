@@ -29,9 +29,6 @@ namespace Cronos
         {
             if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
 
-            // TODO: Add message to exception.
-            //if(cronExpression.Split(' ').Length < 6) throw new FormatException();
-
             var expression = new CronExpression();
 
             unsafe
@@ -82,6 +79,10 @@ namespace Cronos
                     {
                         expression.Flags |= CronExpressionFlag.DayOfMonthStar;
                     }
+                    else if (*pointer == 'L')
+                    {
+                        expression.Flags |= CronExpressionFlag.DayOfMonthLast;
+                    }
 
                     if ((pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth)) == null)
                     {
@@ -99,12 +100,20 @@ namespace Cronos
 
                     if (*pointer == '*')
                     {
+                        if(expression.Flags.HasFlag(CronExpressionFlag.DayOfMonthStar)) throw new ArgumentException("day of week", nameof(cronExpression));
+
                         expression.Flags |= CronExpressionFlag.DayOfWeekStar;
                     }
 
                     if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek)) == null)
                     {
                         throw new ArgumentException("day of week", nameof(cronExpression));
+                    }
+
+                    if (*pointer == 'L')
+                    {
+                        expression.Flags |= CronExpressionFlag.DayOfWeekLast;
+                        pointer++;
                     }
 
                     if (*pointer != '\0')
@@ -124,8 +133,17 @@ namespace Cronos
             }
         }
 
-        public bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek)
+        public bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
+            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                if(dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
+            }
+            else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
+            {
+                if (dayOfMonth + 7 <= Calendar.GetDaysInMonth(year, month)) return false;
+            }
+
             // Make 0-based values out of these so we can use them as indicies
             // minute -= Constants.FirstMinute;
             //  hour -= Constants.FirstHour;
@@ -133,19 +151,17 @@ namespace Cronos
             //  month -= Constants.FirstMonth;
             // dayOfWeek -= Constants.FirstDayOfWeek;
 
-            // The dom/dow situation is odd:  
-            //     "* * 1,15 * Sun" will run on the first and fifteenth AND every Sunday; 
+            // The dom/dow situation is:  
+            //     "* * 1,15 * Sun" will run on the first and fifteenth *only* on Sundays; 
             //     "* * * * Sun" will run *only* on Sundays; 
-            //     "* * 1,15 * *" will run *only * the 1st and 15th.
+            //     "* * 1,15 * *" will run *only* the 1st and 15th.
             // this is why we keep DayOfMonthStar and DayOfWeekStar.
-            // Yes, it's bizarre. Like many bizarre things, it's the standard.
             return GetBit(_second, second) &&
                    GetBit(_minute, minute) &&
                    GetBit(_hour, hour) &&
                    GetBit(_month, month) &&
-                   (((Flags & CronExpressionFlag.DayOfMonthStar) != 0) || ((Flags & CronExpressionFlag.DayOfWeekStar) != 0)
-                       ? GetBit(_dayOfWeek, dayOfWeek) && GetBit(_dayOfMonth, dayOfMonth)
-                       : GetBit(_dayOfWeek, dayOfWeek) || GetBit(_dayOfMonth, dayOfMonth));
+                   GetBit(_dayOfWeek, dayOfWeek) && 
+                   GetBit(_dayOfMonth, dayOfMonth);
         }
 
         public ZonedDateTime? Next(ZonedDateTime now)
@@ -405,6 +421,31 @@ namespace Cronos
                 return null;
 
             //
+            // L Symbol
+            //
+
+            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                var lastDayOfMonth = Calendar.GetDaysInMonth(nextTime.Year, nextTime.Month);
+                if (nextTime.Day == lastDayOfMonth)
+                    return nextTime;
+
+                return Next(new LocalDateTime(year, month, lastDayOfMonth, 0, 0, 0, 0), endTime);
+            }
+            if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
+            {
+                if (daysOfWeek.Contains(nextTime.DayOfWeek))
+                {
+                    if (nextTime.Month != nextTime.PlusWeeks(1).Month)
+                        return nextTime;
+
+                    return Next(new LocalDateTime(year, month, day - 1, 23, 59, 59, 59).PlusWeeks(1), endTime);
+                }
+
+                return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
+            }
+            
+            //
             // Day of week
             //
 
@@ -519,6 +560,15 @@ namespace Cronos
                 pointer++;
 
                 if (*pointer == '/') return null;
+
+                bits = ~0L;
+                return pointer;
+            }
+            else if(*pointer == 'L')
+            {
+                if (cronFieldType != CronFieldType.DayOfMonth) return null;
+
+                pointer++;
 
                 bits = ~0L;
                 return pointer;

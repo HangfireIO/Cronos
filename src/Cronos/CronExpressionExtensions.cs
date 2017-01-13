@@ -12,7 +12,8 @@ namespace Cronos
                 dateTime.Hour,
                 dateTime.Day,
                 dateTime.Month,
-                dateTime.DayOfWeek);
+                dateTime.DayOfWeek,
+                dateTime.Year);
         }
     }
 }
