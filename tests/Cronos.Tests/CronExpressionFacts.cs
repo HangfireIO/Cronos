@@ -47,8 +47,16 @@ namespace Cronos.Tests
         [Fact]
         public void Parse_ThrowException_WhenBoth_DayOfMonth_And_DayOfWeek_IsStar()
         {
-            // TODO Why we can't support star for both DayOfMonth and DayOfWeek? 
             Assert.Throws<ArgumentException>(() => CronExpression.Parse("0 12 12 * * *"));
+        }
+
+        [Theory]
+        [InlineData("* * * * * 0#0")]
+        [InlineData("* * * * * 0#6")]
+        [InlineData("* * * * * 1#8")]
+        public void Parse_ThrowException_When_NumberOfDayOfWeekIsInvalid(string cronExpression)
+        {
+            Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
         }
 
         [Theory]
@@ -271,6 +279,25 @@ namespace Cronos.Tests
             var result = expression.IsMatch(dateTime);
 
             Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData(2017, 1, 1, "* * * ? * SUN#1", true)]
+        [InlineData(2017, 1, 1, "* * * ? * 0#1", true)]
+        [InlineData(2017, 1, 8, "* * * ? * 0#2", true)]
+        [InlineData(2017, 1, 20, "* * * ? * 5#3", true)]
+        [InlineData(2017, 5, 19, "* * * ? * 5#3", true)]
+        [InlineData(2017, 1, 8, "* * * ? * 0#1", false)]
+        [InlineData(2017, 1, 1, "* * * ? * 0#2", false)]
+        [InlineData(2017, 1, 24, "* * * ? * 3#2", false)]
+        public void IsMatch_ReturnCorrectValue_WhenSharpIsUsedInDayOfMonth(int year, int month, int day, string cronExpression, bool shouldMatch)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var dateTime = new LocalDateTime(year, month, day, 0, 0);
+            var result = expression.IsMatch(dateTime);
+
+            Assert.Equal(shouldMatch, result);
         }
 
         [Fact]

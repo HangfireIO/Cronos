@@ -15,6 +15,8 @@ namespace Cronos
         private long _month; // 12 bits -> 16 bits in Int16
         private long _dayOfWeek; // 8 bits -> 8 bits in byte
 
+        private int _nthdayOfWeek;
+
         // May be packed into 135 bits / 17 bytes, or 19 bytes unpacked + 4(2?) for Flags
         // Regular CRON string is 9 + 1(\0) bytes minimum
         private CronExpression()
@@ -116,6 +118,17 @@ namespace Cronos
                         pointer++;
                     }
 
+                    if (*pointer == '#')
+                    {
+                        pointer++;
+                        pointer = GetNumber(out expression._nthdayOfWeek, 1, null, pointer);
+
+                        if (expression._nthdayOfWeek < 1 || expression._nthdayOfWeek > 5)
+                        {
+                            throw new ArgumentException("day of week", nameof(cronExpression));
+                        }
+                    }
+
                     if (*pointer != '\0')
                     {
                         throw new ArgumentException("invalid cron", nameof(cronExpression));
@@ -142,6 +155,13 @@ namespace Cronos
             else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
                 if (dayOfMonth + 7 <= Calendar.GetDaysInMonth(year, month)) return false;
+            }
+            else if(_nthdayOfWeek != 0)
+            {
+                if ((dayOfMonth - (_nthdayOfWeek - 1) * 7 <= 0) || (dayOfMonth - _nthdayOfWeek * 7) > 0)
+                {
+                    return false;
+                }
             }
 
             // Make 0-based values out of these so we can use them as indicies
