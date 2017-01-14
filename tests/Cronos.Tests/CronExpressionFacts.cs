@@ -49,8 +49,7 @@ namespace Cronos.Tests
         [InlineData("-1 * * * * *")]
         [InlineData("- * * * * *")]
         [InlineData(", * * * * *")]
-        // TODO
-        //[InlineData(",1 * * * * *")]
+        [InlineData(",1 * * * * *")]
         [InlineData("/ * * * * *")]
         [InlineData("*/ * * * * *")]
         [InlineData("1/ * * * * *")]
@@ -60,6 +59,7 @@ namespace Cronos.Tests
         [InlineData("L * * * * *")]
         [InlineData("W * * * * *")]
         [InlineData("LW * * * * *")]
+        [InlineData("1/2147483648 * * * * ?")]
         // TODO: Consider support of '?' here.
         [InlineData("? * * * * *")]
         public void Parse_ThrowAnException_WhenSecondIsInvalid(string cronExpression)
@@ -74,8 +74,7 @@ namespace Cronos.Tests
         [InlineData("* -1 * * * *")]
         [InlineData("* - * * * *")]
         [InlineData("* , * * * *")]
-        // TODO
-        //[InlineData("* ,1 * * * *")]
+        [InlineData("* ,1 * * * *")]
         [InlineData("* / * * * *")]
         [InlineData("* # * * * *")]
         [InlineData("* *#1 * * * *")]
@@ -97,8 +96,7 @@ namespace Cronos.Tests
         [InlineData("* * -1 * * *")]
         [InlineData("* * - * * *")]
         [InlineData("* * , * * *")]
-        // TODO
-        //[InlineData("* * ,1 * * *")]
+        [InlineData("* * ,1 * * *")]
         [InlineData("* * / * * *")]
         [InlineData("* * # * * *")]
         [InlineData("* * *#2 * * *")]
@@ -129,8 +127,7 @@ namespace Cronos.Tests
         [InlineData("* * * -1 * *")]
         [InlineData("* * * - * *")]
         [InlineData("* * * , * *")]
-        // TODO
-        //[InlineData("* * ,1 * *")]
+        [InlineData("* * * ,1 * *")]
         [InlineData("* * * / * *")]
         [InlineData("* * * # * *")]
         [InlineData("* * * *#3 * *")]
@@ -148,8 +145,7 @@ namespace Cronos.Tests
         [InlineData("* * * *  -1 *")]
         [InlineData("* * * *   - *")]
         [InlineData("* * * *   , *")]
-        // TODO
-        //[InlineData(",1 * * * * *")]
+        [InlineData("* * * * ,1 *")]
         [InlineData("* * * *   / *")]
         [InlineData("* * * *  */ *")]
         [InlineData("* * * *  1/ *")]
@@ -172,8 +168,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * -1")]
         [InlineData("* * * * * -")]
         [InlineData("* * * * * ,")]
-        // TODO
-        //[InlineData(",1 * * * * *")]
+        [InlineData(" * * * * ,1")]
         [InlineData("* * * * * /")]
         [InlineData("* * * * * */")]
         [InlineData("* * * * * 1/")]
@@ -397,13 +392,6 @@ namespace Cronos.Tests
         [InlineData("00 05 18 13 12 05", false)]
         public void IsMatch_HandlesSpecialCase_WhenBoth_DayOfWeek_And_DayOfMonth_WereSet(string cronExpression, bool shouldMatch)
         {
-            // The dom/dow situation is odd:  
-            //     "* * 1,15 * Sun" will run on the first and fifteenth AND every Sunday; 
-            //     "* * * * Sun" will run *only* on Sundays; 
-            //     "* * 1,15 * *" will run *only * the 1st and 15th.
-            // this is why we keep DayOfMonthStar and DayOfWeekStar.
-            // Yes, it's bizarre. Like many bizarre things, it's the standard.
-
             var expression = CronExpression.Parse(cronExpression);
 
             var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 18, 05));
@@ -556,6 +544,61 @@ namespace Cronos.Tests
             var result = expression.Next(now);
 
             Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_HandleMovingToNextMinute()
+        {
+            var expression = CronExpression.Parse("0 * * * * ?");
+
+            var now = new LocalDateTime(2017, 1, 14, 12, 58, 59).InZoneStrictly(TimeZone);
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 1, 14, 12, 59, 0), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_HandleMovingToNextHour()
+        {
+            var expression = CronExpression.Parse("0 0 * * * ?");
+
+            var now = new LocalDateTime(2017, 1, 14, 12, 59, 0).InZoneStrictly(TimeZone);
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 1, 14, 13, 0, 0), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_HandleMovingToNextDay()
+        {
+            var expression = CronExpression.Parse("0 0 0 * * ?");
+
+            var now = new LocalDateTime(2017, 1, 14, 23, 0, 0).InZoneStrictly(TimeZone);
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 1, 15, 0, 0, 0), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_HandleMovingToNextMonth()
+        {
+            var expression = CronExpression.Parse("0 0 0 1 * ?");
+
+            var now = new LocalDateTime(2017, 1, 31, 0, 0, 0).InZoneStrictly(TimeZone);
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2017, 2, 1, 0, 0, 0), result.Value.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_HandleMovingToNextYear()
+        {
+            var expression = CronExpression.Parse("0 0 0 * * ?");
+
+            var now = new LocalDateTime(2017, 12, 31, 23, 59, 58).InZoneStrictly(TimeZone);
+            var result = expression.Next(now);
+
+            Assert.Equal(new LocalDateTime(2018, 1, 1, 0, 0, 0), result.Value.LocalDateTime);
         }
 
         [Theory]

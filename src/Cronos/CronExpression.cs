@@ -109,6 +109,21 @@ namespace Cronos
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
+                    // 101011010101 0
+                    const long monthsWith31Days = 0x15AA;
+                    // 111111111101 0
+                    const long monthsWith30Or31Days = 0x1FFA;
+
+                    const long the31thDayOfMonth = 0x80000000;
+                    const long the30thAnd31thDayOfMonth = 0xC0000000;
+                    
+
+                    if((expression._month & monthsWith31Days) == 0 && (expression._dayOfMonth & the31thDayOfMonth) != 0 ||
+                        (expression._month & monthsWith30Or31Days) == 0 && (expression._dayOfMonth & the30thAnd31thDayOfMonth) != 0)
+                    {
+                        throw new ArgumentException("month", nameof(cronExpression));
+                    }
+
                     // Days of week
 
                     if (*pointer == '*')
@@ -333,14 +348,24 @@ namespace Cronos
             // Minute
             //
 
-            var minutesView = minutes.GetViewBetween(minute, Constants.LastMinute);
-
-            if (minutesView.Count > 0)
+            if (minute <= Constants.LastMinute)
             {
-                minute = minutesView.Min;
+                var minutesView = minutes.GetViewBetween(minute, Constants.LastMinute);
+
+                if (minutesView.Count > 0)
+                {
+                    minute = minutesView.Min;
+                }
+                else
+                {
+                    second = seconds.Min;
+                    minute = minutes.Min;
+                    hour++;
+                }
             }
             else
             {
+                second = seconds.Min;
                 minute = minutes.Min;
                 hour++;
             }
@@ -364,16 +389,28 @@ namespace Cronos
                 }
                 else
                 {
+                    second = seconds.Min;
                     minute = minutes.Min;
                     hour = hours.Min;
                     day++;
+                    if (day > Constants.LastDayOfMonth)
+                    {
+                        day = days.Min;
+                        month++;
+                    }
                 }
             }
             else
             {
+                second = seconds.Min;
                 minute = minutes.Min;
                 hour = hours.Min;
                 day++;
+                if (day > Constants.LastDayOfMonth)
+                {
+                    day = days.Min;
+                    month++;
+                }
             }
 
             //
@@ -398,6 +435,7 @@ namespace Cronos
             }
             else if (day > baseDay)
             {
+                second = seconds.Min;
                 minute = minutes.Min;
                 hour = hours.Min;
             }
@@ -405,27 +443,37 @@ namespace Cronos
             //
             // Month
             //
-
-            var monthsView = months.GetViewBetween(month, Constants.LastMonth);
-
-            if (monthsView.Count > 0)
+            if (month <= Constants.LastMonth)
             {
-                month = monthsView.Min;
-            }
+                var monthsView = months.GetViewBetween(month, Constants.LastMonth);
 
-            if (monthsView.Count == 0)
+                if (monthsView.Count > 0)
+                {
+                    month = monthsView.Min;
+                }
+
+                if (monthsView.Count == 0)
+                {
+                    minute = minutes.Min;
+                    hour = hours.Min;
+                    day = days.Min;
+                    month = months.Min;
+                    year++;
+                }
+                else if (month > baseMonth)
+                {
+                    minute = minutes.Min;
+                    hour = hours.Min;
+                    day = days.Min;
+                }
+            }
+            else
             {
                 minute = minutes.Min;
                 hour = hours.Min;
                 day = days.Min;
                 month = months.Min;
                 year++;
-            }
-            else if (month > baseMonth)
-            {
-                minute = minutes.Min;
-                hour = hours.Min;
-                day = days.Min;
             }
 
             //
