@@ -44,6 +44,9 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
+
+        // seconds field is invalid.
+
         [Theory]
         [InlineData("60 * * * * *")]
         [InlineData("-1 * * * * *")]
@@ -60,16 +63,10 @@ namespace Cronos.Tests
         [InlineData("W * * * * *")]
         [InlineData("LW * * * * *")]
         [InlineData("1/2147483648 * * * * ?")]
-        // TODO: Consider support of '?' here.
-        [InlineData("? * * * * *")]
-        public void Parse_ThrowAnException_WhenSecondIsInvalid(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+        [InlineData("? * * * * ?")]
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        // minute field is invalid.
 
-        [Theory]
         [InlineData("* 60 * * * *")]
         [InlineData("* -1 * * * *")]
         [InlineData("* - * * * *")]
@@ -82,16 +79,10 @@ namespace Cronos.Tests
         [InlineData("* L * * * *")]
         [InlineData("* W * * * *")]
         [InlineData("* LW * * * *")]
-        // TODO: Consider support of '?' here.
-        [InlineData("* ? * * * *")]
-        public void Parse_ThrowAnException_WhenMinuteIsInvalid(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+        [InlineData("* ? * * * ?")]
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        // hour field is invalid.
 
-        [Theory]
         [InlineData("* * 25 * * *")]
         [InlineData("* * -1 * * *")]
         [InlineData("* * - * * *")]
@@ -104,16 +95,10 @@ namespace Cronos.Tests
         [InlineData("* * L * * *")]
         [InlineData("* * W * * *")]
         [InlineData("* * LW * * *")]
-        // TODO: Consider support of '?' here.
-        [InlineData("* * ? * * *")]
-        public void Parse_ThrowAnException_WhenHourIsInvalid(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+        [InlineData("* * ? * * ?")]
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        // day of month field is invalid.
 
-        [Theory]
         [InlineData("* * * 32 * *")]
         [InlineData("* * * 31 4 *")]
         [InlineData("* * * 31 6 *")]
@@ -133,14 +118,9 @@ namespace Cronos.Tests
         [InlineData("* * * *#3 * *")]
         [InlineData("* * * 4#1 * *")]
         [InlineData("* * * W * *")]
-        public void Parse_ThrowAnException_WhenDayOfMonthIsInvalid(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        //month is invalid
 
-        [Theory]
         [InlineData("* * * *  13 *")]
         [InlineData("* * * *  -1 *")]
         [InlineData("* * * *   - *")]
@@ -156,14 +136,9 @@ namespace Cronos.Tests
         [InlineData("* * * *   W *")]
         [InlineData("* * * *  LW *")]
         [InlineData("? * * *   ? *")]
-        public void Parse_ThrowAnException_WhenMonthIsInvalid(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        // day of week field is invalid.
 
-        [Theory]
         [InlineData("* * * * * 8")]
         [InlineData("* * * * * -1")]
         [InlineData("* * * * * -")]
@@ -181,7 +156,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * L")]
         [InlineData("* * * * * W")]
         [InlineData("* * * * * LW")]
-        public void Parse_ThrowAnException_WhenDayOfWeekIsInvalid(string cronExpression)
+        public void Parse_ThrowAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
             var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
 
