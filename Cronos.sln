@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos", "src\Cronos\Cronos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos.Tests", "tests\Cronos.Tests\Cronos.Tests.csproj", "{BE2205CF-316A-4566-8538-3A2E48AC9003}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos.Benchmark", "benchmarks\Cronos.Benchmark\Cronos.Benchmark.csproj", "{D4514DD6-BD99-4A38-A4CD-C121E1A17C0E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE2205CF-316A-4566-8538-3A2E48AC9003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4514DD6-BD99-4A38-A4CD-C121E1A17C0E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4514DD6-BD99-4A38-A4CD-C121E1A17C0E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4514DD6-BD99-4A38-A4CD-C121E1A17C0E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4514DD6-BD99-4A38-A4CD-C121E1A17C0E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
