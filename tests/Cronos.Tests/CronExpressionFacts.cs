@@ -664,150 +664,90 @@ namespace Cronos.Tests
             Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result.Value.LocalDateTime);
         }
 
-        [Fact]
-        public void Dst()
+
+        [Theory]
+
+        // Skipped due to intervals, no problems here
+        [InlineData("0 */30 * * * ?",
+            "00:00 ST",
+            "00:30 ST",
+            "01:00 ST",
+            "01:30 ST",
+            //"02:00 ST" - invalid time
+            //"02:30 ST" - invalid time
+            "03:00 DST",
+            "03:30 DST",
+            "04:00 DST",
+            "04:30 DST")]
+
+        // Skipped due to intervals, can be avoided by enumerating hours and minutes
+        // "0,30 0-23/2 * * *"
+        [InlineData("0 */30 */2 * * ?",
+            "00:00 ST",
+            "00:30 ST",
+            //"02:00 ST" - invalid time
+            //"02:30 ST" - invalid time
+            "04:00 DST",
+            "04:30 DST")]
+
+        // Run missed, strict
+        [InlineData("0 0,30 0-23/2 * * ?",
+            "00:00 ST",
+            "00:30 ST",
+            //"02:00 ST" - invalid time
+            //"02:30 ST" - invalid time
+            "03:00 DST", // 02:30 equivalent skipped, but...
+            "04:00 DST",
+            "04:30 DST")]
+
+        // Duplicates removed
+        [InlineData("0 0 * * * ?",
+            "00:00 ST",
+            "01:00 ST",
+            //"02:00 ST" - invalid time, skipped
+            "03:00 DST",
+            "04:00 DST")]
+
+        // TODO: may be confusing!
+        // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
+        [InlineData("0 */30 2 * * ?",
+            //"02:00 ST" - invalid time
+            //"02:30 ST" - invalid time
+            new string[0])]
+
+        // TODO: exclude duplicates
+        // Run missed
+        [InlineData("0 0,30 2 * * ?",
+            //"02:00 ST" - invalid time
+            //"02:30 ST" - invalid time
+            "03:00 DST")]
+
+        // Run missed, delay
+        [InlineData("0 30 2 * * ?",
+            //"02:30 ST" - invalid time
+            "03:00 DST")]
+
+        // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
+        // TODO: differ from Linux Cron
+        [InlineData("0 0 */2 * * ?",
+            "00:00 ST",
+            //"02:00 ST" - invalid time
+            "03:00 DST",
+            "04:00 DST")]
+
+        // Run missed
+        [InlineData("0 0 0-23/2 * * ?",
+            "00:00 ST",
+            "03:00 DST",
+            //"02:00 ST" - invalid time
+            "04:00 DST")]
+        public void HandleDST_WhenTheClockJumpsForward(string expression, params string[] expectedExecutingTimes)
         {
-            CreateEntry("0 */30 * * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-            // Skipped due to intervals, no problems here
-
-            AssertExecutedAt(
-                "00:00 ST",
-                "00:30 ST",
-                "01:00 ST",
-                "01:30 ST",
-                //"02:00 ST" - invalid time
-                //"02:30 ST" - invalid time
-                "03:00 DST",
-                "03:30 DST",
-                "04:00 DST",
-                "04:30 DST");
-        }
-
-        [Fact]
-        public void Dst2()
-        {
-            CreateEntry("0 */30 */2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-            // Skipped due to intervals, can be avoided by enumerating hours and minutes
-            // "0,30 0-23/2 * * *"
-            AssertExecutedAt(
-                "00:00 ST",
-                "00:30 ST",
-                //"02:00 ST" - invalid time
-                //"02:30 ST" - invalid time
-                "04:00 DST",
-                "04:30 DST");
-        }
-
-        [Fact]
-        public void Dst21()
-        {
-            CreateEntry("0 0,30 0-23/2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // Run missed, strict
-            AssertExecutedAt(
-                "00:00 ST",
-                "00:30 ST",
-                //"02:00 ST" - invalid time
-                //"02:30 ST" - invalid time
-                "03:00 DST", // 02:30 equivalent skipped, but...
-                "04:00 DST",
-                "04:30 DST");
-        }
-
-        [Fact]
-        public void Dst312()
-        {
-            CreateEntry("0 0 * * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // Duplicates removed
-            AssertExecutedAt(
-                "00:00 ST",
-                "01:00 ST",
-                //"02:00 ST" - invalid time, skipped
-                "03:00 DST",
-                "04:00 DST");
-        }
-
-        [Fact]
-        public void Dst3()
-        {
-            CreateEntry("0 */30 2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // TODO: may be confusing!
-            // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
-            AssertExecutedAt(
-                //"02:00 ST" - invalid time
-                //"02:30 ST" - invalid time
-                new string[0]);
-        }
-
-        [Fact]
-        public void Dst4()
-        {
-            CreateEntry("0 0,30 2 * * ?");
+            CreateEntry(expression);
 
             ExecuteSchedulerStandardTimeToDaylightSavingTime();
 
-            // TODO: exclude duplicates
-            // Run missed
-            AssertExecutedAt(
-                //"02:00 ST" - invalid time
-                //"02:30 ST" - invalid time
-                "03:00 DST");
-        }
-
-        [Fact]
-        public void Dst5()
-        {
-            CreateEntry("0 30 2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // Run missed, delay
-            AssertExecutedAt(
-                //"02:30 ST" - invalid time
-                "03:00 DST");
-        }
-
-        [Fact]
-        public void Dst6()
-        {
-            CreateEntry("0 0 */2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
-            // TODO: differ from Linux Cron
-            AssertExecutedAt(
-                "00:00 ST",
-                //"02:00 ST" - invalid time
-                "03:00 DST",
-                "04:00 DST");
-        }
-
-        [Fact]
-        public void Dst61()
-        {
-            CreateEntry("0 0 0-23/2 * * ?");
-
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
-
-            // Run missed
-            AssertExecutedAt(
-                "00:00 ST",
-                "03:00 DST",
-                //"02:00 ST" - invalid time
-                "04:00 DST");
+            AssertExecutedAt(expectedExecutingTimes);
         }
 
         [Fact]
