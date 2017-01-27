@@ -253,7 +253,7 @@ namespace Cronos
 
                         // Interval jobs should be fired in both offsets
 
-                        if (Flags.HasFlag(CronExpressionFlag.MinuteStar))
+                        if (Flags.HasFlag(CronExpressionFlag.SecondStar) || Flags.HasFlag(CronExpressionFlag.MinuteStar) || Flags.HasFlag(CronExpressionFlag.HourStar))
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
                         }

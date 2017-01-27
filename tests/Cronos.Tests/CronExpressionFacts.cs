@@ -876,6 +876,20 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void DstToSt5()
+        {
+            CreateEntry("0 0 */2 * * ?");
+
+            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+
+            // Duplicates skipped due to non-wildcard minute
+            AssertExecutedAt(
+                "00:00 DST",
+                //02:00 DST == 01:00 ST, one hour delay
+                "02:00 ST");
+        }
+
+        [Fact]
         public void DstToSt6()
         {
             CreateEntry("0 0,30 1 * * ?");
@@ -892,17 +906,18 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void DstToSt5()
+        public void DstToSt7()
         {
-            CreateEntry("0 0 */2 * * ?");
+            CreateEntry("0 30 * * * ?");
 
             ExecuteSchedulerDaylightSavingTimeToStandardTime();
 
-            // Duplicates skipped due to non-wildcard minute
             AssertExecutedAt(
-                "00:00 DST",
-                //02:00 DST == 01:00 ST, one hour delay
-                "02:00 ST");
+                "00:30 DST",
+                "01:30 DST",
+                "01:30 ST",
+                "02:30 ST"
+                );
         }
 
         [Theory]
