@@ -6,7 +6,7 @@ TBD.
 
 ## Overview
 
-High performance, full-featured Cron library for .NET. Cronos allow to parse cron expressions, check if given time is matched and calculate next execution time.
+High performance, full-featured Cron implementation for .NET. Cronos allow to parse cron expressions, check if given time is matched and calculate next execution time.
 
 ## Installation
 
@@ -16,21 +16,29 @@ TBD
 
 ### Daylight Saving Time (DST)
 
-Cronos considers situation related to DST. But Cronos behavior deffer from standard cron implementations:
+For ease of understanding, we consider a case, where a one-hour shift occurs at 02:00 local time, in spring the clock jumps forward from the last instant of 01:59 standard time to 03:00 DST, whereas in autumn the clock jumps backward from the last instant of 01:59 am DST to 01:00 am standard time, repeating that hour.
 
-**Adjust clocks forward**. 
-If an expression has '*' in second or minute field it means that each cron job which should be performed from 2:00 to 2:59 will be skipped. In other cases similar jobs will be performed at 3:00. See examples:
-* `0 30 * * * ?`, `0 30 1-12 * * ?` - job will be performed at 1:30, then at 3:00 and then at 3:30. 
-* `0 30 2 * * ?` - job will be perfomed at 3:00.
-* `0 * * * * ?` - job will be performed every minute from 1:00 to 2:00. Then time will jump from 2:00 to 3:00. Then the job will continue to run every minute. So all jobs which had to be perfomed from 2:00 to 2:59  will be skipped. 
-* `0 * 2 ? * *` - job will be skipped in that day. So it will be performed just next day every minute from 2:00 to 2:59.
+Cron behavior is clear and logical until Daylight saving time comes. Lots of implementations don't handle the DST. Thus if a job is scheduled for 1:30 am then it can be performed twice: before and after shifting clock backward. Or worse, if your job should be performed at 2:30 every day when time will jump from 2:00 am to 3:00 am the job won't be performed. Very bad.
 
-**Adjust clocks backward**. 
-If an expression has '*' in hour field it means that each cron job which should be performed from 1:00 to 1:59 will be re-performed after adjusting clock backward. In hour field contains other values a job will be performed just before jumping time from 1:59 to 1:00. See examples:
-* `0 30 * * * ?` - job will be scheduled at 1:30 before and after adjusting clock backward. 
-* `0 30 1 * * ?`, `0 30 1,2,10-12 * * ?` - job will be scheduled once at 1:30 before adjusting clock backward.
-* `0 * * * * ?` - job will be perfomed every minute from 1:00 to 1:59. After adjusting clock backward job will continue to run every second.
-* `0 * 1 ? * *` - job will be performed every minute from 1:00 to 1:59. So it will be performed until the next day at 1:00.
+The easiest solution: do not schedule any cron jobs from 1:00 am to 3:00 am on Sunday morning! But who rememberes about DST until it comes?
+
+Cronos solution: properly handle the daylight saving time. But before we should answer to questions:
+- If a job should be performed in the period of the clock jumping should we perform it?
+- How many times?
+
+**Shift clocks forward**.
+A job will be skipped if it is secondly or minutely (second or minute field conatains '*') and it should be performed from 2:00 am to 2:59 am. In other cases, a job will be performed once at 3:00 am. See examples:
+* `0 30 * * * ?`, `0 30 1-12 * * ?` - job will be performed at 1:30 am, then at 3:00 am and then at 3:30 am. 
+* `0 30 2 * * ?` - job will be perfomed at 3:00 am.
+* `0 * * * * ?` - job will be performed every minute from 1:00 am to 2:00 am. Then time will jump from 2:00 am to 3:00 am. Then the job will continue to run every minute. So all jobs which had to be perfomed from 2:00 am to 2:59 am will be skipped. 
+* `0 * 2 ? * *` - job will be skipped in that day. So it will be performed just next day every minute from 2:00 am to 2:59 am.
+
+**Shift clocks backward**. 
+A job will be performed twice before and after the clock shifting if it is secondly, minutely or hourly (an cron expression contains '*' in second, minute or hour field). In other cases a job will be performed only before the clock shifting. See examples:
+* `0 30 * * * ?` - job will be scheduled at 1:30 am before and after shifting clock backward. 
+* `0 30 1 * * ?`, `0 30 1,2,10-12 * * ?` - job will be scheduled once at 1:30 before shifting clock backward.
+* `0 * * * * ?` - job will be perfomed every minute from 1:00 am to 1:59 am. After shifting clock backward job will continue to run every second.
+* `0 * 1 ? * *` - job will be perfomed every minute from 1:00 am to 1:59 am. After shifting clock backward job will continue to run every second from 1:00 am to 1:59 am.
 
 ### Format
 
@@ -46,7 +54,7 @@ A CRON expression is a string comprising six or seven fields separated by white 
 | Day of week  | Yes      | 0-7 or SUN-SAT  | * , - / ? L #              | 0 and 7 standing for SUN |
 | Year         | No       | 1970–2099       | * , - /                    |                          |
 
-** * **
+*
 :  "All values". Used to select all values within a field. For example, '*'' in the hour field means "every hour".
 
 **,**
