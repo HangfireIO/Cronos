@@ -474,7 +474,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
         }
 
         [Fact]
@@ -485,7 +485,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
         }
 
         [Fact]
@@ -496,7 +496,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
         }
 
         [Fact]
@@ -507,7 +507,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 30), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 30), result?.LocalDateTime);
         }
 
         [Fact]
@@ -518,7 +518,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result?.LocalDateTime);
         }
 
         [Fact]
@@ -529,7 +529,7 @@ namespace Cronos.Tests
             var now = new LocalDateTime(2017, 1, 14, 12, 58, 59).InZoneStrictly(TimeZone);
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 1, 14, 12, 59, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 1, 14, 12, 59, 0), result?.LocalDateTime);
         }
 
         [Fact]
@@ -540,7 +540,7 @@ namespace Cronos.Tests
             var now = new LocalDateTime(2017, 1, 14, 12, 59, 0).InZoneStrictly(TimeZone);
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 1, 14, 13, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 1, 14, 13, 0, 0), result?.LocalDateTime);
         }
 
         [Fact]
@@ -551,7 +551,7 @@ namespace Cronos.Tests
             var now = new LocalDateTime(2017, 1, 14, 23, 0, 0).InZoneStrictly(TimeZone);
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 1, 15, 0, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 1, 15, 0, 0, 0), result?.LocalDateTime);
         }
 
         [Fact]
@@ -562,7 +562,7 @@ namespace Cronos.Tests
             var now = new LocalDateTime(2017, 1, 31, 0, 0, 0).InZoneStrictly(TimeZone);
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2017, 2, 1, 0, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2017, 2, 1, 0, 0, 0), result?.LocalDateTime);
         }
 
         [Fact]
@@ -573,7 +573,7 @@ namespace Cronos.Tests
             var now = new LocalDateTime(2017, 12, 31, 23, 59, 58).InZoneStrictly(TimeZone);
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(2018, 1, 1, 0, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(2018, 1, 1, 0, 0, 0), result?.LocalDateTime);
         }
 
         [Theory]
@@ -585,7 +585,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(now.Year, now.Month, now.Calendar.GetDaysInMonth(now.Year, now.Month), 00, 00), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(now.Year, now.Month, now.Calendar.GetDaysInMonth(now.Year, now.Month), 00, 00), result?.LocalDateTime);
         }
 
         [Theory]
@@ -597,7 +597,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(dateTime, result.Value.LocalDateTime);
+            Assert.Equal(dateTime, result?.LocalDateTime);
         }
 
         [Theory]
@@ -617,7 +617,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(dateTime, result.Value.LocalDateTime);
+            Assert.Equal(dateTime, result?.LocalDateTime);
         }
 
         [Theory]
@@ -640,7 +640,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result?.LocalDateTime);
         }
 
         [Theory]
@@ -661,7 +661,7 @@ namespace Cronos.Tests
 
             var result = expression.Next(now);
 
-            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result.Value.LocalDateTime);
+            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result?.LocalDateTime);
         }
 
 
@@ -750,114 +750,70 @@ namespace Cronos.Tests
             AssertExecutedAt(expectedExecutingTimes);
         }
 
-        [Fact]
-        public void DstToSt1()
+
+        [Theory]
+
+        // As usual due to intervals
+        [InlineData("0 */30 * * * ?",
+            "00:00 DST",
+            "00:30 DST",
+            "01:00 DST",
+            "01:30 DST",
+            "01:00 ST",
+            "01:30 ST",
+            "02:00 ST",
+            "02:30 ST")]
+
+        // As usual due to intervals
+        [InlineData("0 */30 */2 * * ?",
+            "00:00 DST",
+            "00:30 DST",
+            // 02:00 DST == 01:00 ST, one hour delay
+            "02:00 ST",
+            "02:30 ST")]
+
+        // As usual due to intervals
+        [InlineData("0 0 1 * * ?",
+            "01:00 DST"
+            //"01:00 ST" - ignore
+            )]
+
+        // TODO: differ from Linux Cron
+        // Duplicates skipped due to non-wildcard hour
+        [InlineData("0 */30 1 * * ?",
+            "01:00 DST",
+            "01:30 DST",
+            "01:00 ST",
+            "01:30 ST")]
+
+        // Duplicates skipped due to non-wildcard minute
+        [InlineData("0 0 */2 * * ?",
+            "00:00 DST",
+            //02:00 DST == 01:00 ST, one hour delay
+            "02:00 ST")]
+
+        // Duplicates skipped due to non-wildcard
+        [InlineData("0 0,30 1 * * ?",
+            "01:00 DST",
+            "01:30 DST"
+            //"01:00 ST"
+            //"01:30 ST"
+            )]
+        
+        // Duplicates skipped due to non-wildcard
+        [InlineData("0 30 * * * ?",
+            "00:30 DST",
+            "01:30 DST",
+            "01:30 ST",
+            "02:30 ST"
+            )]
+        public void HandleDST_WhenTheClockJumpsBackward(string expression, params string[] expectedExecutingTimes)
         {
-            CreateEntry("0 */30 * * * ?");
+            CreateEntry(expression);
 
             ExecuteSchedulerDaylightSavingTimeToStandardTime();
 
-            // As usual due to intervals
-            AssertExecutedAt(
-                "00:00 DST",
-                "00:30 DST",
-                "01:00 DST",
-                "01:30 DST",
-                "01:00 ST",
-                "01:30 ST",
-                "02:00 ST",
-                "02:30 ST");
-        }
-
-        [Fact]
-        public void DstToSt2()
-        {
-            CreateEntry("0 */30 */2 * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            // As usual due to intervals
-            AssertExecutedAt(
-                "00:00 DST",
-                "00:30 DST",
-                // 02:00 DST == 01:00 ST, one hour delay
-                "02:00 ST",
-                "02:30 ST");
-        }
-
-        [Fact]
-        public void DstToSt3()
-        {
-            CreateEntry("0 0 1 * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            // Duplicates skipped, due to strict
-            AssertExecutedAt(
-                "01:00 DST"
-                //"01:00 ST" - ignore
-                );
-        }
-
-        [Fact]
-        public void DstToSt4()
-        {
-            CreateEntry("0 */30 1 * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            // TODO: differ from Linux Cron
-            // Duplicates skipped due to non-wildcard hour
-            AssertExecutedAt(
-                "01:00 DST",
-                "01:30 DST",
-                "01:00 ST",
-                "01:30 ST");
-        }
-
-        [Fact]
-        public void DstToSt5()
-        {
-            CreateEntry("0 0 */2 * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            // Duplicates skipped due to non-wildcard minute
-            AssertExecutedAt(
-                "00:00 DST",
-                //02:00 DST == 01:00 ST, one hour delay
-                "02:00 ST");
-        }
-
-        [Fact]
-        public void DstToSt6()
-        {
-            CreateEntry("0 0,30 1 * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            // Duplicates skipped due to non-wildcard
-            AssertExecutedAt(
-                "01:00 DST",
-                "01:30 DST"
-                //"01:00 ST"
-                //"01:30 ST"
-                );
-        }
-
-        [Fact]
-        public void DstToSt7()
-        {
-            CreateEntry("0 30 * * * ?");
-
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            AssertExecutedAt(
-                "00:30 DST",
-                "01:30 DST",
-                "01:30 ST",
-                "02:30 ST"
-                );
+            AssertExecutedAt(expectedExecutingTimes);
         }
 
         [Theory]
