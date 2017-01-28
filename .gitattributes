@@ -1,0 +1,42 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Custom for Visual Studio
+*.cs     diff=csharp text
+*.sln    merge=union text eol=crlf
+*.csproj merge=union text eol=crlf
+
+# Standard to msysgit
+*.doc	 diff=astextplain
+*.DOC	 diff=astextplain
+*.docx diff=astextplain
+*.DOCX diff=astextplain
+*.dot  diff=astextplain
+*.DOT  diff=astextplain
+*.pdf  diff=astextplain
+*.PDF	 diff=astextplain
+*.rtf	 diff=astextplain
+*.RTF	 diff=astextplain
+
+# Source code
+*.xml    text
+*.bat    text
+*.ps1    text
+*.nuspec text
+*.js     text
+*.json   text
+
+# Documentation
+*.md           text
+*.txt          text
+*.manifest     text
+COPYING        text
+COPYING.LESSER text
+
+# Configs
+*.config       text
+.editorconfig  text
+.gitattributes text
+.gitignore     text
+*.yml          text
+*.DotSettings  text
