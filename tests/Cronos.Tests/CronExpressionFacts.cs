@@ -10,6 +10,8 @@ namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
+        private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+
         [Fact]
         public void BasicFact()
         {
@@ -738,8 +740,8 @@ namespace Cronos.Tests
         // Run missed
         [InlineData("0 0 0-23/2 * * ?",
             "00:00 ST",
-            "03:00 DST",
             //"02:00 ST" - invalid time
+            "03:00 DST",
             "04:00 DST")]
         public void AllNext_HandleDST_WhenTheClockJumpsForward(string cronExpression, params string[] expectedExecutingTimes)
         {
@@ -753,6 +755,53 @@ namespace Cronos.Tests
             AssertExecutedAt(executed, expectedExecutingTimes);
         }
 
+        [Theory]
+        // Skipped due to intervals, no problems here
+        [InlineData("0 */30 * * * ?", "03:00 DST")]
+
+        // Skipped due to intervals, can be avoided by enumerating hours and minutes
+        // "0,30 0-23/2 * * *"
+        [InlineData("0 */30 */2 * * ?", "04:00 DST")]
+
+        // Run missed, strict
+        [InlineData("0 0,30 0-23/2 * * ?", "03:00 DST")]
+
+        // Duplicates removed
+        [InlineData("0 0 * * * ?", "03:00 DST")]
+
+        // TODO: may be confusing!
+        // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
+        [InlineData("0 */30 2 * * ?", null)]
+
+        // TODO: exclude duplicates
+        // Run missed
+        [InlineData("0 0,30 2 * * ?", "03:00 DST")]
+
+        // Run missed, delay
+        [InlineData("0 30 2 * * ?", "03:00 DST")]
+
+        // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
+        // TODO: differ from Linux Cron
+        [InlineData("0 0 */2 * * ?", "03:00 DST")]
+
+        // Run missed
+        [InlineData("0 0 0-23/2 * * ?", "03:00 DST")]
+        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string expectedTime)
+        {
+            // Arrange
+            var expression = CronExpression.Parse(cronExpression);
+
+            var lastStandardTime = new LocalDateTime(2016, 03, 13, 01, 59, 59).InZoneStrictly(America);
+            var endDateTime = new LocalDateTime(2016, 03, 13, 23, 59, 59).InZoneStrictly(America);
+
+            // Act
+            var executed = expression.Next(lastStandardTime);
+
+            if (executed > endDateTime) executed = null;
+
+            // Assert
+            Assert.Equal(expectedTime, DateTimeToString(executed));
+        }
 
         [Theory]
 
@@ -829,6 +878,54 @@ namespace Cronos.Tests
         }
 
         [Theory]
+
+        // As usual due to intervals
+        [InlineData("0 */30 * * * ?", "01:30 DST", "01:30 DST")]
+        [InlineData("0 */30 * * * ?", "01:59 DST", "01:00 ST")]
+        [InlineData("0 */30 * * * ?", "01:15 ST", "01:30 ST")]
+
+        // As usual due to intervals
+        [InlineData("0 */30 */2 * * ?", "01:30 DST", "02:00 ST")]
+
+        // As usual due to intervals
+        [InlineData("0 0 1 * * ?", "01:00 DST", "01:00 DST")]
+        [InlineData("0 0 1 * * ?", "01:30 DST", null)]
+
+        // TODO: differ from Linux Cron
+        // Duplicates skipped due to non-wildcard hour
+        [InlineData("0 */30 1 * * ?", "01:20 DST", "01:30 DST")]
+        [InlineData("0 */30 1 * * ?", "01:59 DST", "01:00 ST")]
+        [InlineData("0 */30 1 * * ?", "01:30 ST", "01:30 ST")]
+
+        // Duplicates skipped due to non-wildcard minute
+        [InlineData("0 0 */2 * * ?", "00:30 DST", "02:00 ST")]
+
+        // Duplicates skipped due to non-wildcard
+        [InlineData("0 0,30 1 * * ?", "01:00 DST", "01:00 DST")]
+        [InlineData("0 0,30 1 * * ?", "01:20 DST", "01:30 DST")]
+        [InlineData("0 0,30 1 * * ?", "01:59 DST", null)]
+
+        // Duplicates skipped due to non-wildcard
+        [InlineData("0 30 * * * ?", "01:30 DST", "01:30 DST")]
+        [InlineData("0 30 * * * ?", "01:59 DST", "01:30 ST")]
+        public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithDstMarker, string expectedTime)
+        {
+            // Arrange
+            var expression = CronExpression.Parse(cronExpression);
+
+            var startDateTime = GetZonedDateTime(new LocalDate(2016, 11, 06), startTimeWithDstMarker);
+            var endDateTime = new LocalDateTime(2016, 11, 06, 23, 59, 59).InZoneStrictly(America);
+
+            // Act
+            var executed = expression.Next(startDateTime);
+
+            if (executed > endDateTime) executed = null;
+
+            // Assert
+            Assert.Equal(expectedTime, DateTimeToString(executed));
+        }
+
+        [Theory]
         [InlineData("0 12 12 * * ?")]
         [InlineData("0 12 12 */2 * ?")]
         [InlineData("0 12 12 11-18 * ?")]
@@ -863,9 +960,6 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
-        private CronExpression _expression;
-        private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
-
         private void AssertExecutedAt(ZonedDateTime[] executedTimes, params string[] expectedTimes)
         {
             var actualTimes = new List<string>();
@@ -884,6 +978,32 @@ namespace Cronos.Tests
             var combinedActualTimes = String.Join(", ", actualTimes);
 
             Assert.Equal(combinedExpectedTimes, combinedActualTimes);
+        }
+
+        private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeWithDstMarker)
+        {
+            var timeAndDstMarker = timeWithDstMarker.Split(' ');
+
+            var time = TimeSpan.Parse(timeAndDstMarker[0]);
+            var localDateTime = date.At(new LocalTime(time.Hours, time.Minutes));
+
+            var isDst = timeAndDstMarker[1] == "DST";
+
+            return isDst ?
+                localDateTime.InZone(America, mapping => mapping.First()) :
+                localDateTime.InZone(America, mapping => mapping.Last());
+        }
+
+        private string DateTimeToString(ZonedDateTime? zonedDateTime)
+        {
+            if (zonedDateTime == null) return null;
+            var sb = new StringBuilder();
+
+            sb.Append(zonedDateTime.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
+            sb.Append(" " + (zonedDateTime.Value.IsDaylightSavingTime() ? "DST" : "ST"));
+
+            return sb.ToString();
+
         }
 
         private static IEnumerable<object> GetRandomDates()
