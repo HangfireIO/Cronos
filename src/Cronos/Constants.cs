@@ -13,7 +13,7 @@
 
         public static readonly string[] DayOfWeekNames =
         {
-            "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"//, "Sun" TODO: Re-add this again
+            "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
         };
 
         public const int FirstSecond = 0;

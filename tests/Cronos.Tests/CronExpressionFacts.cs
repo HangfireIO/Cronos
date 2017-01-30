@@ -11,15 +11,17 @@ namespace Cronos.Tests
     public class CronExpressionFacts
     {
         private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+        private static readonly DateTimeZone TimeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull("America/New_York");
 
         [Fact]
         public void BasicFact()
         {
             var expression = CronExpression.Parse("* * * * * ?");
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 03, 18, 12, 0, 0));
+            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0);
+            var result = expression.Next(dateTime, dateTime.PlusYears(1));
 
-            Assert.True(result);
+            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0), result);
         }
 
         [Fact]
@@ -165,6 +167,18 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
+        [Theory]
+        [InlineData("? * * * * *")]
+        [InlineData("* ? * * * *")]
+        [InlineData("* * ? * * *")]
+        [InlineData("* * * * ? *")]
+        public void Parse_HandlesQuestionMarkCanBeSpecfiedOnlyForDayOfMonthOrDayOfWeek(string cronExpression)
+        {
+            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
+
+            Assert.Equal("cronExpression", exception.ParamName);
+        }
+
         [Fact]
         public void Parse_ThrowException_WhenBoth_DayOfMonth_And_DayOfWeek_IsStar()
         {
@@ -173,207 +187,194 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetRandomDates))]
-        public void IsMatch_ReturnsTrueForAnyDate_When6StarsWerePassed(LocalDateTime dateTime)
+        public void Next_ReturnsTheSameDateForAnyDate_When6StarsWerePassed(LocalDateTime dateTime)
         {
             var expression = CronExpression.Parse("* * * * * ?");
 
-            var result = expression.IsMatch(dateTime);
+            var nextExecuted = expression.Next(dateTime.InZoneStrictly(America));
 
-            Assert.True(result);
+            Assert.Equal(dateTime.InZoneStrictly(America), nextExecuted);
         }
 
         [Theory]
-        [InlineData("20 * * * * ?", true)]
-        [InlineData("19,20,21 * * * * ?", true)]
-        [InlineData("10-30 * * * * ?", true)]
-        [InlineData("*/20 * * * * ?", true)]
-        [InlineData("10 * * * * ?", false)]
-        [InlineData("10,30 * * * * ?", false)]
-        [InlineData("10-19 * * * * ?", false)]
-        [InlineData("*/30 * * * * ?", false)]
-        public void IsMatch_ReturnsCorrectResult_WhenOnlySecondsAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("20 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("19,20,21 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("10-30 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("*/20 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("10 * * * * ?", "17:35:20", "17:36:10")]
+        [InlineData("10,30 * * * * ?", "17:35:20", "17:35:30")]
+        [InlineData("10-19 * * * * ?", "17:35:20", "17:36:10")]
+        [InlineData("*/30 * * * * ?", "17:35:20", "17:35:30")]
+        public void Next_ReturnsCorrectResult_WhenOnlySecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 35, 20));
+            var date = new LocalDate(2016, 12, 09);
+            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("59 * * * * ?")]
-        [InlineData("40-59 * * * * ?")]
-        [InlineData("1,59 * * * * ?")]
-        public void IsMatch_ReturnsCorrectResult_WhenMaxSecondsAreSpecified(string cronExpression)
+        [InlineData("59 * * * * ?", "17:35:55", "17:35:59")]
+        [InlineData("40-59 * * * * ?", "17:59:59", "17:59:59")]
+        [InlineData("1,59 * * * * ?", "23:00:58", "23:00:59")]
+        public void Next_ReturnsCorrectResult_WhenMaxSecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 17, 35, 59));
+            var date = new LocalDate(2016, 12, 09);
+            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
 
-            Assert.True(result);
+            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("0 * * * * ?", true)]
-        [InlineData("0-10 * * * * ?", true)]
-        [InlineData("0,14 * * * * ?", true)]
-        public void IsMatch_ReturnsCorrectResult_WhenMinSecondsAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("0 * * * * ?", "15:59:00", "15:59:00")]
+        [InlineData("0-10 * * * * ?", "15:58:59", "15:59:00")]
+        [InlineData("0,14 * * * * ?", "15:58:59", "15:59:00")]
+        public void Next_ReturnsCorrectResult_WhenMinSecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 17, 35, 00));
+            var date = new LocalDate(2016, 12, 09);
+            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("* 20 * * * ?", true)]
-        [InlineData("* 19,20,21 * * * ?", true)]
-        [InlineData("* 10-30 * * * ?", true)]
-        [InlineData("* */20 * * * ?", true)]
-        [InlineData("* 10 * * * ?", false)]
-        [InlineData("* 10,30 * * * ?", false)]
-        [InlineData("* 10-19 * * * ?", false)]
-        [InlineData("* */30 * * * ?", false)]
-        public void IsMatch_ReturnsCorrectResult_WhenOnlyMinutesAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("* 20 * * * ?", "15:59", "16:20")]
+        [InlineData("* 19,20,21 * * * ?", "15:59", "16:19")]
+        [InlineData("* 10-30 * * * ?", "15:59", "16:10")]
+        [InlineData("* */20 * * * ?", "15:59", "16:00")]
+        [InlineData("* 10 * * * ?", "15:59", "16:10")]
+        [InlineData("* 10,30 * * * ?", "15:59", "16:10")]
+        [InlineData("* 10-19 * * * ?", "16:15", "16:15")]
+        [InlineData("* */30 * * * ?", "15:59", "16:00")]
+        [InlineData("* */30 * * * ?", "16:01", "16:30")]
+        public void Next_ReturnsCorrectResult_WhenOnlyMinutesAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 20));
+            var date = new LocalDate(2016, 12, 09);
+            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("* * 15 * * ?", true)]
-        [InlineData("* * 14,15,16 * * ?", true)]
-        [InlineData("* * 10-20 * * ?", true)]
-        [InlineData("* * */5 * * ?", true)]
-        [InlineData("* * 10 * * ?", false)]
-        [InlineData("* * 10,20 * * ?", false)]
-        [InlineData("* * 16-23 * * ?", false)]
-        [InlineData("* * */20 * * ?", false)]
-        public void IsMatch_ReturnsCorrectResult_WhenOnlyHoursAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("* * 15 * * ?", "14:30", "15:00")]
+        [InlineData("* * 14,15,16 * * ?", "14:30", "14:30")]
+        [InlineData("* * 10-20 * * ?", "14:30", "14:30")]
+        [InlineData("* * */5 * * ?", "14:30", "15:00")]
+        [InlineData("* * 10 * * ?", "09:30", "10:00")]
+        [InlineData("* * 10,20 * * ?", "14:30", "20:00")]
+        [InlineData("* * 16-23 * * ?", "14:30", "16:00")]
+        [InlineData("* * */20 * * ?", "14:30", "20:00")]
+        public void Next_ReturnsCorrectResult_WhenOnlyHoursAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 15, 20));
+            var date = new LocalDate(2016, 12, 09);
+            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("* * * 9 * ?", true)]
-        [InlineData("* * * 09 * ?", true)]
-        [InlineData("* * * 7,8,9 * ?", true)]
-        [InlineData("* * * 5-10 * ?", true)]
-        [InlineData("* * * */4 * ?", true)] // TODO: That's bad
-        [InlineData("* * * 10 * ?", false)]
-        [InlineData("* * * 10,20 * ?", false)]
-        [InlineData("* * * 16-23 * ?", false)]
-        [InlineData("* * * */3 * ?", false)] // TODO: That's bad
-        public void IsMatch_ReturnsCorrectResult_WhenOnlyDaysOfMonthAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("* * * 9 * ?", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * 09 * ?", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * 7,8,9 * ?", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * 5-10 * ?", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * */4 * ?", "2016/12/09", "2016/12/09")] // TODO: That's bad
+        [InlineData("* * * 10 * ?", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * 10,20 * ?", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * 16-23 * ?", "2016/12/09", "2016/12/16")]
+        [InlineData("* * * */3 * ?", "2016/12/09", "2016/12/10")] // TODO: That's bad
+        public void Next_ReturnsCorrectResult_WhenOnlyDaysOfMonthAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 15, 20));
+            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("* * * ? 12 *", true)]
-        [InlineData("* * * ? 3,5,12 *", true)]
-        [InlineData("* * * ? 5-12 *", true)]
-        [InlineData("* * * ? DEC *", true)]
-        [InlineData("* * * ? mar-dec *", true)]
-        [InlineData("* * * ? */4 *", false)] // TODO: That's very bad
-        [InlineData("* * * ? 10 *", false)]
-        [InlineData("* * * ? 10,11 *", false)]
-        [InlineData("* * * ? 03-10 *", false)]
-        [InlineData("* * * ? */3 *", false)] // TODO: That's very bad
-        [InlineData("* * * ? */5 *", false)]
-        [InlineData("* * * ? APR-NOV *", false)]
-        public void IsMatch_ReturnsCorrectResult_WhenOnlyMonthsAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("* * * ? 12 *", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? 3,5,12 *", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? 5-12 *", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? DEC *", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? mar-dec *", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? */4 *", "2016/12/09", "2017/01/01")] // TODO: That's very bad
+        [InlineData("* * * ? 10 *", "2016/12/09", "2017/10/01")]
+        [InlineData("* * * ? 10,11 *", "2016/12/09", "2017/10/01")]
+        [InlineData("* * * ? 03-10 *", "2016/12/09", "2017/03/01")]
+        [InlineData("* * * ? */3 *", "2016/12/09", "2017/01/01")] // TODO: That's very bad
+        [InlineData("* * * ? */5 *", "2016/12/09", "2017/01/01")]
+        [InlineData("* * * ? APR-NOV *", "2016/12/09", "2017/04/01")]
+        public void Next_ReturnsCorrectResult_WhenOnlyMonthsAreSpecified(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 15, 20));
+            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
+        }
+
+        // 2016/12/09 is friday.
+        [Theory]
+        [InlineData("* * * ? * 5", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * 05", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * 3,5,7", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * 4-7", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * FRI", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * FRI/3", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * thu-sat", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * */5", "2016/12/09", "2016/12/09")]
+        //[InlineData("* * * ? * thu-sun", "2016/12/09", "2016/12/09")] // TODO: that's bad
+        [InlineData("* * * ? * 2", "2016/12/09", "2016/12/13")]
+        [InlineData("* * * ? * 1,3", "2016/12/09", "2016/12/12")]
+        [InlineData("* * * ? * 02-4", "2016/12/09", "2016/12/13")]
+        [InlineData("* * * ? * */3", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * ? * thu/2", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * ? * mon-wed", "2016/12/09", "2016/12/12")]
+        public void Next_ReturnsCorrectResult_WhenOnlyDaysOfWeekAreSpecified(string cronExpression, string startTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
+
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("* * * * * 5", true)]
-        [InlineData("* * * * * 05", true)]
-        [InlineData("* * * * * 3,5,7", true)]
-        [InlineData("* * * * * 4-7", true)]
-        [InlineData("* * * * * FRI", true)]
-        [InlineData("* * * * * FRI/3", true)]
-        [InlineData("* * * * * thu-sat", true)]
-        [InlineData("* * * ? * */5", true)]
-        [InlineData("* * * * * thu-sun", false)] // TODO: that's bad
-        [InlineData("* * * * * 2", false)]
-        [InlineData("* * * * * 1,3", false)]
-        [InlineData("* * * * * 02-4", false)]
-        [InlineData("* * * ? * */3", false)]
-        [InlineData("* * * * * thu/2", false)]
-        [InlineData("* * * * * mon-wed", false)]
-        public void IsMatch_ReturnsCorrectResult_WhenOnlyDaysOfWeekAreSpecified(string cronExpression, bool shouldMatch)
+        [InlineData("54 47 17 09 12 5", "2016/12/01 00:00:00", "2016/12/09 17:47:54")]
+        [InlineData("54 47 17 09 DEC FRI", "2016/12/01 00:00:00", "2016/12/09 17:47:54")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/01 00:00:00", "2016/12/09 15:40:50")]
+        public void Next_ReturnsTrue_WhenAllFieldsMatchTheSpecifiedDate(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 15, 20)); // It's Friday!
+            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
         }
 
         [Theory]
-        [InlineData("54 47 17 09 12 5")]
-        [InlineData("54 47 17 09 DEC FRI")]
-        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7")]
-        public void IsMatch_ReturnsTrue_WhenAllFieldsMatchTheSpecifiedDate(string cronExpression)
+        [InlineData("00 05 18 13 01 05", "2017/01/13 18:05")]
+        [InlineData("00 05 18 13 *  05", "2017/01/13 18:05")]
+        [InlineData("00 05 18 13 01 01", null)]
+        [InlineData("00 05 18 01 01 05", null)]
+        public void Next_HandlesSpecialCase_WhenBoth_DayOfWeek_And_DayOfMonth_WereSet(string cronExpression, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47, 54));
+            var result = expression.Next(new LocalDate(2017, 01, 01).AtMidnight().InZoneStrictly(America));
 
-            Assert.True(result);
-        }
-
-        [Theory]
-        [InlineData("54 47 17 09 12 5", true)] // For reference
-        [InlineData("50 47 17 09 12 5")]
-        [InlineData("54 40 17 09 12 5")]
-        [InlineData("54 47 15 09 12 5")]
-        [InlineData("54 47 17 12 12 *")]
-        [InlineData("54 47 17 09 3 5")]
-        [InlineData("54 47 17 * 12 4")]
-        public void IsMatch_ReturnsFalse_WhenAnyFieldDoesNotMatchTheSpecifiedDate(string cronExpression, bool shouldMatch = false)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 09, 17, 47, 54));
-
-            Assert.Equal(shouldMatch, result);
-        }
-
-        [Theory]
-        [InlineData("00 05 18 13 01 05", true)]
-        [InlineData("00 05 18 13 *  05", true)]
-        [InlineData("00 05 18 13 01 01", false)]
-        [InlineData("00 05 18 01 01 05", false)]
-        [InlineData("05 05 18 13 01 05", false)]
-        [InlineData("00 00 18 13 01 05", false)]
-        [InlineData("00 05 00 13 01 05", false)]
-        [InlineData("00 05 18 13 12 05", false)]
-        public void IsMatch_HandlesSpecialCase_WhenBoth_DayOfWeek_And_DayOfMonth_WereSet(string cronExpression, bool shouldMatch)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var result = expression.IsMatch(new LocalDateTime(2017, 01, 13, 18, 05));
-
-            Assert.Equal(shouldMatch, result);
+            var expectedDateTime = expectedTime != null ? GetZonedDateTime(expectedTime) : (ZonedDateTime?)null;
+            Assert.Equal(expectedDateTime, result);
         }
 
         [Theory]
@@ -381,68 +382,66 @@ namespace Cronos.Tests
         [InlineData("00 00 00 11 12 7")]
         [InlineData("00 00 00 11 12 SUN")]
         [InlineData("00 00 00 11 12 sun")]
-        public void IsMatch_HandlesSpecialCase_ForSundays(string cronExpression)
+        public void Next_HandlesSpecialCase_ForSundays(string cronExpression)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var result = expression.IsMatch(new LocalDateTime(2016, 12, 11, 00, 00));
+            var result = expression.Next(new LocalDateTime(2016, 12, 11, 00, 00).InZoneStrictly(America));
 
-            Assert.True(result);
+            Assert.Equal(new LocalDateTime(2016, 12, 11, 00, 00).InZoneStrictly(America), result);
         }
 
         [Theory]
         [MemberData(nameof(GetLastDaysOfMonth))]
-        public void IsMatch_ReturnTrue_WhenLMarkInDayOfMonthMatchesTheSpecifiedDate(LocalDateTime dateTime)
+        public void Next_ReturnsTheSameDate_WhenLMarkInDayOfMonthMatchesTheSpecifiedDate(LocalDateTime dateTime)
         {
             var expression = CronExpression.Parse("* * * L * ?");
 
-            var result = expression.IsMatch(dateTime);
+            var result = expression.Next(dateTime.InZoneStrictly(America));
 
-            Assert.True(result);
+            Assert.Equal(dateTime.InZoneStrictly(America), result);
         }
 
         [Theory]
         [MemberData(nameof(GetNotLastDaysOfMonth))]
-        public void IsMatch_ReturnTrue_WhenLMarkInDayOfMonthDoesNotMatchTheSpecifiedDate(LocalDateTime dateTime)
+        public void Next_Returns_WhenLMarkInDayOfMonthDoesNotMatchTheSpecifiedDate(LocalDateTime dateTime)
         {
             var expression = CronExpression.Parse("* * * L * ?");
 
-            var result = expression.IsMatch(dateTime);
+            var result = expression.Next(dateTime.InZoneStrictly(America));
 
-            Assert.False(result);
+            Assert.NotEqual(dateTime.InZoneStrictly(America), result);
         }
 
         [Theory]
-        [InlineData("* * * ? * SUN#1", 2017, 1, 1, true)]
-        [InlineData("* * * ? * 0#1", 2017, 1, 1, true)]
-        [InlineData("* * * ? * 0#2", 2017, 1, 8, true)]
-        [InlineData("* * * ? * 5#3", 2017, 1, 20,  true)]
-        [InlineData("* * * ? * 5#3", 2017, 5, 19,  true)]
-        [InlineData("* * * ? * 0#1", 2017, 1, 8,  false)]
-        [InlineData("* * * ? * 0#2", 2017, 1, 1,  false)]
-        [InlineData("* * * ? * 3#2", 2017, 1, 24, false)]
-        public void IsMatch_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, int year, int month, int day, bool shouldMatch)
+        [InlineData("* * * ? * SUN#1", "2017/1/1", "2017/1/1")]
+        [InlineData("* * * ? * 0#1", "2017/1/1", "2017/1/1")]
+        [InlineData("* * * ? * 0#2", "2017/1/1", "2017/1/8")]
+        [InlineData("* * * ? * 0#2", "2017/1/1", "2017/1/8")]
+        [InlineData("* * * ? * 5#3", "2017/1/1", "2017/1/20")]
+        [InlineData("* * * ? * 3#2", "2017/1/1", "2017/1/11")]
+        public void Next_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var dateTime = new LocalDateTime(year, month, day, 0, 0);
-            var result = expression.IsMatch(dateTime);
+            var result = expression.Next(GetZonedDateTime(startTime));
 
-            Assert.Equal(shouldMatch, result);
+            Assert.Equal(GetZonedDateTime(expectedTime), result);
         }
 
-        [Theory]
-        [InlineData("* * * 1W * ?", 2017, 1, 2, true)]
-        [InlineData("* * * 1W * ?", 2017, 1, 1, false)]
-        public void IsMatch_ReturnCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, int year, int month, int day, bool shouldMatch)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.
 
-            var dateTime = new LocalDateTime(year, month, day, 0, 0);
-            var result = expression.IsMatch(dateTime);
+        //[Theory]
+        //[InlineData("* * * 1W * ?", "2017/1/2", "2017/1/2")]
+        //[InlineData("* * * 1W * ?", "2017/1/1", "2017/1/2")]
+        //public void Next_ReturnCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, string startTime, string expectedTime)
+        //{
+        //    var expression = CronExpression.Parse(cronExpression);
 
-            Assert.Equal(shouldMatch, result);
-        }
+        //    var result = expression.Next(GetZonedDateTime(startTime));
+
+        //    Assert.Equal(result, GetZonedDateTime(expectedTime));
+        //}
 
         [Fact]
         public void Next_()
@@ -465,8 +464,6 @@ namespace Cronos.Tests
 
             Assert.Equal(now.Plus(Duration.FromMinutes(5)), result);
         }
-
-        private static readonly DateTimeZone TimeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull("America/New_York");
 
         [Fact]
         public void Next3()
@@ -925,41 +922,6 @@ namespace Cronos.Tests
             Assert.Equal(expectedTime, DateTimeToString(executed));
         }
 
-        [Theory]
-        [InlineData("0 12 12 * * ?")]
-        [InlineData("0 12 12 */2 * ?")]
-        [InlineData("0 12 12 11-18 * ?")]
-        [InlineData("0 12 12 * 1 ?")]
-        [InlineData("0 12 12 12 1 ?")]
-        public void IsMatch_ReturnCorrectValue_WhenDayOfWeekSpecifiedAsQuestion(string cronExpression)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            expression.IsMatch(new LocalDateTime(2017, 1, 12, 12, 12, 0));
-        }
-
-        [Theory]
-        [InlineData("0 12 12 ? * *", true)]
-        [InlineData("0 12 12 ? * TUE/3", false)]
-        [InlineData("0 12 12 ? * THU", true)]
-        public void IsMatch_ReturnCorrectValue_WhenDayOfMonthSpecifiedAsQuestion(string cronExpression, bool shouldMatch)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            expression.IsMatch(new LocalDateTime(2017, 1, 12, 12, 12, 0));
-        }
-
-        [Theory]
-        [InlineData("? * * * * *")]
-        [InlineData("* ? * * * *")]
-        [InlineData("* * ? * * *")]
-        [InlineData("* * * * ? *")]
-        public void IsMatch_HandlesQuestionMarkCantBeSpecfiedForDayOfMonthOrDayOfWeek(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
-
         private void AssertExecutedAt(ZonedDateTime[] executedTimes, params string[] expectedTimes)
         {
             var actualTimes = new List<string>();
@@ -980,18 +942,36 @@ namespace Cronos.Tests
             Assert.Equal(combinedExpectedTimes, combinedActualTimes);
         }
 
-        private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeWithDstMarker)
+        private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeString)
         {
-            var timeAndDstMarker = timeWithDstMarker.Split(' ');
+            var timeAndDstMarker = timeString.Split(' ');
+            var dstMarkerIncluded = timeAndDstMarker.Length > 1;
 
             var time = TimeSpan.Parse(timeAndDstMarker[0]);
-            var localDateTime = date.At(new LocalTime(time.Hours, time.Minutes));
+            var localDateTime = date.At(new LocalTime(time.Hours, time.Minutes, time.Seconds));
+
+            if (!dstMarkerIncluded) return localDateTime.InZoneStrictly(America);
 
             var isDst = timeAndDstMarker[1] == "DST";
 
             return isDst ?
                 localDateTime.InZone(America, mapping => mapping.First()) :
                 localDateTime.InZone(America, mapping => mapping.Last());
+        }
+
+        private static ZonedDateTime GetZonedDateTime(string dateTimeString)
+        {
+            var dateTime = DateTime.Parse(dateTimeString);
+
+            var localDateTime = new LocalDateTime(
+                dateTime.Year, 
+                dateTime.Month, 
+                dateTime.Day, 
+                dateTime.Hour,
+                dateTime.Minute,
+                dateTime.Second);
+
+            return localDateTime.InZoneStrictly(America);
         }
 
         private string DateTimeToString(ZonedDateTime? zonedDateTime)

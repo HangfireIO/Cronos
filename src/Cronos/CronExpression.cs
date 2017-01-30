@@ -172,54 +172,6 @@ namespace Cronos
             }
         }
 
-        public bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
-        {
-            var isDayMatched = true;
-            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
-            {
-                if(dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
-            }
-            else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
-            {
-                if (dayOfMonth + 7 <= Calendar.GetDaysInMonth(year, month)) return false;
-            }
-            else if(_nthdayOfWeek != 0)
-            {
-                if ((dayOfMonth - (_nthdayOfWeek - 1) * 7 <= 0) || (dayOfMonth - _nthdayOfWeek * 7) > 0)
-                {
-                    return false;
-                }
-            }
-            else if (_nearestWeekday)
-            {
-                isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
-                     GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
-                     GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
-                     GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
-
-                if (!isDayMatched) return false;
-            }
-
-            // Make 0-based values out of these so we can use them as indicies
-            // minute -= Constants.FirstMinute;
-            //  hour -= Constants.FirstHour;
-            // dayOfMonth -= Constants.FirstDayOfMonth;
-            //  month -= Constants.FirstMonth;
-            // dayOfWeek -= Constants.FirstDayOfWeek;
-
-            // The dom/dow situation is:  
-            //     "* * 1,15 * Sun" will run on the first and fifteenth *only* on Sundays; 
-            //     "* * * * Sun" will run *only* on Sundays; 
-            //     "* * 1,15 * *" will run *only* the 1st and 15th.
-            // this is why we keep DayOfMonthStar and DayOfWeekStar.
-            return GetBit(_second, second) &&
-                   GetBit(_minute, minute) &&
-                   GetBit(_hour, hour) &&
-                   GetBit(_month, month) &&
-                   GetBit(_dayOfWeek, dayOfWeek) &&
-                   (_nearestWeekday || GetBit(_dayOfMonth, dayOfMonth));
-        }
-
         public ZonedDateTime? Next(ZonedDateTime now)
         {
             return Next(now.LocalDateTime, now.Offset, now.Zone);
@@ -231,7 +183,7 @@ namespace Cronos
 
             var mapping = zone.MapLocal(now);
 
-            if (this.IsMatch(now))
+            if (IsMatch(now))
             {
                 switch (mapping.Count)
                 {
@@ -355,6 +307,11 @@ namespace Cronos
                 if (minutesView.Count > 0)
                 {
                     minute = minutesView.Min;
+
+                    if (minute > baseMinute)
+                    {
+                        second = seconds.Min;
+                    }
                 }
                 else
                 {
@@ -384,6 +341,7 @@ namespace Cronos
 
                     if (hour > baseHour)
                     {
+                        second = seconds.Min;
                         minute = minutes.Min;
                     }
                 }
@@ -454,6 +412,7 @@ namespace Cronos
 
                 if (monthsView.Count == 0)
                 {
+                    second = seconds.Min;
                     minute = minutes.Min;
                     hour = hours.Min;
                     day = days.Min;
@@ -462,6 +421,7 @@ namespace Cronos
                 }
                 else if (month > baseMonth)
                 {
+                    second = seconds.Min;
                     minute = minutes.Min;
                     hour = hours.Min;
                     day = days.Min;
@@ -469,6 +429,7 @@ namespace Cronos
             }
             else
             {
+                second = seconds.Min;
                 minute = minutes.Min;
                 hour = hours.Min;
                 day = days.Min;
@@ -542,8 +503,6 @@ namespace Cronos
                     {
                         return nextTime;
                     }
-
-                    return Next(new LocalDateTime(year, month, day - 1, 23, 59, 59, 59).PlusWeeks(1), endTime);
                 }
 
                 return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
@@ -556,7 +515,7 @@ namespace Cronos
             if (daysOfWeek.Contains(nextTime.DayOfWeek))
                 return nextTime;
 
-            return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0), endTime);
+            return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
         }
 
         public IEnumerable<ZonedDateTime> AllNext(ZonedDateTime now, ZonedDateTime end)
@@ -590,6 +549,66 @@ namespace Cronos
             }
 
             return result;
+        }
+
+        private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
+        {
+            var isDayMatched = true;
+            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                if (dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
+            }
+            else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
+            {
+                if (dayOfMonth + 7 <= Calendar.GetDaysInMonth(year, month)) return false;
+            }
+            else if (_nthdayOfWeek != 0)
+            {
+                if ((dayOfMonth - (_nthdayOfWeek - 1) * 7 <= 0) || (dayOfMonth - _nthdayOfWeek * 7) > 0)
+                {
+                    return false;
+                }
+            }
+            else if (_nearestWeekday)
+            {
+                isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
+                     GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
+                     GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
+                     GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
+
+                if (!isDayMatched) return false;
+            }
+
+            // Make 0-based values out of these so we can use them as indicies
+            // minute -= Constants.FirstMinute;
+            //  hour -= Constants.FirstHour;
+            // dayOfMonth -= Constants.FirstDayOfMonth;
+            //  month -= Constants.FirstMonth;
+            // dayOfWeek -= Constants.FirstDayOfWeek;
+
+            // The dom/dow situation is:  
+            //     "* * 1,15 * Sun" will run on the first and fifteenth *only* on Sundays; 
+            //     "* * * * Sun" will run *only* on Sundays; 
+            //     "* * 1,15 * *" will run *only* the 1st and 15th.
+            // this is why we keep DayOfMonthStar and DayOfWeekStar.
+            return GetBit(_second, second) &&
+                   GetBit(_minute, minute) &&
+                   GetBit(_hour, hour) &&
+                   GetBit(_month, month) &&
+                   GetBit(_dayOfWeek, dayOfWeek) &&
+                   (_nearestWeekday || GetBit(_dayOfMonth, dayOfMonth));
+        }
+
+        private bool IsMatch(LocalDateTime dateTime)
+        {
+            return IsMatch(
+                dateTime.Second,
+                dateTime.Minute,
+                dateTime.Hour,
+                dateTime.Day,
+                dateTime.Month,
+                dateTime.DayOfWeek,
+                dateTime.Year);
         }
 
         private static unsafe char* GetList(

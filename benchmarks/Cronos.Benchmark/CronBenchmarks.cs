@@ -44,18 +44,6 @@ namespace Cronos.Benchmark
         }
 
         [Benchmark]
-        public bool IsMatchNumbers()
-        {
-            return ComplexExpression.IsMatch(Second, Minute, Hour, Day, Month, DayOfWeek, Year);
-        }
-
-        [Benchmark]
-        public bool IsMatchDateTime()
-        {
-            return ComplexExpression.IsMatch(Now);
-        }
-
-        [Benchmark]
         public ZonedDateTime? NextSimple()
         {
             return SimpleExpression.Next(NowUtc);
