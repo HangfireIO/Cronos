@@ -741,13 +741,16 @@ namespace Cronos.Tests
             "03:00 DST",
             //"02:00 ST" - invalid time
             "04:00 DST")]
-        public void HandleDST_WhenTheClockJumpsForward(string expression, params string[] expectedExecutingTimes)
+        public void AllNext_HandleDST_WhenTheClockJumpsForward(string cronExpression, params string[] expectedExecutingTimes)
         {
-            CreateEntry(expression);
+            var expression = CronExpression.Parse(cronExpression);
 
-            ExecuteSchedulerStandardTimeToDaylightSavingTime();
+            var executed = expression.AllNext(
+                new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(America),
+                new LocalDateTime(2016, 03, 13, 04, 59).InZoneStrictly(America)
+            ).ToArray();
 
-            AssertExecutedAt(expectedExecutingTimes);
+            AssertExecutedAt(executed, expectedExecutingTimes);
         }
 
 
@@ -807,13 +810,22 @@ namespace Cronos.Tests
             "01:30 ST",
             "02:30 ST"
             )]
-        public void HandleDST_WhenTheClockJumpsBackward(string expression, params string[] expectedExecutingTimes)
+        public void AllNext_HandleDST_WhenTheClockJumpsBackward(string cronExpression, params string[] expectedExecutingTimes)
         {
-            CreateEntry(expression);
+            //CreateEntry(expression);
 
-            ExecuteSchedulerDaylightSavingTimeToStandardTime();
+            //ExecuteSchedulerDaylightSavingTimeToStandardTime();
 
-            AssertExecutedAt(expectedExecutingTimes);
+            //AssertExecutedAt(expectedExecutingTimes);
+
+            var expression = CronExpression.Parse(cronExpression);
+
+            var executed = expression.AllNext(
+                new LocalDateTime(2016, 11, 06, 00, 00).InZoneStrictly(America),
+                new LocalDateTime(2016, 11, 06, 02, 59).InZoneStrictly(America)
+            ).ToArray();
+
+            AssertExecutedAt(executed, expectedExecutingTimes);
         }
 
         [Theory]
@@ -852,32 +864,14 @@ namespace Cronos.Tests
         }
 
         private CronExpression _expression;
-        private ZonedDateTime[] _executed;
         private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
-        private readonly ZonedDateTime _start = new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(America);
-        private readonly ZonedDateTime _end = new LocalDateTime(2016, 03, 13, 04, 59).InZoneStrictly(America);
 
-        private void ExecuteSchedulerStandardTimeToDaylightSavingTime()
-        {
-            _executed = _expression.AllNext(_start, _end).ToArray();
-        }
-
-        private void ExecuteSchedulerDaylightSavingTimeToStandardTime()
-        {
-            _executed = _expression.AllNext(new LocalDateTime(2016, 11, 06, 00, 00).InZoneStrictly(America), new LocalDateTime(2016, 11, 06, 02, 59).InZoneStrictly(America)).ToArray();
-        }
-
-        private void CreateEntry(string expression)
-        {
-            _expression = CronExpression.Parse(expression);
-        }
-
-        private void AssertExecutedAt(params string[] expectedTimes)
+        private void AssertExecutedAt(ZonedDateTime[] executedTimes, params string[] expectedTimes)
         {
             var actualTimes = new List<string>();
-            for (var i = 0; i < _executed.Length; i++)
+            for (var i = 0; i < executedTimes.Length; i++)
             {
-                var time = _executed[i];
+                var time = executedTimes[i];
                 var sb = new StringBuilder();
 
                 sb.Append(time.ToString("HH:mm", CultureInfo.InvariantCulture));
