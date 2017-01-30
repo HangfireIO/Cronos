@@ -663,215 +663,50 @@ namespace Cronos.Tests
             Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result?.LocalDateTime);
         }
 
-
         [Theory]
 
         // Skipped due to intervals, no problems here
-        [InlineData("0 */30 * * * ?",
-            "00:00 ST",
-            "00:30 ST",
-            "01:00 ST",
-            "01:30 ST",
-            //"02:00 ST" - invalid time
-            //"02:30 ST" - invalid time
-            "03:00 DST",
-            "03:30 DST",
-            "04:00 DST",
-            "04:30 DST")]
+        [InlineData("0 */30 * * * ?", "01:59 ST", "03:00 DST")]
 
         // Skipped due to intervals, can be avoided by enumerating hours and minutes
         // "0,30 0-23/2 * * *"
-        [InlineData("0 */30 */2 * * ?",
-            "00:00 ST",
-            "00:30 ST",
-            //"02:00 ST" - invalid time
-            //"02:30 ST" - invalid time
-            "04:00 DST",
-            "04:30 DST")]
+        [InlineData("0 */30 */2 * * ?", "01:59 ST", "04:00 DST")]
 
         // Run missed, strict
-        [InlineData("0 0,30 0-23/2 * * ?",
-            "00:00 ST",
-            "00:30 ST",
-            //"02:00 ST" - invalid time
-            //"02:30 ST" - invalid time
-            "03:00 DST", // 02:30 equivalent skipped, but...
-            "04:00 DST",
-            "04:30 DST")]
-
-        // Duplicates removed
-        [InlineData("0 0 * * * ?",
-            "00:00 ST",
-            "01:00 ST",
-            //"02:00 ST" - invalid time, skipped
-            "03:00 DST",
-            "04:00 DST")]
+        [InlineData("0 0,30 0-23/2 * * ?", "01:59 ST", "03:00 DST")]
 
         // TODO: may be confusing!
         // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
-        [InlineData("0 */30 2 * * ?",
-            //"02:00 ST" - invalid time
-            //"02:30 ST" - invalid time
-            new string[0])]
+        [InlineData("0 */30 2 * * ?", "01:59 ST", null)]
 
-        // TODO: exclude duplicates
         // Run missed
-        [InlineData("0 0,30 2 * * ?",
-            //"02:00 ST" - invalid time
-            //"02:30 ST" - invalid time
-            "03:00 DST")]
+        [InlineData("0 0,30 2 * * ?", "01:59 ST", "03:00 DST")]
 
         // Run missed, delay
-        [InlineData("0 30 2 * * ?",
-            //"02:30 ST" - invalid time
-            "03:00 DST")]
+        [InlineData("0 30 2 * * ?", "01:59 ST", "03:00 DST")]
 
         // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
         // TODO: differ from Linux Cron
-        [InlineData("0 0 */2 * * ?",
-            "00:00 ST",
-            //"02:00 ST" - invalid time
-            "03:00 DST",
-            "04:00 DST")]
+        [InlineData("0 0 */2 * * ?", "01:59 ST", "03:00 DST")]
 
         // Run missed
-        [InlineData("0 0 0-23/2 * * ?",
-            "00:00 ST",
-            //"02:00 ST" - invalid time
-            "03:00 DST",
-            "04:00 DST")]
-        public void AllNext_HandleDST_WhenTheClockJumpsForward(string cronExpression, params string[] expectedExecutingTimes)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var executed = expression.AllNext(
-                new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(America),
-                new LocalDateTime(2016, 03, 13, 04, 59).InZoneStrictly(America)
-            ).ToArray();
-
-            AssertExecutedAt(executed, expectedExecutingTimes);
-        }
-
-        [Theory]
-        // Skipped due to intervals, no problems here
-        [InlineData("0 */30 * * * ?", "03:00 DST")]
-
-        // Skipped due to intervals, can be avoided by enumerating hours and minutes
-        // "0,30 0-23/2 * * *"
-        [InlineData("0 */30 */2 * * ?", "04:00 DST")]
-
-        // Run missed, strict
-        [InlineData("0 0,30 0-23/2 * * ?", "03:00 DST")]
-
-        // Duplicates removed
-        [InlineData("0 0 * * * ?", "03:00 DST")]
-
-        // TODO: may be confusing!
-        // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
-        [InlineData("0 */30 2 * * ?", null)]
-
-        // TODO: exclude duplicates
-        // Run missed
-        [InlineData("0 0,30 2 * * ?", "03:00 DST")]
-
-        // Run missed, delay
-        [InlineData("0 30 2 * * ?", "03:00 DST")]
-
-        // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
-        // TODO: differ from Linux Cron
-        [InlineData("0 0 */2 * * ?", "03:00 DST")]
-
-        // Run missed
-        [InlineData("0 0 0-23/2 * * ?", "03:00 DST")]
-        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string expectedTime)
+        [InlineData("0 0 0-23/2 * * ?", "01:59 ST", "03:00 DST")]
+        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string startTime, string expectedTime)
         {
             // Arrange
             var expression = CronExpression.Parse(cronExpression);
 
-            var lastStandardTime = new LocalDateTime(2016, 03, 13, 01, 59, 59).InZoneStrictly(America);
-            var endDateTime = new LocalDateTime(2016, 03, 13, 23, 59, 59).InZoneStrictly(America);
+            // 2016/03/13 is date when the clock jumps forward from 1:59 ST to 3:00 DST in America
+            var date = new LocalDate(2016, 03, 13);
+            var endDateTime = date.At(new LocalTime(23, 59, 59)).InZoneStrictly(America);
 
             // Act
-            var executed = expression.Next(lastStandardTime);
+            var executed = expression.Next(GetZonedDateTime(date, startTime));
 
             if (executed > endDateTime) executed = null;
 
             // Assert
             Assert.Equal(expectedTime, DateTimeToString(executed));
-        }
-
-        [Theory]
-
-        // As usual due to intervals
-        [InlineData("0 */30 * * * ?",
-            "00:00 DST",
-            "00:30 DST",
-            "01:00 DST",
-            "01:30 DST",
-            "01:00 ST",
-            "01:30 ST",
-            "02:00 ST",
-            "02:30 ST")]
-
-        // As usual due to intervals
-        [InlineData("0 */30 */2 * * ?",
-            "00:00 DST",
-            "00:30 DST",
-            // 02:00 DST == 01:00 ST, one hour delay
-            "02:00 ST",
-            "02:30 ST")]
-
-        // As usual due to intervals
-        [InlineData("0 0 1 * * ?",
-            "01:00 DST"
-            //"01:00 ST" - ignore
-            )]
-
-        // TODO: differ from Linux Cron
-        // Duplicates skipped due to non-wildcard hour
-        [InlineData("0 */30 1 * * ?",
-            "01:00 DST",
-            "01:30 DST",
-            "01:00 ST",
-            "01:30 ST")]
-
-        // Duplicates skipped due to non-wildcard minute
-        [InlineData("0 0 */2 * * ?",
-            "00:00 DST",
-            //02:00 DST == 01:00 ST, one hour delay
-            "02:00 ST")]
-
-        // Duplicates skipped due to non-wildcard
-        [InlineData("0 0,30 1 * * ?",
-            "01:00 DST",
-            "01:30 DST"
-            //"01:00 ST"
-            //"01:30 ST"
-            )]
-        
-        // Duplicates skipped due to non-wildcard
-        [InlineData("0 30 * * * ?",
-            "00:30 DST",
-            "01:30 DST",
-            "01:30 ST",
-            "02:30 ST"
-            )]
-        public void AllNext_HandleDST_WhenTheClockJumpsBackward(string cronExpression, params string[] expectedExecutingTimes)
-        {
-            //CreateEntry(expression);
-
-            //ExecuteSchedulerDaylightSavingTimeToStandardTime();
-
-            //AssertExecutedAt(expectedExecutingTimes);
-
-            var expression = CronExpression.Parse(cronExpression);
-
-            var executed = expression.AllNext(
-                new LocalDateTime(2016, 11, 06, 00, 00).InZoneStrictly(America),
-                new LocalDateTime(2016, 11, 06, 02, 59).InZoneStrictly(America)
-            ).ToArray();
-
-            AssertExecutedAt(executed, expectedExecutingTimes);
         }
 
         [Theory]
@@ -886,7 +721,7 @@ namespace Cronos.Tests
 
         // As usual due to intervals
         [InlineData("0 0 1 * * ?", "01:00 DST", "01:00 DST")]
-        [InlineData("0 0 1 * * ?", "01:30 DST", null)]
+        [InlineData("0 0 1 * * ?", "01:00 ST", null)]
 
         // TODO: differ from Linux Cron
         // Duplicates skipped due to non-wildcard hour
@@ -900,17 +735,17 @@ namespace Cronos.Tests
         // Duplicates skipped due to non-wildcard
         [InlineData("0 0,30 1 * * ?", "01:00 DST", "01:00 DST")]
         [InlineData("0 0,30 1 * * ?", "01:20 DST", "01:30 DST")]
-        [InlineData("0 0,30 1 * * ?", "01:59 DST", null)]
+        [InlineData("0 0,30 1 * * ?", "01:00 ST", null)]
 
         // Duplicates skipped due to non-wildcard
         [InlineData("0 30 * * * ?", "01:30 DST", "01:30 DST")]
         [InlineData("0 30 * * * ?", "01:59 DST", "01:30 ST")]
-        public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithDstMarker, string expectedTime)
+        public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTime, string expectedTime)
         {
             // Arrange
             var expression = CronExpression.Parse(cronExpression);
 
-            var startDateTime = GetZonedDateTime(new LocalDate(2016, 11, 06), startTimeWithDstMarker);
+            var startDateTime = GetZonedDateTime(new LocalDate(2016, 11, 06), startTime);
             var endDateTime = new LocalDateTime(2016, 11, 06, 23, 59, 59).InZoneStrictly(America);
 
             // Act
@@ -920,26 +755,6 @@ namespace Cronos.Tests
 
             // Assert
             Assert.Equal(expectedTime, DateTimeToString(executed));
-        }
-
-        private void AssertExecutedAt(ZonedDateTime[] executedTimes, params string[] expectedTimes)
-        {
-            var actualTimes = new List<string>();
-            for (var i = 0; i < executedTimes.Length; i++)
-            {
-                var time = executedTimes[i];
-                var sb = new StringBuilder();
-
-                sb.Append(time.ToString("HH:mm", CultureInfo.InvariantCulture));
-                sb.Append(" " + (time.IsDaylightSavingTime() ? "DST" : "ST"));
-
-                actualTimes.Add(sb.ToString());
-            }
-
-            var combinedExpectedTimes = String.Join(", ", expectedTimes);
-            var combinedActualTimes = String.Join(", ", actualTimes);
-
-            Assert.Equal(combinedExpectedTimes, combinedActualTimes);
         }
 
         private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeString)
