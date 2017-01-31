@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using NodaTime;
 using Xunit;
 
@@ -10,16 +11,7 @@ namespace Cronos.Tests
         private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
         private static readonly DateTimeZone TimeZone = DateTimeZoneProviders.Tzdb.GetZoneOrNull("America/New_York");
 
-        [Fact]
-        public void BasicFact()
-        {
-            var expression = CronExpression.Parse("* * * * * ?");
-
-            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0);
-            var result = expression.Next(dateTime, dateTime.PlusYears(1));
-
-            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0), result);
-        }
+        private static readonly LocalDate Today = new LocalDate(2016, 12, 09);
 
         [Theory]
 
@@ -62,134 +54,142 @@ namespace Cronos.Tests
             Assert.Equal("cronExpression", exception.ParamName);
         }
 
-        // seconds field is invalid.
-
         [Theory]
-        [InlineData("60 * * * * *")]
-        [InlineData("-1 * * * * *")]
-        [InlineData("- * * * * *")]
-        [InlineData("5- * * * * *")]
-        [InlineData(", * * * * *")]
-        [InlineData(",1 * * * * *")]
-        [InlineData("/ * * * * *")]
-        [InlineData("*/ * * * * *")]
-        [InlineData("1/ * * * * *")]
-        [InlineData("# * * * * *")]
-        [InlineData("*#1 * * * * *")]
-        [InlineData("0#2 * * * * *")]
-        [InlineData("L * * * * *")]
-        [InlineData("W * * * * *")]
-        [InlineData("LW * * * * *")]
+
+        // Second field is invalid.
+
+        [InlineData("60  * * * * ?")]
+        [InlineData("-1  * * * * ?")]
+        [InlineData("-   * * * * ?")]
+        [InlineData("5-  * * * * ?")]
+        [InlineData(",   * * * * ?")]
+        [InlineData(",1  * * * * ?")]
+        [InlineData("/   * * * * ?")]
+        [InlineData("*/  * * * * ?")]
+        [InlineData("1/  * * * * ?")]
+        [InlineData("#   * * * * ?")]
+        [InlineData("*#1 * * * * ?")]
+        [InlineData("0#2 * * * * ?")]
+        [InlineData("L   * * * * ?")]
+        [InlineData("W   * * * * ?")]
+        [InlineData("LW  * * * * ?")]
+        [InlineData("?   * * * * ?")]
+
         [InlineData("1/2147483648 * * * * ?")]
-        [InlineData("? * * * * ?")]
 
-        // minute field is invalid.
+        // Minute field is invalid.
 
-        [InlineData("* 60 * * * *")]
-        [InlineData("* -1 * * * *")]
-        [InlineData("* - * * * *")]
-        [InlineData("* 7- * * * *")]
-        [InlineData("* , * * * *")]
-        [InlineData("* ,1 * * * *")]
-        [InlineData("* / * * * *")]
-        [InlineData("* # * * * *")]
-        [InlineData("* *#1 * * * *")]
-        [InlineData("* 5#3 * * * *")]
-        [InlineData("* L * * * *")]
-        [InlineData("* W * * * *")]
-        [InlineData("* LW * * * *")]
-        [InlineData("* ? * * * ?")]
+        [InlineData("* 60  * * * ?")]
+        [InlineData("* -1  * * * ?")]
+        [InlineData("* -   * * * ?")]
+        [InlineData("* 7-  * * * ?")]
+        [InlineData("* ,   * * * ?")]
+        [InlineData("* ,1  * * * ?")]
+        [InlineData("* /   * * * ?")]
+        [InlineData("* #   * * * ?")]
+        [InlineData("* *#1 * * * ?")]
+        [InlineData("* 5#3 * * * ?")]
+        [InlineData("* L   * * * ?")]
+        [InlineData("* W   * * * ?")]
+        [InlineData("* LW  * * * ?")]
+        [InlineData("* ?   * * * ?")]
 
-        // hour field is invalid.
+        // Hour field is invalid.
 
-        [InlineData("* * 25 * * *")]
-        [InlineData("* * -1 * * *")]
-        [InlineData("* * - * * *")]
-        [InlineData("* * 0- * * *")]
-        [InlineData("* * , * * *")]
-        [InlineData("* * ,1 * * *")]
-        [InlineData("* * / * * *")]
-        [InlineData("* * # * * *")]
-        [InlineData("* * *#2 * * *")]
-        [InlineData("* * 10#1 * * *")]
-        [InlineData("* * L * * *")]
-        [InlineData("* * W * * *")]
-        [InlineData("* * LW * * *")]
-        [InlineData("* * ? * * ?")]
+        [InlineData("* * 25   * * ?")]
+        [InlineData("* * -1   * * ?")]
+        [InlineData("* * -    * * ?")]
+        [InlineData("* * 0-   * * ?")]
+        [InlineData("* * ,    * * ?")]
+        [InlineData("* * ,1   * * ?")]
+        [InlineData("* * /    * * ?")]
+        [InlineData("* * #    * * ?")]
+        [InlineData("* * *#2  * * ?")]
+        [InlineData("* * 10#1 * * ?")]
+        [InlineData("* * L    * * ?")]
+        [InlineData("* * W    * * ?")]
+        [InlineData("* * LW   * * ?")]
+        [InlineData("* * ?    * * ?")]
 
-        // day of month field is invalid.
+        // Day of month field is invalid.
 
-        [InlineData("* * * 32 * *")]
-        [InlineData("* * * 31 4 *")]
-        [InlineData("* * * 31 6 *")]
-        [InlineData("* * * 31 9 *")]
-        [InlineData("* * * 31 11 *")]
-        [InlineData("* * * 30 2 *")]
-        [InlineData("* * * 10-32 * *")]
-        [InlineData("* * * 31-32 * *")]
-        [InlineData("* * * 30-31 2 *")]
-        [InlineData("* * * 30-31 2 *")]
-        [InlineData("* * * -1 * *")]
-        [InlineData("* * * - * *")]
-        [InlineData("* * * 8- * *")]
-        [InlineData("* * * , * *")]
-        [InlineData("* * * ,1 * *")]
-        [InlineData("* * * / * *")]
-        [InlineData("* * * # * *")]
-        [InlineData("* * * *#3 * *")]
-        [InlineData("* * * 4#1 * *")]
-        [InlineData("* * * W * *")]
-        [InlineData("* * * ?/2 * *")]
+        [InlineData("* * * 32    *  ?")]
+        [InlineData("* * * 31    4  ?")]
+        [InlineData("* * * 31    6  ?")]
+        [InlineData("* * * 31    9  ?")]
+        [InlineData("* * * 31    11 ?")]
+        [InlineData("* * * 30    2  ?")]
+        [InlineData("* * * 10-32 *  ?")]
+        [InlineData("* * * 31-32 *  ?")]
+        [InlineData("* * * 30-31 2  ?")]
+        [InlineData("* * * 30-31 2  ?")]
+        [InlineData("* * * -1    *  ?")]
+        [InlineData("* * * -     *  ?")]
+        [InlineData("* * * 8-    *  ?")]
+        [InlineData("* * * ,     *  ?")]
+        [InlineData("* * * ,1    *  ?")]
+        [InlineData("* * * /     *  ?")]
+        [InlineData("* * * #     *  ?")]
+        [InlineData("* * * *#3   *  ?")]
+        [InlineData("* * * 4#1   *  ?")]
+        [InlineData("* * * W     *  ?")]
+        [InlineData("* * * ?/2   *  ?")]
 
-        //month is invalid
+        // Month field is invalid.
 
-        [InlineData("* * * *  13 *")]
-        [InlineData("* * * *  -1 *")]
-        [InlineData("* * * *   - *")]
-        [InlineData("* * * *  2- *")]
-        [InlineData("* * * *   , *")]
-        [InlineData("* * * * ,1 *")]
-        [InlineData("* * * *   / *")]
-        [InlineData("* * * *  */ *")]
-        [InlineData("* * * *  1/ *")]
-        [InlineData("* * * *   # *")]
+        [InlineData("* * * * 13  *")]
+        [InlineData("* * * * -1  *")]
+        [InlineData("* * * * -   *")]
+        [InlineData("* * * * 2-  *")]
+        [InlineData("* * * * ,   *")]
+        [InlineData("* * * * ,1  *")]
+        [InlineData("* * * * /   *")]
+        [InlineData("* * * * */  *")]
+        [InlineData("* * * * 1/  *")]
+        [InlineData("* * * * #   *")]
         [InlineData("* * * * *#1 *")]
         [InlineData("* * * * 2#2 *")]
-        [InlineData("* * * *   L *")]
-        [InlineData("* * * *   W *")]
-        [InlineData("* * * *  LW *")]
-        [InlineData("? * * *   ? *")]
+        [InlineData("* * * * L   *")]
+        [InlineData("* * * * W   *")]
+        [InlineData("* * * * LW  *")]
+        [InlineData("? * * * ?   *")]
 
-        // day of week field is invalid.
+        // Day of week field is invalid.
 
-        [InlineData("* * * * * 8")]
-        [InlineData("* * * * * -1")]
-        [InlineData("* * * * * -")]
-        [InlineData("* * * * * 3-")]
-        [InlineData("* * * * * ,")]
-        [InlineData(" * * * * ,1")]
-        [InlineData("* * * * * /")]
-        [InlineData("* * * * * */")]
-        [InlineData("* * * * * 1/")]
-        [InlineData("* * * * * #")]
-        [InlineData("* * * * * 0#")]
-        [InlineData("* * * * * 5#6")]
-        [InlineData("* * * * * SUN#6")]
-        [InlineData("* * * * * 0#0")]
-        [InlineData("* * * * * SUT")]
-        [InlineData("* * * * * SU0")]
-        [InlineData("* * * * * SUNDAY")]
-        [InlineData("* * * * * L")]
-        [InlineData("* * * * * W")]
-        [InlineData("* * * * * LW")]
+        [InlineData("* * * ? * 8     ")]
+        [InlineData("* * * ? * -1    ")]
+        [InlineData("* * * ? * -     ")]
+        [InlineData("* * * ? * 3-    ")]
+        [InlineData("* * * ? * ,     ")]
+        [InlineData("* * * ? * ,1    ")]
+        [InlineData("* * * ? * /     ")]
+        [InlineData("* * * ? * */    ")]
+        [InlineData("* * * ? * 1/    ")]
+        [InlineData("* * * ? * #     ")]
+        [InlineData("* * * ? * 0#    ")]
+        [InlineData("* * * ? * 5#6   ")]
+        [InlineData("* * * ? * SUN#6 ")]
+        [InlineData("* * * ? * 0#0   ")]
+        [InlineData("* * * ? * SUT   ")]
+        [InlineData("* * * ? * SU0   ")]
+        [InlineData("* * * ? * SUNDAY")]
+        [InlineData("* * * ? * L     ")]
+        [InlineData("* * * ? * W     ")]
+        [InlineData("* * * ? * LW    ")]
 
-
-        // day of month and day of week must be specified both or one of them must be specified as '?'.
+        // Day of month and day of week must be specified both or one of them must be specified as '?'.
 
         [InlineData("* * * * * *")]
         [InlineData("* * * * * 2")]
         [InlineData("* * * 2 * *")]
-        public void Parse_ThrowAnException_WhenCronExpressionIsInvalid(string cronExpression)
+
+        // '?' can be specfied only for day of month or day of week.
+
+        [InlineData("? * * * * ?")]
+        [InlineData("* ? * * * ?")]
+        [InlineData("* * ? * * ?")]
+        [InlineData("* * * * ? ?")]
+        public void Parse_ThrowsAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
             var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
 
@@ -197,265 +197,306 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("? * * * * *")]
-        [InlineData("* ? * * * *")]
-        [InlineData("* * ? * * *")]
-        [InlineData("* * * * ? *")]
-        public void Parse_HandlesQuestionMarkCanBeSpecfiedOnlyForDayOfMonthOrDayOfWeek(string cronExpression)
-        {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
 
-            Assert.Equal("cronExpression", exception.ParamName);
-        }
+        // Basic facts.
 
-        [Fact]
-        public void Parse_ThrowException_WhenBoth_DayOfMonth_And_DayOfWeek_IsStar()
-        {
-            Assert.Throws<ArgumentException>(() => CronExpression.Parse("0 12 12 * * *"));
-        }
+        [InlineData("* * * * * ?", "17:35:00", "17:35:00")]
 
-        [Theory]
-        [MemberData(nameof(GetRandomDates))]
-        public void Next_ReturnsTheSameDateForAnyDate_When6StarsWerePassed(LocalDateTime dateTime)
-        {
-            var expression = CronExpression.Parse("* * * * * ?");
+        [InlineData("* * * * * ?", "2016/12/09 16:46", "2016/12/09 16:46")]
+        [InlineData("* * * ? * *", "2016/03/09 16:46", "2016/03/09 16:46")]
+        [InlineData("* * * * * ?", "2016/12/30 16:46", "2016/12/30 16:46")]
+        [InlineData("* * * ? * *", "2016/12/09 02:46", "2016/12/09 02:46")]
+        [InlineData("* * * * * ?", "2016/12/09 16:09", "2016/12/09 16:09")]
+        [InlineData("* * * ? * *", "2099/12/09 16:46", "2099/12/09 16:46")]
 
-            var nextExecuted = expression.Next(dateTime.InZoneStrictly(America));
+        // Second specified.
 
-            Assert.Equal(dateTime.InZoneStrictly(America), nextExecuted);
-        }
-
-        [Theory]
-        [InlineData("20 * * * * ?", "17:35:20", "17:35:20")]
-        [InlineData("19,20,21 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("20    * * * * ?", "17:35:00", "17:35:20")]
+        [InlineData("20    * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("20    * * * * ?", "17:35:40", "17:36:20")]
+        [InlineData("10-30 * * * * ?", "17:35:09", "17:35:10")]
+        [InlineData("10-30 * * * * ?", "17:35:10", "17:35:10")]
         [InlineData("10-30 * * * * ?", "17:35:20", "17:35:20")]
-        [InlineData("*/20 * * * * ?", "17:35:20", "17:35:20")]
-        [InlineData("10 * * * * ?", "17:35:20", "17:36:10")]
-        [InlineData("10,30 * * * * ?", "17:35:20", "17:35:30")]
-        [InlineData("10-19 * * * * ?", "17:35:20", "17:36:10")]
-        [InlineData("*/30 * * * * ?", "17:35:20", "17:35:30")]
-        public void Next_ReturnsCorrectResult_WhenOnlySecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        [InlineData("10-30 * * * * ?", "17:35:30", "17:35:30")]
+        [InlineData("10-30 * * * * ?", "17:35:31", "17:36:10")]
+        [InlineData("*/20  * * * * ?", "17:35:00", "17:35:00")]
+        [InlineData("*/20  * * * * ?", "17:35:11", "17:35:20")]
+        [InlineData("*/20  * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("*/20  * * * * ?", "17:35:25", "17:35:40")]
+        [InlineData("*/20  * * * * ?", "17:35:59", "17:36:00")]
+        [InlineData("10/5  * * * * ?", "17:35:00", "17:35:10")]
+        [InlineData("10/5  * * * * ?", "17:35:12", "17:35:15")]
+        [InlineData("10/5  * * * * ?", "17:35:59", "17:36:10")]
+        [InlineData("0     * * * * ?", "17:35:59", "17:36:00")]
+        [InlineData("0     * * * * ?", "17:59:59", "18:00:00")]
 
-            var date = new LocalDate(2016, 12, 09);
-            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:01", "17:35:05")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:06", "17:35:06")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:18", "17:35:19")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:19", "17:35:19")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:20", "17:35:20")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:21", "17:35:35")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:36", "17:35:36")]
+        [InlineData("5-8,19,20,35-41 * * * * ?", "17:35:42", "17:36:05")]
 
-            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
-        }
+        // Minute specified.
 
-        [Theory]
-        [InlineData("59 * * * * ?", "17:35:55", "17:35:59")]
-        [InlineData("40-59 * * * * ?", "17:59:59", "17:59:59")]
-        [InlineData("1,59 * * * * ?", "23:00:58", "23:00:59")]
-        public void Next_ReturnsCorrectResult_WhenMaxSecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        [InlineData("* 12    * * * ?", "15:05", "15:12")]
+        [InlineData("* 12    * * * ?", "15:12", "15:12")]
+        [InlineData("* 12    * * * ?", "15:59", "16:12")]
+        [InlineData("* 31-39 * * * ?", "15:00", "15:31")]
+        [InlineData("* 31-39 * * * ?", "15:30", "15:31")]
+        [InlineData("* 31-39 * * * ?", "15:31", "15:31")]
+        [InlineData("* 31-39 * * * ?", "15:39", "15:39")]
+        [InlineData("* 31-39 * * * ?", "15:59", "16:31")]
+        [InlineData("* */20  * * * ?", "15:00", "15:00")]
+        [InlineData("* */20  * * * ?", "15:10", "15:20")]
+        [InlineData("* */20  * * * ?", "15:59", "16:00")]
+        [InlineData("* 10/5  * * * ?", "15:00", "15:10")]
+        [InlineData("* 10/5  * * * ?", "15:14", "15:15")]
+        [InlineData("* 10/5  * * * ?", "15:59", "16:10")]
+        [InlineData("* 0     * * * ?", "15:59", "16:00")]
 
-            var date = new LocalDate(2016, 12, 09);
-            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:01", "15:05")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:06", "15:06")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:18", "15:19")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:19", "15:19")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:20", "15:20")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:21", "15:35")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:36", "15:36")]
+        [InlineData("* 5-8,19,20,35-41 * * * ?", "15:42", "16:05")]
 
-            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
-        }
+        // Hour specified.
 
-        [Theory]
-        [InlineData("0 * * * * ?", "15:59:00", "15:59:00")]
-        [InlineData("0-10 * * * * ?", "15:58:59", "15:59:00")]
-        [InlineData("0,14 * * * * ?", "15:58:59", "15:59:00")]
-        public void Next_ReturnsCorrectResult_WhenMinSecondsAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        [InlineData("* * 11   * * ?", "10:59", "11:00")]
+        [InlineData("* * 11   * * ?", "11:30", "11:30")]
+        [InlineData("* * 3-22 * * ?", "01:40", "03:00")]
+        [InlineData("* * 3-22 * * ?", "11:40", "11:40")]
+        [InlineData("* * */2  * * ?", "00:00", "00:00")]
+        [InlineData("* * */2  * * ?", "01:00", "02:00")]
+        [InlineData("* * 4/5  * * ?", "00:45", "04:00")]
+        [InlineData("* * 4/5  * * ?", "04:14", "04:14")]
+        [InlineData("* * 4/5  * * ?", "05:00", "09:00")]
 
-            var date = new LocalDate(2016, 12, 09);
-            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "01:55", "03:00")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "04:55", "04:55")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "06:10", "10:00")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "10:55", "10:55")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "11:25", "11:25")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "12:30", "13:00")]
+        [InlineData("* * 3-5,10,11,13-17 * * ?", "17:30", "17:30")]
 
-            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
-        }
+        // Day of month specified.
 
-        [Theory]
-        [InlineData("* 20 * * * ?", "15:59", "16:20")]
-        [InlineData("* 19,20,21 * * * ?", "15:59", "16:19")]
-        [InlineData("* 10-30 * * * ?", "15:59", "16:10")]
-        [InlineData("* */20 * * * ?", "15:59", "16:00")]
-        [InlineData("* 10 * * * ?", "15:59", "16:10")]
-        [InlineData("* 10,30 * * * ?", "15:59", "16:10")]
-        [InlineData("* 10-19 * * * ?", "16:15", "16:15")]
-        [InlineData("* */30 * * * ?", "15:59", "16:00")]
-        [InlineData("* */30 * * * ?", "16:01", "16:30")]
-        public void Next_ReturnsCorrectResult_WhenOnlyMinutesAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var date = new LocalDate(2016, 12, 09);
-            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
-
-            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
-        }
-
-        [Theory]
-        [InlineData("* * 15 * * ?", "14:30", "15:00")]
-        [InlineData("* * 14,15,16 * * ?", "14:30", "14:30")]
-        [InlineData("* * 10-20 * * ?", "14:30", "14:30")]
-        [InlineData("* * */5 * * ?", "14:30", "15:00")]
-        [InlineData("* * 10 * * ?", "09:30", "10:00")]
-        [InlineData("* * 10,20 * * ?", "14:30", "20:00")]
-        [InlineData("* * 16-23 * * ?", "14:30", "16:00")]
-        [InlineData("* * */20 * * ?", "14:30", "20:00")]
-        public void Next_ReturnsCorrectResult_WhenOnlyHoursAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var date = new LocalDate(2016, 12, 09);
-            var nextExecuted = expression.Next(GetZonedDateTime(date, startTime));
-
-            Assert.Equal(GetZonedDateTime(date, expectedTime), nextExecuted);
-        }
-
-        [Theory]
-        [InlineData("* * * 9 * ?", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * 09 * ?", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * 7,8,9 * ?", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * 5-10 * ?", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * */4 * ?", "2016/12/09", "2016/12/09")] // TODO: That's bad
-        [InlineData("* * * 10 * ?", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * 9     * ?", "2016/11/01", "2016/11/09")]
+        [InlineData("* * * 9     * ?", "2016/11/09", "2016/11/09")]
+        [InlineData("* * * 09    * ?", "2016/11/10", "2016/12/09")]
+        [InlineData("* * * */4   * ?", "2016/12/01", "2016/12/01")]
+        [InlineData("* * * */4   * ?", "2016/12/02", "2016/12/05")]
+        [InlineData("* * * */4   * ?", "2016/12/06", "2016/12/09")]
+        [InlineData("* * * */3   * ?", "2016/12/02", "2016/12/04")]
         [InlineData("* * * 10,20 * ?", "2016/12/09", "2016/12/10")]
-        [InlineData("* * * 16-23 * ?", "2016/12/09", "2016/12/16")]
-        [InlineData("* * * */3 * ?", "2016/12/09", "2016/12/10")] // TODO: That's bad
-        public void Next_ReturnsCorrectResult_WhenOnlyDaysOfMonthAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        [InlineData("* * * 10,20 * ?", "2016/12/12", "2016/12/20")]
+        [InlineData("* * * 16-23 * ?", "2016/12/01", "2016/12/16")]
+        [InlineData("* * * 16-23 * ?", "2016/12/16", "2016/12/16")]
+        [InlineData("* * * 16-23 * ?", "2016/12/18", "2016/12/18")]
+        [InlineData("* * * 16-23 * ?", "2016/12/23", "2016/12/23")]
+        [InlineData("* * * 16-23 * ?", "2016/12/24", "2017/01/16")]
 
-            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/01", "2016/12/05")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/05", "2016/12/05")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/06", "2016/12/06")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/08", "2016/12/08")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/09", "2016/12/19")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/20", "2016/12/20")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/21", "2016/12/28")]
+        [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/30", "2017/01/05")]
+        [InlineData("* * * 5-8,19,20,29-30 * ?", "2017/02/27", "2017/03/05")]
 
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
-        }
+        // Month specified.
 
-        [Theory]
-        [InlineData("* * * ? 12 *", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? 3,5,12 *", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? 5-12 *", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? DEC *", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? mar-dec *", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? */4 *", "2016/12/09", "2017/01/01")] // TODO: That's very bad
-        [InlineData("* * * ? 10 *", "2016/12/09", "2017/10/01")]
-        [InlineData("* * * ? 10,11 *", "2016/12/09", "2017/10/01")]
-        [InlineData("* * * ? 03-10 *", "2016/12/09", "2017/03/01")]
-        [InlineData("* * * ? */3 *", "2016/12/09", "2017/01/01")] // TODO: That's very bad
-        [InlineData("* * * ? */5 *", "2016/12/09", "2017/01/01")]
-        [InlineData("* * * ? APR-NOV *", "2016/12/09", "2017/04/01")]
-        public void Next_ReturnsCorrectResult_WhenOnlyMonthsAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
+        [InlineData("* * * * 11      ?", "2016/10/09", "2016/11/01")]
+        [InlineData("* * * * 11      ?", "2016/11/02", "2016/11/02")]
+        [InlineData("* * * * 11      ?", "2016/12/02", "2017/11/01")]
+        [InlineData("* * * * 3,9     ?", "2016/01/09", "2016/03/01")]
+        [InlineData("* * * * 3,9     ?", "2016/06/09", "2016/09/01")]
+        [InlineData("* * * * 3,9     ?", "2016/10/09", "2017/03/01")]
+        [InlineData("* * * * 5-11    ?", "2016/01/01", "2016/05/01")]
+        [InlineData("* * * * 5-11    ?", "2016/05/07", "2016/05/07")]
+        [InlineData("* * * * 5-11    ?", "2016/07/12", "2016/07/12")]
+        [InlineData("* * * * 05-11   ?", "2016/12/13", "2017/05/01")]
+        [InlineData("* * * * DEC     ?", "2016/08/09", "2016/12/01")]
+        [InlineData("* * * * mar-dec ?", "2016/02/09", "2016/03/01")]
+        [InlineData("* * * * mar-dec ?", "2016/04/09", "2016/04/09")]
+        [InlineData("* * * * mar-dec ?", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * * */4     ?", "2016/01/09", "2016/01/09")]
+        [InlineData("* * * * */4     ?", "2016/02/09", "2016/05/01")]
+        [InlineData("* * * * */3     ?", "2016/12/09", "2017/01/01")]
+        [InlineData("* * * * */5     ?", "2016/12/09", "2017/01/01")]
+        [InlineData("* * * * APR-NOV ?", "2016/12/09", "2017/04/01")]    
 
-            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/01/01", "2016/02/01")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/02/10", "2016/02/10")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/03/01", "2016/03/01")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/05/20", "2016/06/01")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/06/10", "2016/06/10")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/07/05", "2016/07/05")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/08/15", "2016/09/01")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/11/25", "2016/11/25")]
+        [InlineData("* * * * 2-4,JUN,7,SEP-nov ?", "2016/12/01", "2017/02/01")]
 
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
-        }
+        // Day of week specified.
 
-        // 2016/12/09 is friday.
-        [Theory]
-        [InlineData("* * * ? * 5", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * 05", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * 3,5,7", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * 4-7", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * FRI", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * FRI/3", "2016/12/09", "2016/12/09")]
+        // Monday        Tuesday       Wednesday     Thursday      Friday        Saturday      Sunday
+        //                                           2016/12/01    2016/12/02    2016/12/03    2016/12/04
+        // 2016/12/05    2016/12/06    2016/12/07    2016/12/08    2016/12/09    2016/12/10    2016/12/11
+        // 2016/12/12    2016/12/13    2016/12/14    2016/12/15    2016/12/16    2016/12/17    2016/12/18
+
+        [InlineData("* * * ? * 5      ", "2016/12/07", "2016/12/09")]
+        [InlineData("* * * ? * 5      ", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * 05     ", "2016/12/10", "2016/12/16")]
+        [InlineData("* * * ? * 3,5,7  ", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * 3,5,7  ", "2016/12/10", "2016/12/11")]
+        [InlineData("* * * ? * 3,5,7  ", "2016/12/12", "2016/12/14")]
+        [InlineData("* * * ? * 4-7    ", "2016/12/08", "2016/12/08")]
+        [InlineData("* * * ? * 4-7    ", "2016/12/10", "2016/12/10")]
+        [InlineData("* * * ? * 4-7    ", "2016/12/11", "2016/12/11")]
+        [InlineData("* * * ? * 4-07   ", "2016/12/12", "2016/12/15")]
+        [InlineData("* * * ? * FRI    ", "2016/12/08", "2016/12/09")]
+        [InlineData("* * * ? * tue/2  ", "2016/12/09", "2016/12/10")]
+        [InlineData("* * * ? * tue/2  ", "2016/12/11", "2016/12/13")]
+        [InlineData("* * * ? * FRI/3  ", "2016/12/03", "2016/12/09")]
+        [InlineData("* * * ? * thu-sat", "2016/12/04", "2016/12/08")]
         [InlineData("* * * ? * thu-sat", "2016/12/09", "2016/12/09")]
-        [InlineData("* * * ? * */5", "2016/12/09", "2016/12/09")]
+        [InlineData("* * * ? * thu-sat", "2016/12/10", "2016/12/10")]
+        [InlineData("* * * ? * thu-sat", "2016/12/12", "2016/12/15")]
+        [InlineData("* * * ? * */5    ", "2016/12/08", "2016/12/09")]
+        [InlineData("* * * ? * */5    ", "2016/12/10", "2016/12/11")]
+        [InlineData("* * * ? * */5    ", "2016/12/12", "2016/12/16")]
         //[InlineData("* * * ? * thu-sun", "2016/12/09", "2016/12/09")] // TODO: that's bad
-        [InlineData("* * * ? * 2", "2016/12/09", "2016/12/13")]
-        [InlineData("* * * ? * 1,3", "2016/12/09", "2016/12/12")]
-        [InlineData("* * * ? * 02-4", "2016/12/09", "2016/12/13")]
-        [InlineData("* * * ? * */3", "2016/12/09", "2016/12/10")]
-        [InlineData("* * * ? * thu/2", "2016/12/09", "2016/12/10")]
-        [InlineData("* * * ? * mon-wed", "2016/12/09", "2016/12/12")]
-        public void Next_ReturnsCorrectResult_WhenOnlyDaysOfWeekAreSpecified(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
+        [InlineData("00 00 00 11 12 0  ", "2016/12/07", "2016/12/11")]
+        [InlineData("00 00 00 11 12 7  ", "2016/12/09", "2016/12/11")]
+        [InlineData("00 00 00 11 12 SUN", "2016/12/10", "2016/12/11")]
+        [InlineData("00 00 00 11 12 sun", "2016/12/09", "2016/12/11")]
 
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
-        }
+        // All fields are specified.
 
-        [Theory]
-        [InlineData("54 47 17 09 12 5", "2016/12/01 00:00:00", "2016/12/09 17:47:54")]
-        [InlineData("54 47 17 09 DEC FRI", "2016/12/01 00:00:00", "2016/12/09 17:47:54")]
+        [InlineData("54    47    17    09   12    5    ", "2016/10/01 00:00:00", "2016/12/09 17:47:54")]
+        [InlineData("54    47    17    09   DEC   FRI  ", "2016/07/05 00:00:00", "2016/12/09 17:47:54")]
         [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/01 00:00:00", "2016/12/09 15:40:50")]
-        public void Next_ReturnsTrue_WhenAllFieldsMatchTheSpecifiedDate(string cronExpression, string startTime, string expectedTime)
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/09 15:40:53", "2016/12/09 15:40:53")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/09 15:40:57", "2016/12/09 15:41:50")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/09 15:45:56", "2016/12/09 15:45:56")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/09 15:51:56", "2016/12/09 16:40:50")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/09 21:50:56", "2016/12/10 15:40:50")]
+        [InlineData("50-56 40-50 15-20 5-10 11,12 5,6,7", "2016/12/11 21:50:56", "2017/11/05 15:40:50")]
+
+        // Friday the thirteenth.
+
+        [InlineData("00    05    18    13   01    05   ", "2016/01/01 00:00:00", "2017/01/13 18:05:00")]
+        [InlineData("00    05    18    13   *     05   ", "2016/01/01 00:00:00", "2016/05/13 18:05:00")]
+        [InlineData("00    05    18    13   *     05   ", "2016/09/01 00:00:00", "2017/01/13 18:05:00")]
+        [InlineData("00    05    18    13   *     05   ", "2017/02/01 00:00:00", "2017/10/13 18:05:00")]
+
+        // Handle moving to next second, minute, hour, month, year.
+
+        [InlineData("0 * * * * ?", "2017/01/14 12:58:59", "2017/01/14 12:59:00")]
+
+        [InlineData("0 0 * * * ?", "2017/01/14 12:59", "2017/01/14 13:00")]
+        [InlineData("0 0 0 * * ?", "2017/01/14 23:00", "2017/01/15 00:00")]
+        [InlineData("0 0 0 1 * ?", "2017/01/31 00:00", "2017/02/01 00:00")]
+        [InlineData("0 0 0 * * ?", "2017/12/31 23:59", "2018/01/01 00:00")]
+        [InlineData("0 0 0 * * ?", "2017/12/31 00:00", "2018/01/01 00:00")]
+
+        // Skip month if day of month is specified and month has less days.
+
+        [InlineData("0 0 0 30 * ?", "2017/02/25 00:00", "2017/03/30 00:00")]
+        [InlineData("0 0 0 31 * ?", "2017/02/25 00:00", "2017/03/31 00:00")]
+        [InlineData("0 0 0 31 * ?", "2017/04/01 00:00", "2017/05/31 00:00")]
+
+        // Leap year.
+
+        [InlineData("0 0 0 29 2 ?", "2017/02/25 00:00", "2020/02/29 00:00")]
+
+        // Support 'L' character in day of month field.
+
+        [InlineData("* * * L * ?","2016/01/05", "2016/01/31")]
+        [InlineData("* * * L * ?","2016/01/31", "2016/01/31")]
+        [InlineData("* * * L * ?","2016/02/05", "2016/02/29")]
+        [InlineData("* * * L * ?","2016/02/29", "2016/02/29")]
+        [InlineData("* * * L * ?","2017/02/28", "2017/02/28")]
+        [InlineData("* * * L * ?","2100/02/05", "2100/02/28")]
+        [InlineData("* * * L * ?","2016/03/05", "2016/03/31")]
+        [InlineData("* * * L * ?","2016/03/31", "2016/03/31")]
+        [InlineData("* * * L * ?","2016/04/05", "2016/04/30")]
+        [InlineData("* * * L * ?","2016/04/30", "2016/04/30")]
+        [InlineData("* * * L * ?","2016/05/05", "2016/05/31")]
+        [InlineData("* * * L * ?","2016/05/31", "2016/05/31")]
+        [InlineData("* * * L * ?","2016/06/05", "2016/06/30")]
+        [InlineData("* * * L * ?","2016/06/30", "2016/06/30")]
+        [InlineData("* * * L * ?","2016/07/05", "2016/07/31")]
+        [InlineData("* * * L * ?","2016/07/31", "2016/07/31")]
+        [InlineData("* * * L * ?","2016/08/05", "2016/08/31")]
+        [InlineData("* * * L * ?","2016/08/31", "2016/08/31")]
+        [InlineData("* * * L * ?","2016/09/05", "2016/09/30")]
+        [InlineData("* * * L * ?","2016/09/30", "2016/09/30")]
+        [InlineData("* * * L * ?","2016/10/05", "2016/10/31")]
+        [InlineData("* * * L * ?","2016/10/31", "2016/10/31")]
+        [InlineData("* * * L * ?","2016/11/05", "2016/11/30")]
+        [InlineData("* * * L * ?","2016/12/05", "2016/12/31")]
+        [InlineData("* * * L * ?","2016/12/31", "2016/12/31")]
+        [InlineData("* * * L * ?","2099/12/05", "2099/12/31")]
+        [InlineData("* * * L * ?","2099/12/31", "2099/12/31")]
+
+        // Support 'L' character in day of week field.
+
+        // Monday        Tuesday       Wednesday     Thursday      Friday        Saturday      Sunday
+        // 2016/01/23    2016/01/24    2016/01/25    2016/01/26    2016/01/27    2016/01/28    2016/01/29
+        // 2016/01/30    2016/01/31
+
+        [InlineData("* * * ? * 0L", "2017/01/29", "2017/01/29")]
+        [InlineData("* * * ? * 0L", "2017/01/01", "2017/01/29")]
+        [InlineData("* * * ? * 1L", "2017/01/30", "2017/01/30")]
+        [InlineData("* * * ? * 1L", "2017/01/01", "2017/01/30")]
+        [InlineData("* * * ? * 2L", "2017/01/31", "2017/01/31")]
+        [InlineData("* * * ? * 2L", "2017/01/01", "2017/01/31")]
+        [InlineData("* * * ? * 3L", "2017/01/25", "2017/01/25")]
+        [InlineData("* * * ? * 3L", "2017/01/01", "2017/01/25")]
+        [InlineData("* * * ? * 4L", "2017/01/26", "2017/01/26")]
+        [InlineData("* * * ? * 4L", "2017/01/01", "2017/01/26")]
+        [InlineData("* * * ? * 5L", "2017/01/27", "2017/01/27")]
+        [InlineData("* * * ? * 5L", "2017/01/01", "2017/01/27")]
+        [InlineData("* * * ? * 6L", "2017/01/28", "2017/01/28")]
+        [InlineData("* * * ? * 6L", "2017/01/01", "2017/01/28")]
+        [InlineData("* * * ? * 7L", "2017/01/29", "2017/01/29")]
+        [InlineData("* * * ? * 7L", "2016/12/31", "2017/01/29")]
+
+        // Support '#' in day of week field.
+
+        [InlineData("* * * ? * SUN#1", "2017/01/01", "2017/01/01")]
+        [InlineData("* * * ? * 0#1  ", "2017/01/01", "2017/01/01")]
+        [InlineData("* * * ? * 0#1  ", "2016/12/10", "2017/01/01")]
+        [InlineData("* * * ? * 0#1  ", "2017/02/01", "2017/02/05")]
+        [InlineData("* * * ? * 0#2  ", "2017/01/01", "2017/01/08")]
+        [InlineData("* * * ? * 0#2  ", "2017/01/08", "2017/01/08")]
+        [InlineData("* * * ? * 5#3  ", "2017/01/01", "2017/01/20")]
+        [InlineData("* * * ? * 5#3  ", "2017/01/21", "2017/02/17")]
+        [InlineData("* * * ? * 3#2  ", "2017/01/01", "2017/01/11")]
+        [InlineData("* * * ? * 2#5  ", "2017/02/01", "2017/05/30")]
+
+        // Handle '?'.
+
+        [InlineData("* * * ? 11 *", "2016/10/09", "2016/11/01")]
+        public void Next_ReturnsCorrectDate(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuted = expression.Next(GetZonedDateTime(startTime));
-
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuted);
-        }
-
-        [Theory]
-        [InlineData("00 05 18 13 01 05", "2017/01/13 18:05")]
-        [InlineData("00 05 18 13 *  05", "2017/01/13 18:05")]
-        [InlineData("00 05 18 13 01 01", null)]
-        [InlineData("00 05 18 01 01 05", null)]
-        public void Next_HandlesSpecialCase_WhenBoth_DayOfWeek_And_DayOfMonth_WereSet(string cronExpression, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var result = expression.Next(new LocalDate(2017, 01, 01).AtMidnight().InZoneStrictly(America));
+            var nextExecuting = expression.Next(GetZonedDateTime(startTime));
 
             var expectedDateTime = expectedTime != null ? GetZonedDateTime(expectedTime) : (ZonedDateTime?)null;
-            Assert.Equal(expectedDateTime, result);
-        }
 
-        [Theory]
-        [InlineData("00 00 00 11 12 0")]
-        [InlineData("00 00 00 11 12 7")]
-        [InlineData("00 00 00 11 12 SUN")]
-        [InlineData("00 00 00 11 12 sun")]
-        public void Next_HandlesSpecialCase_ForSundays(string cronExpression)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var result = expression.Next(new LocalDateTime(2016, 12, 11, 00, 00).InZoneStrictly(America));
-
-            Assert.Equal(new LocalDateTime(2016, 12, 11, 00, 00).InZoneStrictly(America), result);
-        }
-
-        [Theory]
-        [MemberData(nameof(GetLastDaysOfMonth))]
-        public void Next_ReturnsTheSameDate_WhenLMarkInDayOfMonthMatchesTheSpecifiedDate(LocalDateTime dateTime)
-        {
-            var expression = CronExpression.Parse("* * * L * ?");
-
-            var result = expression.Next(dateTime.InZoneStrictly(America));
-
-            Assert.Equal(dateTime.InZoneStrictly(America), result);
-        }
-
-        [Theory]
-        [MemberData(nameof(GetNotLastDaysOfMonth))]
-        public void Next_Returns_WhenLMarkInDayOfMonthDoesNotMatchTheSpecifiedDate(LocalDateTime dateTime)
-        {
-            var expression = CronExpression.Parse("* * * L * ?");
-
-            var result = expression.Next(dateTime.InZoneStrictly(America));
-
-            Assert.NotEqual(dateTime.InZoneStrictly(America), result);
-        }
-
-        [Theory]
-        [InlineData("* * * ? * SUN#1", "2017/1/1", "2017/1/1")]
-        [InlineData("* * * ? * 0#1", "2017/1/1", "2017/1/1")]
-        [InlineData("* * * ? * 0#2", "2017/1/1", "2017/1/8")]
-        [InlineData("* * * ? * 0#2", "2017/1/1", "2017/1/8")]
-        [InlineData("* * * ? * 5#3", "2017/1/1", "2017/1/20")]
-        [InlineData("* * * ? * 3#2", "2017/1/1", "2017/1/11")]
-        public void Next_ReturnsCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var result = expression.Next(GetZonedDateTime(startTime));
-
-            Assert.Equal(GetZonedDateTime(expectedTime), result);
+            Assert.Equal(expectedDateTime, nextExecuting);
         }
 
         // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.
@@ -472,178 +513,16 @@ namespace Cronos.Tests
         //    Assert.Equal(result, GetZonedDateTime(expectedTime));
         //}
 
-        [Fact]
-        public void Next_ReturnsTheSameUtcDate_WhenCronExpressionHas6Stars()
-        {
-            var expression = CronExpression.Parse("* * * * * ?");
-            var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
-
-            var result = expression.Next(now);
-
-            Assert.Equal(now, result);
-        }
-
-        [Fact]
-        public void Next_ReturnsCorrectUtcDate_WhenSecondAndMinuteFieldsAreSpecified()
-        {
-            var expression = CronExpression.Parse("00 05 * * * ?");
-            var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
-
-            var result = expression.Next(now);
-
-            Assert.Equal(now.Plus(Duration.FromMinutes(5)), result);
-        }
-
-        [Fact]
-        public void Next_ReturnCorrectDate_WhenSecondAndMinuteAndHourFieldsAreSpecified()
-        {
-            var expression = CronExpression.Parse("00 30 02 * * ?");
-            var now = new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_HandleMovingToNextMinute()
-        {
-            var expression = CronExpression.Parse("0 * * * * ?");
-
-            var now = new LocalDateTime(2017, 1, 14, 12, 58, 59).InZoneStrictly(TimeZone);
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 1, 14, 12, 59, 0), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_HandleMovingToNextHour()
-        {
-            var expression = CronExpression.Parse("0 0 * * * ?");
-
-            var now = new LocalDateTime(2017, 1, 14, 12, 59, 0).InZoneStrictly(TimeZone);
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 1, 14, 13, 0, 0), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_HandleMovingToNextDay()
-        {
-            var expression = CronExpression.Parse("0 0 0 * * ?");
-
-            var now = new LocalDateTime(2017, 1, 14, 23, 0, 0).InZoneStrictly(TimeZone);
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 1, 15, 0, 0, 0), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_HandleMovingToNextMonth()
-        {
-            var expression = CronExpression.Parse("0 0 0 1 * ?");
-
-            var now = new LocalDateTime(2017, 1, 31, 0, 0, 0).InZoneStrictly(TimeZone);
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 2, 1, 0, 0, 0), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_HandleMovingToNextYear()
-        {
-            var expression = CronExpression.Parse("0 0 0 * * ?");
-
-            var now = new LocalDateTime(2017, 12, 31, 23, 59, 58).InZoneStrictly(TimeZone);
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2018, 1, 1, 0, 0, 0), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next_SkipMonth_IfDayOfMonthIsSpecified_And_MonthHasLessDays()
-        {
-            var expression = CronExpression.Parse("0 0 0 30 * ?");
-
-            var nextExecuting = expression.Next(new LocalDateTime(2017, 2, 25, 0, 0).InZoneStrictly(America));
-
-            Assert.Equal(new LocalDateTime(2017, 3, 30, 0, 0).InZoneStrictly(America), nextExecuting);
-        }
-
-        [Fact]
-        public void Next_HandleLeapYear()
-        {
-            var expression = CronExpression.Parse("0 0 0 29 2 ?");
-            var nextExecuting = expression.Next(new LocalDateTime(2017, 2, 25, 0, 0).InZoneStrictly(America));
-
-            Assert.Equal(new LocalDateTime(2020, 2, 29, 0, 0).InZoneStrictly(America), nextExecuting);
-        }
-
         [Theory]
-        [MemberData(nameof(GetNotLastDaysOfMonth))]
-        public void Next_ReturnsCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol(LocalDateTime dateTime)
+        [InlineData("* * * * * ?", "15:30", "15:30")]
+        [InlineData("0 5 * * * ?", "00:00", "00:05")]
+        public void Next_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
         {
-            var expression = CronExpression.Parse("* * * L * ?");
-            var now = dateTime.InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(now.Year, now.Month, now.Calendar.GetDaysInMonth(now.Year, now.Month), 00, 00), result?.LocalDateTime);
-        }
-
-        [Theory]
-        [MemberData(nameof(GetLastDaysOfMonth))]
-        public void Next_ReturnsCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol2(LocalDateTime dateTime)
-        {
-            var expression = CronExpression.Parse("* * * L * ?");
-            var now = dateTime.InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(dateTime, result?.LocalDateTime);
-        }
-
-        [Theory]
-        [InlineData(2017, 01, 29, "* * * ? * 0L")] // last sunday
-        [InlineData(2017, 01, 30, "* * * ? * 1L")] // last monday
-        [InlineData(2017, 01, 31, "* * * ? * 2L")] // last tuesday
-        [InlineData(2017, 01, 25, "* * * ? * 3L")] // last wednesday
-        [InlineData(2017, 01, 26, "* * * ? * 4L")] // last thursday
-        [InlineData(2017, 01, 27, "* * * ? * 5L")] // last friday
-        [InlineData(2017, 01, 28, "* * * ? * 6L")] // last saturday
-        [InlineData(2017, 01, 29, "* * * ? * 7L")] // last sunday
-        public void Next_ReturnTheSameDate_WhenDayOfWeekIsSpecifiedAsLSymbol_And_DateGivenDoesMatch(int year, int month, int day, string cronExpression)
-        {
-            var dateTime = new LocalDateTime(year, month, day, 0, 0);
             var expression = CronExpression.Parse(cronExpression);
-            var now = dateTime.InZoneStrictly(TimeZone);
 
-            var result = expression.Next(now);
+            var nextExecuting = expression.Next(GetZonedDateTime(startTime));
 
-            Assert.Equal(dateTime, result?.LocalDateTime);
-        }
-
-        [Theory]
-        [InlineData(2017, 01, 25, "* * * ? * 0L", 2017, 01, 29)]
-        [InlineData(2017, 01, 01, "* * * ? * 1L", 2017, 01, 30)]
-        [InlineData(2017, 03, 29, "* * * ? * 2L", 2017, 04, 25)]
-        [InlineData(2017, 12, 31, "* * * ? * 5L", 2018, 01, 26)]
-        public void Next_ReturnsCorrectValue_WhenDayOfWeekIsSpecifiedAsLSymbol(
-            int startYear, 
-            int startMonth, 
-            int startDay, 
-            string cronExpression, 
-            int expectedYear, 
-            int expectedMonth, 
-            int expectedDay)
-        {
-            var dateTime = new LocalDateTime(startYear, startMonth, startDay, 0, 0);
-            var expression = CronExpression.Parse(cronExpression);
-            var now = dateTime.InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result?.LocalDateTime);
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuting);
         }
 
         [Theory]
@@ -669,204 +548,125 @@ namespace Cronos.Tests
 
         [Theory]
 
+        // 2016/03/13 is date when the clock jumps forward from 1:59 ST to 3:00 DST in America.
+        // Period from 2016/03/13 2:00 am to 2016/03/13 2:59 am is invalid.
+
         // Skipped due to intervals, no problems here
-        [InlineData("0 */30 * * * ?", "01:45 ST", "03:00 DST")]
+        [InlineData("0 */30 * * * ?"     , "2016/03/13 01:45 ST", "2016/03/13 03:00 DST")]
 
         // Skipped due to intervals, can be avoided by enumerating hours and minutes
         // "0,30 0-23/2 * * *"
-        [InlineData("0 */30 */2 * * ?", "01:59 ST", "04:00 DST")]
+        [InlineData("0 */30 */2 * * ?"   , "2016/03/13 01:59 ST", "2016/03/13 04:00 DST")]
 
         // Run missed, strict
-        [InlineData("0 0,30 0-23/2 * * ?", "01:59 ST", "03:00 DST")]
+        [InlineData("0 0,30 0-23/2 * * ?", "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
 
         // TODO: may be confusing!
         // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
-        [InlineData("0 */30 2 * * ?", "01:59 ST", null)]
+        [InlineData("0 */30 2 * * ?"     , "2016/03/13 01:59 ST", "2016/03/14 02:00 DST")]
 
         // Run missed
-        [InlineData("0 0,30 2 * * ?", "01:59 ST", "03:00 DST")]
-        [InlineData("0 30 02 13 03 ?", "01:45 ST", "03:00 DST")]
+        [InlineData("0 0,30 2 * * ?"     , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
+        [InlineData("0 30 02 13 03 ?"    , "2016/03/13 01:45 ST", "2016/03/13 03:00 DST")]
 
         // Run missed, delay
-        [InlineData("0 30 2 * * ?", "01:59 ST", "03:00 DST")]
+        [InlineData("0 30 2 * * ?"       , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
 
         // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
         // TODO: differ from Linux Cron
-        [InlineData("0 0 */2 * * ?", "01:59 ST", "03:00 DST")]
+        [InlineData("0 0 */2 * * ?"      , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
 
         // Run missed
-        [InlineData("0 0 0-23/2 * * ?", "01:59 ST", "03:00 DST")]
-        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string startTime, string expectedTime)
-        {
-            // Arrange
-            var expression = CronExpression.Parse(cronExpression);
-
-            // 2016/03/13 is date when the clock jumps forward from 1:59 ST to 3:00 DST in America
-            var date = new LocalDate(2016, 03, 13);
-            var endDateTime = date.At(new LocalTime(23, 59, 59)).InZoneStrictly(America);
-
-            // Act
-            var executed = expression.Next(GetZonedDateTime(date, startTime));
-
-            if (executed > endDateTime) executed = null;
-
-            // Assert
-            var expectedDateTime = expectedTime != null ? GetZonedDateTime(date, expectedTime) : (ZonedDateTime?)null;
-
-            Assert.Equal(expectedDateTime, executed);
-        }
-
-        [Theory]
+        [InlineData("0 0 0-23/2 * * ?"   , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
 
         [InlineData("0 */30 2 * * ?", "2016/03/12 23:59", "2016/03/14 02:00")]
         [InlineData("0 30 2 13 03 ?", "2016/03/13 23:59", "2017/03/13 02:30")]
         [InlineData("0 */30 2 13 3 ?", "2016/03/13 23:59", "2017/03/13 02:00")]
-        public void Next_HandleDST_WhenTheClockJumpsForward_AndResultIsOutTheGivenDay(string cronExpression, string startTime, string expectedTime)
+        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
             var executed = expression.Next(GetZonedDateTime(startTime));
 
-            var expectedDateTime = expectedTime != null ? GetZonedDateTime(expectedTime) : (ZonedDateTime?)null;
-
-            Assert.Equal(expectedDateTime, executed);
+            Assert.Equal(GetZonedDateTime(expectedTime), executed);
         }
 
         [Theory]
 
         // As usual due to intervals
-        [InlineData("0 */30 * * * ?", "01:30 DST", "01:30 DST")]
-        [InlineData("0 */30 * * * ?", "01:59 DST", "01:00 ST")]
-        [InlineData("0 */30 * * * ?", "01:15 ST", "01:30 ST")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 01:15 ST", "2016/11/06 01:30 ST")]
 
         // As usual due to intervals
-        [InlineData("0 */30 */2 * * ?", "01:30 DST", "02:00 ST")]
+        [InlineData("0 */30 */2 * * ?", "2016/11/06 01:30 DST", "2016/11/06 02:00 ST")]
 
         // As usual due to intervals
-        [InlineData("0 0 1 * * ?", "01:00 DST", "01:00 DST")]
-        [InlineData("0 0 1 * * ?", "01:00 ST", null)]
+        [InlineData("0 0 1 * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 0 1 * * ?", "2016/11/06 01:00 ST", "2016/11/07 01:00 ST")]
 
         // TODO: differ from Linux Cron
         // Duplicates skipped due to non-wildcard hour
-        [InlineData("0 */30 1 * * ?", "01:20 DST", "01:30 DST")]
-        [InlineData("0 */30 1 * * ?", "01:59 DST", "01:00 ST")]
-        [InlineData("0 */30 1 * * ?", "01:30 ST", "01:30 ST")]
+        [InlineData("0 */30 1 * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 */30 1 * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST")]
+        [InlineData("0 */30 1 * * ?", "2016/11/06 01:30 ST", "2016/11/06 01:30 ST")]
 
         // Duplicates skipped due to non-wildcard minute
-        [InlineData("0 0 */2 * * ?", "00:30 DST", "02:00 ST")]
+        [InlineData("0 0 */2 * * ?", "2016/11/06 00:30 DST", "2016/11/06 02:00 ST")]
 
         // Duplicates skipped due to non-wildcard
-        [InlineData("0 0,30 1 * * ?", "01:00 DST", "01:00 DST")]
-        [InlineData("0 0,30 1 * * ?", "01:20 DST", "01:30 DST")]
-        [InlineData("0 0,30 1 * * ?", "01:00 ST", null)]
+        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:00 ST", "2016/11/07 01:00 ST")]
 
         // Duplicates skipped due to non-wildcard
-        [InlineData("0 30 * * * ?", "01:30 DST", "01:30 DST")]
-        [InlineData("0 30 * * * ?", "01:59 DST", "01:30 ST")]
+        [InlineData("0 30 * * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 30 * * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:30 ST")]
         public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTime, string expectedTime)
         {
-            // Arrange
             var expression = CronExpression.Parse(cronExpression);
 
-            var date = new LocalDate(2016, 11, 06);
+            var executed = expression.Next(GetZonedDateTime(startTime));
 
-            var endDateTime = date.At(new LocalTime(23, 59, 59)).InZoneStrictly(America);
-
-            // Act
-            var executed = expression.Next(GetZonedDateTime(date, startTime));
-
-            if (executed > endDateTime) executed = null;
-
-            // Assert
-            var expectedDateTime = expectedTime != null ? GetZonedDateTime(date, expectedTime) : (ZonedDateTime?)null;
-            Assert.Equal(expectedDateTime, executed);
-        }
-
-        private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeString)
-        {
-            var timeAndDstMarker = timeString.Split(' ');
-            var dstMarkerIncluded = timeAndDstMarker.Length > 1;
-
-            var time = TimeSpan.Parse(timeAndDstMarker[0]);
-            var localDateTime = date.At(new LocalTime(time.Hours, time.Minutes, time.Seconds));
-
-            if (!dstMarkerIncluded) return localDateTime.InZoneStrictly(America);
-
-            var isDst = timeAndDstMarker[1] == "DST";
-
-            return isDst ?
-                localDateTime.InZone(America, mapping => mapping.First()) :
-                localDateTime.InZone(America, mapping => mapping.Last());
+            Assert.Equal(GetZonedDateTime(expectedTime), executed);
         }
 
         private static ZonedDateTime GetZonedDateTime(string dateTimeString)
         {
-            var dateTime = DateTime.Parse(dateTimeString);
+            var isDst = dateTimeString.Contains("DST");
+            dateTimeString = dateTimeString.Replace("DST", "");
+
+            var isSt = dateTimeString.Contains("ST");
+            dateTimeString = dateTimeString.Replace("ST", "");
+
+            dateTimeString = dateTimeString.Trim();
+
+            var dateTime = DateTime.ParseExact(
+                dateTimeString,
+                new[]
+                {
+                    "HH:mm:ss",
+                    "HH:mm",
+                    "yyyy/MM/dd HH:mm:ss",
+                    "yyyy/MM/dd HH:mm",
+                    "yyyy/MM/dd"
+                },
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.NoCurrentDateDefault);
 
             var localDateTime = new LocalDateTime(
-                dateTime.Year, 
-                dateTime.Month, 
-                dateTime.Day, 
+                dateTime.Year != 1 ? dateTime.Year : Today.Year,
+                dateTime.Year != 1 ? dateTime.Month : Today.Month,
+                dateTime.Year != 1 ? dateTime.Day : Today.Day,
                 dateTime.Hour,
                 dateTime.Minute,
                 dateTime.Second);
 
-            return localDateTime.InZoneStrictly(America);
-        }
+            if(!isDst && !isSt) return localDateTime.InZoneStrictly(America);
 
-        private static IEnumerable<object> GetRandomDates()
-        {
-            return new[]
-            {
-                new object[] { new LocalDateTime(2016, 12, 09, 16, 46) },
-                new object[] { new LocalDateTime(2016, 03, 09, 16, 46) },
-                new object[] { new LocalDateTime(2016, 12, 30, 16, 46) },
-                new object[] { new LocalDateTime(2016, 12, 09, 02, 46) },
-                new object[] { new LocalDateTime(2016, 12, 09, 16, 09) },
-                new object[] { new LocalDateTime(2099, 12, 09, 16, 46) }
-            };
-        }
-
-        private static IEnumerable<object> GetLastDaysOfMonth()
-        {
-            return new[]
-            {
-                new object[] { new LocalDateTime(2016, 1, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 2, 29, 0, 0) },
-                new object[] { new LocalDateTime(2017, 2, 28, 0, 0) },
-                new object[] { new LocalDateTime(2100, 2, 28, 0, 0) },
-                new object[] { new LocalDateTime(2016, 3, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 4, 30, 0, 0) },
-                new object[] { new LocalDateTime(2016, 5, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 6, 30, 0, 0) },
-                new object[] { new LocalDateTime(2016, 7, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 8, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 9, 30, 0, 0) },
-                new object[] { new LocalDateTime(2016, 10, 31, 0, 0) },
-                new object[] { new LocalDateTime(2016, 11, 30, 0, 0) },
-                new object[] { new LocalDateTime(2016, 12, 31, 0, 0) },
-                new object[] { new LocalDateTime(2099, 12, 31, 0, 0) }
-            };
-        }
-
-        private static IEnumerable<object> GetNotLastDaysOfMonth()
-        {
-            return new[]
-            {
-                new object[] { new LocalDateTime(2017, 1, 28, 0, 0) },
-                new object[] { new LocalDateTime(2017, 2, 26, 0, 0) },
-                new object[] { new LocalDateTime(2016, 3, 1, 0, 0) },
-                new object[] { new LocalDateTime(2016, 3, 15, 0, 0) },
-                new object[] { new LocalDateTime(2016, 4, 1, 0, 0) },
-                new object[] { new LocalDateTime(2016, 5, 23, 0, 0) },
-                new object[] { new LocalDateTime(2016, 6, 12, 0, 0) },
-                new object[] { new LocalDateTime(2016, 7, 4, 0, 0) },
-                new object[] { new LocalDateTime(2016, 8, 15, 0, 0) },
-                new object[] { new LocalDateTime(2016, 9, 11, 0, 0) },
-                new object[] { new LocalDateTime(2016, 10, 4, 0, 0) },
-                new object[] { new LocalDateTime(2016, 11, 25, 0, 0) },
-                new object[] { new LocalDateTime(2016, 12, 17, 0, 0) },
-            };
+            return isDst ?
+              localDateTime.InZone(America, mapping => mapping.First()) :
+              localDateTime.InZone(America, mapping => mapping.Last());
         }
     }
 }

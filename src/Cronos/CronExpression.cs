@@ -160,6 +160,8 @@ namespace Cronos
                         {
                             throw new ArgumentException("day of week", nameof(cronExpression));
                         }
+
+                        pointer = SkipWhiteSpaces(pointer);
                     }
 
                     if (*pointer != '\0')
