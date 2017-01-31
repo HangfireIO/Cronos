@@ -52,6 +52,7 @@ namespace Cronos.Tests
         [InlineData("60 * * * * *")]
         [InlineData("-1 * * * * *")]
         [InlineData("- * * * * *")]
+        [InlineData("5- * * * * *")]
         [InlineData(", * * * * *")]
         [InlineData(",1 * * * * *")]
         [InlineData("/ * * * * *")]
@@ -71,6 +72,7 @@ namespace Cronos.Tests
         [InlineData("* 60 * * * *")]
         [InlineData("* -1 * * * *")]
         [InlineData("* - * * * *")]
+        [InlineData("* 7- * * * *")]
         [InlineData("* , * * * *")]
         [InlineData("* ,1 * * * *")]
         [InlineData("* / * * * *")]
@@ -87,6 +89,7 @@ namespace Cronos.Tests
         [InlineData("* * 25 * * *")]
         [InlineData("* * -1 * * *")]
         [InlineData("* * - * * *")]
+        [InlineData("* * 0- * * *")]
         [InlineData("* * , * * *")]
         [InlineData("* * ,1 * * *")]
         [InlineData("* * / * * *")]
@@ -112,6 +115,7 @@ namespace Cronos.Tests
         [InlineData("* * * 30-31 2 *")]
         [InlineData("* * * -1 * *")]
         [InlineData("* * * - * *")]
+        [InlineData("* * * 8- * *")]
         [InlineData("* * * , * *")]
         [InlineData("* * * ,1 * *")]
         [InlineData("* * * / * *")]
@@ -119,12 +123,14 @@ namespace Cronos.Tests
         [InlineData("* * * *#3 * *")]
         [InlineData("* * * 4#1 * *")]
         [InlineData("* * * W * *")]
+        [InlineData("* * * ?/2 * *")]
 
         //month is invalid
 
         [InlineData("* * * *  13 *")]
         [InlineData("* * * *  -1 *")]
         [InlineData("* * * *   - *")]
+        [InlineData("* * * *  2- *")]
         [InlineData("* * * *   , *")]
         [InlineData("* * * * ,1 *")]
         [InlineData("* * * *   / *")]
@@ -143,6 +149,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * 8")]
         [InlineData("* * * * * -1")]
         [InlineData("* * * * * -")]
+        [InlineData("* * * * * 3-")]
         [InlineData("* * * * * ,")]
         [InlineData(" * * * * ,1")]
         [InlineData("* * * * * /")]
@@ -154,6 +161,8 @@ namespace Cronos.Tests
         [InlineData("* * * * * SUN#6")]
         [InlineData("* * * * * 0#0")]
         [InlineData("* * * * * SUT")]
+        [InlineData("* * * * * SU0")]
+        [InlineData("* * * * * SUNDAY")]
         [InlineData("* * * * * L")]
         [InlineData("* * * * * W")]
         [InlineData("* * * * * LW")]
@@ -526,6 +535,25 @@ namespace Cronos.Tests
             var result = expression.Next(now);
 
             Assert.Equal(new LocalDateTime(2018, 1, 1, 0, 0, 0), result?.LocalDateTime);
+        }
+
+        [Fact]
+        public void Next_SkipMonth_IfDayOfMonthIsSpecified_And_MonthHasLessDays()
+        {
+            var expression = CronExpression.Parse("0 0 0 30 * ?");
+
+            var nextExecuting = expression.Next(new LocalDateTime(2017, 2, 25, 0, 0).InZoneStrictly(America));
+
+            Assert.Equal(new LocalDateTime(2017, 3, 30, 0, 0).InZoneStrictly(America), nextExecuting);
+        }
+
+        [Fact]
+        public void Next_HandleLeapYear()
+        {
+            var expression = CronExpression.Parse("0 0 0 29 2 ?");
+            var nextExecuting = expression.Next(new LocalDateTime(2017, 2, 25, 0, 0).InZoneStrictly(America));
+
+            Assert.Equal(new LocalDateTime(2020, 2, 29, 0, 0).InZoneStrictly(America), nextExecuting);
         }
 
         [Theory]
