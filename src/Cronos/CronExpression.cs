@@ -42,6 +42,8 @@ namespace Cronos
 
                     var pointer = value;
 
+                    pointer = SkipWhiteSpaces(pointer);
+
                     if (*pointer == '*')
                     {
                         expression.Flags |= CronExpressionFlag.SecondStar;
@@ -97,9 +99,7 @@ namespace Cronos
                         expression._nearestWeekday = true;
                         pointer++;
 
-                        // TODO: Consider way when cronExpression contains '\t' symbols.
-                        // eat space
-                        pointer++;
+                        pointer = SkipWhiteSpaces(pointer);
                     }
 
                     // Months
@@ -589,6 +589,17 @@ namespace Cronos
                 dateTime.Year);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe char* SkipWhiteSpaces(char* pointer)
+        {
+            while (*pointer == '\t' || *pointer == ' ')
+            {
+                pointer++;
+            }
+
+            return pointer;
+        }
+
         private static unsafe char* GetList(
           ref long bits, /* one bit per flag, default=FALSE */
           int low, int high, /* bounds, impl. offset for bitstr */
@@ -619,10 +630,7 @@ namespace Cronos
                 pointer++;
             }*/
 
-            while (*pointer == '\t' || *pointer == ' ')
-            {
-                pointer++;
-            }
+            pointer = SkipWhiteSpaces(pointer);
 
             return pointer;
         }
@@ -636,7 +644,7 @@ namespace Cronos
             CronFieldType cronFieldType)
         {
             int num1, num2, num3;
-
+            
             if (*pointer == '*')
             {
                 // '*' means "first-last" but can still be modified by /step

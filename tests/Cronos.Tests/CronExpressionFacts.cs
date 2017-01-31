@@ -21,6 +21,23 @@ namespace Cronos.Tests
             Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0), result);
         }
 
+        [Theory]
+
+        // handle tabs.
+        [InlineData("*	*	* * * ?")]
+
+        // handle white spaces at the beginning and end of expression.
+        [InlineData(" 	*	*	* * * ?    ")]
+        public void HandleWhiteSpaces(string cronExpression)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0);
+            var result = expression.Next(dateTime, dateTime.PlusYears(1));
+
+            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0), result);
+        }
+
         [Fact]
         public void Parse_ThrowAnException_WhenCronExressionIsNull()
         {
@@ -44,7 +61,6 @@ namespace Cronos.Tests
 
             Assert.Equal("cronExpression", exception.ParamName);
         }
-
 
         // seconds field is invalid.
 
