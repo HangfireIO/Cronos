@@ -182,6 +182,13 @@ namespace Cronos.Tests
         [InlineData("* * * * * L")]
         [InlineData("* * * * * W")]
         [InlineData("* * * * * LW")]
+
+
+        // day of month and day of week must be specified both or one of them must be specified as '?'.
+
+        [InlineData("* * * * * *")]
+        [InlineData("* * * * * 2")]
+        [InlineData("* * * 2 * *")]
         public void Parse_ThrowAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
             var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
@@ -713,7 +720,7 @@ namespace Cronos.Tests
 
         [InlineData("0 */30 2 * * ?", "2016/03/12 23:59", "2016/03/14 02:00")]
         [InlineData("0 30 2 13 03 ?", "2016/03/13 23:59", "2017/03/13 02:30")]
-        [InlineData("0 */30 2 13 3 *", "2016/03/13 23:59", "2017/03/13 02:00")]
+        [InlineData("0 */30 2 13 3 ?", "2016/03/13 23:59", "2017/03/13 02:00")]
         public void Next_HandleDST_WhenTheClockJumpsForward_AndResultIsOutTheGivenDay(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
