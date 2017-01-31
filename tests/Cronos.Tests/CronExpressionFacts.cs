@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
 using NodaTime;
 using Xunit;
 
@@ -420,7 +417,7 @@ namespace Cronos.Tests
         [InlineData("* * * ? * 0#2", "2017/1/1", "2017/1/8")]
         [InlineData("* * * ? * 5#3", "2017/1/1", "2017/1/20")]
         [InlineData("* * * ? * 3#2", "2017/1/1", "2017/1/11")]
-        public void Next_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, string startTime, string expectedTime)
+        public void Next_ReturnsCorrectValue_WhenSharpIsUsedInDayOfWeek(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -434,7 +431,7 @@ namespace Cronos.Tests
         //[Theory]
         //[InlineData("* * * 1W * ?", "2017/1/2", "2017/1/2")]
         //[InlineData("* * * 1W * ?", "2017/1/1", "2017/1/2")]
-        //public void Next_ReturnCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, string startTime, string expectedTime)
+        //public void Next_ReturnsCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, string startTime, string expectedTime)
         //{
         //    var expression = CronExpression.Parse(cronExpression);
 
@@ -444,7 +441,7 @@ namespace Cronos.Tests
         //}
 
         [Fact]
-        public void Next_()
+        public void Next_ReturnsTheSameUtcDate_WhenCronExpressionHas6Stars()
         {
             var expression = CronExpression.Parse("* * * * * ?");
             var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
@@ -455,7 +452,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void Next2()
+        public void Next_ReturnsCorrectUtcDate_WhenSecondAndMinuteFieldsAreSpecified()
         {
             var expression = CronExpression.Parse("00 05 * * * ?");
             var now = new LocalDateTime(2016, 12, 16, 00, 00, 00).InUtc();
@@ -466,7 +463,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void Next3()
+        public void Next_ReturnCorrectDate_WhenSecondAndMinuteAndHourFieldsAreSpecified()
         {
             var expression = CronExpression.Parse("00 30 02 * * ?");
             var now = new LocalDateTime(2016, 03, 13, 00, 00).InZoneStrictly(TimeZone);
@@ -474,50 +471,6 @@ namespace Cronos.Tests
             var result = expression.Next(now);
 
             Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next4()
-        {
-            var expression = CronExpression.Parse("00 */30 * * * ?");
-            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next5()
-        {
-            var expression = CronExpression.Parse("00 30 02 13 03 ?");
-            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2016, 03, 13, 03, 00), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next6()
-        {
-            var expression = CronExpression.Parse("00 30 02 13 03 ?");
-            var now = new LocalDateTime(2016, 03, 13, 03, 00).InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 30), result?.LocalDateTime);
-        }
-
-        [Fact]
-        public void Next7()
-        {
-            var expression = CronExpression.Parse("00 */30 02 13 03 *");
-            var now = new LocalDateTime(2016, 03, 13, 01, 45).InZoneStrictly(TimeZone);
-
-            var result = expression.Next(now);
-
-            Assert.Equal(new LocalDateTime(2017, 03, 13, 02, 00), result?.LocalDateTime);
         }
 
         [Fact]
@@ -577,7 +530,7 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetNotLastDaysOfMonth))]
-        public void Next_ReturnCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol(LocalDateTime dateTime)
+        public void Next_ReturnsCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol(LocalDateTime dateTime)
         {
             var expression = CronExpression.Parse("* * * L * ?");
             var now = dateTime.InZoneStrictly(TimeZone);
@@ -589,7 +542,7 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetLastDaysOfMonth))]
-        public void Next_ReturnCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol2(LocalDateTime dateTime)
+        public void Next_ReturnsCorrectDate_WhenDayOfMonthIsSpecifiedAsLSymbol2(LocalDateTime dateTime)
         {
             var expression = CronExpression.Parse("* * * L * ?");
             var now = dateTime.InZoneStrictly(TimeZone);
@@ -624,7 +577,7 @@ namespace Cronos.Tests
         [InlineData(2017, 01, 01, "* * * ? * 1L", 2017, 01, 30)]
         [InlineData(2017, 03, 29, "* * * ? * 2L", 2017, 04, 25)]
         [InlineData(2017, 12, 31, "* * * ? * 5L", 2018, 01, 26)]
-        public void Next_ReturnCorrectValue_WhenDayOfWeekIsSpecifiedAsLSymbol(
+        public void Next_ReturnsCorrectValue_WhenDayOfWeekIsSpecifiedAsLSymbol(
             int startYear, 
             int startMonth, 
             int startDay, 
@@ -645,7 +598,7 @@ namespace Cronos.Tests
         [Theory]
         [InlineData(2017, 01, 25, "* * * ? * 0#5", 2017, 01, 29)]
         [InlineData(2017, 01, 30, "* * * ? * 0#5", 2017, 04, 30)]
-        public void Next_ReturnCorrectValue_WhenSharpIsUsedInDayOfWeek(
+        public void Next_ReturnsCorrectValue_WhenSharpIsUsedInDayOfWeek(
            int startYear,
            int startMonth,
            int startDay,
@@ -666,7 +619,7 @@ namespace Cronos.Tests
         [Theory]
 
         // Skipped due to intervals, no problems here
-        [InlineData("0 */30 * * * ?", "01:59 ST", "03:00 DST")]
+        [InlineData("0 */30 * * * ?", "01:45 ST", "03:00 DST")]
 
         // Skipped due to intervals, can be avoided by enumerating hours and minutes
         // "0,30 0-23/2 * * *"
@@ -681,6 +634,7 @@ namespace Cronos.Tests
 
         // Run missed
         [InlineData("0 0,30 2 * * ?", "01:59 ST", "03:00 DST")]
+        [InlineData("0 30 02 13 03 ?", "01:45 ST", "03:00 DST")]
 
         // Run missed, delay
         [InlineData("0 30 2 * * ?", "01:59 ST", "03:00 DST")]
@@ -706,7 +660,25 @@ namespace Cronos.Tests
             if (executed > endDateTime) executed = null;
 
             // Assert
-            Assert.Equal(expectedTime, DateTimeToString(executed));
+            var expectedDateTime = expectedTime != null ? GetZonedDateTime(date, expectedTime) : (ZonedDateTime?)null;
+
+            Assert.Equal(expectedDateTime, executed);
+        }
+
+        [Theory]
+
+        [InlineData("0 */30 2 * * ?", "2016/03/12 23:59", "2016/03/14 02:00")]
+        [InlineData("0 30 2 13 03 ?", "2016/03/13 23:59", "2017/03/13 02:30")]
+        [InlineData("0 */30 2 13 3 *", "2016/03/13 23:59", "2017/03/13 02:00")]
+        public void Next_HandleDST_WhenTheClockJumpsForward_AndResultIsOutTheGivenDay(string cronExpression, string startTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var executed = expression.Next(GetZonedDateTime(startTime));
+
+            var expectedDateTime = expectedTime != null ? GetZonedDateTime(expectedTime) : (ZonedDateTime?)null;
+
+            Assert.Equal(expectedDateTime, executed);
         }
 
         [Theory]
@@ -745,16 +717,18 @@ namespace Cronos.Tests
             // Arrange
             var expression = CronExpression.Parse(cronExpression);
 
-            var startDateTime = GetZonedDateTime(new LocalDate(2016, 11, 06), startTime);
-            var endDateTime = new LocalDateTime(2016, 11, 06, 23, 59, 59).InZoneStrictly(America);
+            var date = new LocalDate(2016, 11, 06);
+
+            var endDateTime = date.At(new LocalTime(23, 59, 59)).InZoneStrictly(America);
 
             // Act
-            var executed = expression.Next(startDateTime);
+            var executed = expression.Next(GetZonedDateTime(date, startTime));
 
             if (executed > endDateTime) executed = null;
 
             // Assert
-            Assert.Equal(expectedTime, DateTimeToString(executed));
+            var expectedDateTime = expectedTime != null ? GetZonedDateTime(date, expectedTime) : (ZonedDateTime?)null;
+            Assert.Equal(expectedDateTime, executed);
         }
 
         private static ZonedDateTime GetZonedDateTime(LocalDate date, string timeString)
@@ -787,18 +761,6 @@ namespace Cronos.Tests
                 dateTime.Second);
 
             return localDateTime.InZoneStrictly(America);
-        }
-
-        private string DateTimeToString(ZonedDateTime? zonedDateTime)
-        {
-            if (zonedDateTime == null) return null;
-            var sb = new StringBuilder();
-
-            sb.Append(zonedDateTime.Value.ToString("HH:mm", CultureInfo.InvariantCulture));
-            sb.Append(" " + (zonedDateTime.Value.IsDaylightSavingTime() ? "DST" : "ST"));
-
-            return sb.ToString();
-
         }
 
         private static IEnumerable<object> GetRandomDates()
