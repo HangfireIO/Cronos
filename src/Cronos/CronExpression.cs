@@ -116,10 +116,9 @@ namespace Cronos
 
                     const long the31thDayOfMonth = 0x80000000;
                     const long the30thAnd31thDayOfMonth = 0xC0000000;
-                    
 
-                    if((expression._month & monthsWith31Days) == 0 && (expression._dayOfMonth & the31thDayOfMonth) != 0 ||
-                        (expression._month & monthsWith30Or31Days) == 0 && (expression._dayOfMonth & the30thAnd31thDayOfMonth) != 0)
+                    if((expression._month & monthsWith31Days) == 0 && (expression._dayOfMonth | the31thDayOfMonth) == the31thDayOfMonth ||
+                        (expression._month & monthsWith30Or31Days) == 0 && (expression._dayOfMonth | the30thAnd31thDayOfMonth) == the30thAnd31thDayOfMonth)
                     {
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
