@@ -205,7 +205,6 @@ namespace Cronos
                         // Ambiguous
 
                         // Interval jobs should be fired in both offsets
-
                         if (Flags.HasFlag(CronExpressionFlag.SecondStar) || Flags.HasFlag(CronExpressionFlag.MinuteStar) || Flags.HasFlag(CronExpressionFlag.HourStar))
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
@@ -745,12 +744,10 @@ namespace Cronos
                 // names here, because the number is not an
                 // element id, it's a step size.  'low' is
                 // sent as a 0 since there is no offset either.
-                if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0)
+                if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0 || num3 > high)
                 {
                     return null;
                 }
-
-                // TODO: Check num3 against high
             }
             else
             {
@@ -787,9 +784,6 @@ namespace Cronos
                 num = (num << 3) + (num << 1) + GetNumeric(*pointer++);
 
                 if (!IsDigit(*pointer)) return pointer;
-
-                // TODO: 123 should return false
-                // TODO: 0a should return false
 
                 return null;
 
