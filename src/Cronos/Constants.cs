@@ -36,10 +36,19 @@
         public const int LastMonth = 12;
         public const int MonthCount = LastMonth - FirstMonth + 1;
 
-        /* note on DOW: 0 and 7 are both Sunday, for compatibility reasons. */
+        // Note on DOW: 0 and 7 are both Sunday, for compatibility reasons. 
         public const int FirstDayOfWeek = 0;
         public const int LastDayOfWeek = 7;
         public const int DayOfWeekCount = LastDayOfWeek - FirstDayOfWeek + 1;
+
+        // 101011010101 0
+        public const long MonthsWith31Days = 0x15AA;
+        // 111111111101 0
+        public const long MonthsWith30Or31Days = 0x1FFA;
+
+        public const long The31ThDayOfMonth = 0x80000000;
+        public const long The30ThDayOfMonth = 0x40000000;
+        public const long The30ThOr31ThDayOfMonth = The30ThDayOfMonth | The31ThDayOfMonth;
 
         static Constants()
         {

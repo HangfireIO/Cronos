@@ -38,7 +38,7 @@ namespace Cronos
             {
                 fixed (char* value = cronExpression)
                 {
-                    // Seconds
+                    // Seconds.
 
                     var pointer = value;
 
@@ -54,7 +54,7 @@ namespace Cronos
                         throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
                     }
 
-                    // Minutes
+                    // Minutes.
 
                     if (*pointer == '*')
                     {
@@ -66,7 +66,7 @@ namespace Cronos
                         throw new ArgumentException($"minute '{cronExpression}'", nameof(cronExpression));
                     }
 
-                    // Hours
+                    // Hours.
 
                     if (*pointer == '*')
                     {
@@ -78,7 +78,7 @@ namespace Cronos
                         throw new ArgumentException("hour", nameof(cronExpression));
                     }
 
-                    // Days of month
+                    // Days of month.
 
                     if (*pointer == '*')
                     {
@@ -102,28 +102,24 @@ namespace Cronos
                         pointer = SkipWhiteSpaces(pointer);
                     }
 
-                    // Months
+                    // Months.
 
                     if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month)) == null)
                     {
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // 101011010101 0
-                    const long monthsWith31Days = 0x15AA;
-                    // 111111111101 0
-                    const long monthsWith30Or31Days = 0x1FFA;
+                    // If Month doesn't contain months with 31 days and Day-of-month contains only 31 or
+                    // Month doesn't contain months with 30 or 31 days Day-of-month contains only 30 or 31
+                    // it means that date is unreachable.
 
-                    const long the31thDayOfMonth = 0x80000000;
-                    const long the30thAnd31thDayOfMonth = 0xC0000000;
-
-                    if((expression._month & monthsWith31Days) == 0 && (expression._dayOfMonth | the31thDayOfMonth) == the31thDayOfMonth ||
-                        (expression._month & monthsWith30Or31Days) == 0 && (expression._dayOfMonth | the30thAnd31thDayOfMonth) == the30thAnd31thDayOfMonth)
+                    if (((expression._month & Constants.MonthsWith31Days) == 0 && (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
+                        ((expression._month & Constants.MonthsWith30Or31Days) == 0 && (expression._dayOfMonth | Constants.The30ThOr31ThDayOfMonth) == Constants.The30ThOr31ThDayOfMonth))
                     {
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // Days of week
+                    // Days of week.
 
                     if (*pointer == '*')
                     {
@@ -529,7 +525,6 @@ namespace Cronos
 
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
-            var isDayMatched = true;
             if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
                 if (dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
@@ -547,10 +542,10 @@ namespace Cronos
             }
             else if (_nearestWeekday)
             {
-                isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
-                     GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
-                     GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
-                     GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
+                var isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
+                                   GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
+                                   GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
+                                   GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
 
                 if (!isDayMatched) return false;
             }
