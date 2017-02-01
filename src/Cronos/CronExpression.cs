@@ -197,13 +197,6 @@ namespace Cronos
                 switch (mapping.Count)
                 {
                     case 0:
-                        // Invalid time
-                        // Interval jobs should be recalculated starting from next valid time (inclusive)
-                        if (Flags.HasFlag(CronExpressionFlag.MinuteStar))
-                        {
-                            return Next(now.InZoneLeniently(zone));
-                        }
-
                         // Strict jobs should be shifted to next valid time.
                         return now.InZoneLeniently(zone);
                     case 1:

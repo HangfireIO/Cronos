@@ -15,10 +15,10 @@ namespace Cronos.Tests
 
         [Theory]
 
-        // handle tabs.
+        // Handle tabs.
         [InlineData("*	*	* * * ?")]
 
-        // handle white spaces at the beginning and end of expression.
+        // Handle white spaces at the beginning and end of expression.
         [InlineData(" 	*	*	* * * ?    ")]
         public void HandleWhiteSpaces(string cronExpression)
         {
@@ -67,6 +67,8 @@ namespace Cronos.Tests
         [InlineData("/   * * * * ?")]
         [InlineData("*/  * * * * ?")]
         [InlineData("1/  * * * * ?")]
+        [InlineData("1/k * * * * ?")]
+        [InlineData("1k  * * * * ?")]
         [InlineData("#   * * * * ?")]
         [InlineData("*#1 * * * * ?")]
         [InlineData("0#2 * * * * ?")]
@@ -85,7 +87,11 @@ namespace Cronos.Tests
         [InlineData("* 7-  * * * ?")]
         [InlineData("* ,   * * * ?")]
         [InlineData("* ,1  * * * ?")]
+        [InlineData("* */  * * * ?")]
         [InlineData("* /   * * * ?")]
+        [InlineData("* 1/  * * * ?")]
+        [InlineData("* 1/k * * * ?")]
+        [InlineData("* 1k  * * * ?")]
         [InlineData("* #   * * * ?")]
         [InlineData("* *#1 * * * ?")]
         [InlineData("* 5#3 * * * ?")]
@@ -103,6 +109,9 @@ namespace Cronos.Tests
         [InlineData("* * ,    * * ?")]
         [InlineData("* * ,1   * * ?")]
         [InlineData("* * /    * * ?")]
+        [InlineData("* * 1/   * * ?")]
+        [InlineData("* * 1/k  * * ?")]
+        [InlineData("* * 1k   * * ?")]
         [InlineData("* * #    * * ?")]
         [InlineData("* * *#2  * * ?")]
         [InlineData("* * 10#1 * * ?")]
@@ -121,14 +130,17 @@ namespace Cronos.Tests
         [InlineData("* * * 30    2  ?")]
         [InlineData("* * * 10-32 *  ?")]
         [InlineData("* * * 31-32 *  ?")]
-        [InlineData("* * * 30-31 2  ?")]
-        [InlineData("* * * 30-31 2  ?")]
         [InlineData("* * * -1    *  ?")]
         [InlineData("* * * -     *  ?")]
         [InlineData("* * * 8-    *  ?")]
         [InlineData("* * * ,     *  ?")]
         [InlineData("* * * ,1    *  ?")]
         [InlineData("* * * /     *  ?")]
+        [InlineData("* * * 1/    *  ?")]
+        [InlineData("* * * 1/k   *  ?")]
+        [InlineData("* * * 1m    *  ?")]
+        [InlineData("* * * T     *  ?")]
+        [InlineData("* * * MON   *  ?")]
         [InlineData("* * * #     *  ?")]
         [InlineData("* * * *#3   *  ?")]
         [InlineData("* * * 4#1   *  ?")]
@@ -137,22 +149,24 @@ namespace Cronos.Tests
 
         // Month field is invalid.
 
-        [InlineData("* * * * 13  *")]
-        [InlineData("* * * * -1  *")]
-        [InlineData("* * * * -   *")]
-        [InlineData("* * * * 2-  *")]
-        [InlineData("* * * * ,   *")]
-        [InlineData("* * * * ,1  *")]
-        [InlineData("* * * * /   *")]
-        [InlineData("* * * * */  *")]
-        [InlineData("* * * * 1/  *")]
-        [InlineData("* * * * #   *")]
-        [InlineData("* * * * *#1 *")]
-        [InlineData("* * * * 2#2 *")]
-        [InlineData("* * * * L   *")]
-        [InlineData("* * * * W   *")]
-        [InlineData("* * * * LW  *")]
-        [InlineData("? * * * ?   *")]
+        [InlineData("* * * * 13  ?")]
+        [InlineData("* * * * -1  ?")]
+        [InlineData("* * * * -   ?")]
+        [InlineData("* * * * 2-  ?")]
+        [InlineData("* * * * ,   ?")]
+        [InlineData("* * * * ,1  ?")]
+        [InlineData("* * * * /   ?")]
+        [InlineData("* * * * */  ?")]
+        [InlineData("* * * * 1/  ?")]
+        [InlineData("* * * * 1/k ?")]
+        [InlineData("* * * * 1k  ?")]
+        [InlineData("* * * * #   ?")]
+        [InlineData("* * * * *#1 ?")]
+        [InlineData("* * * * 2#2 ?")]
+        [InlineData("* * * * L   ?")]
+        [InlineData("* * * * W   ?")]
+        [InlineData("* * * * LW  ?")]
+        [InlineData("* * * * ?   ?")]
 
         // Day of week field is invalid.
 
@@ -189,6 +203,12 @@ namespace Cronos.Tests
         [InlineData("* ? * * * ?")]
         [InlineData("* * ? * * ?")]
         [InlineData("* * * * ? ?")]
+
+        // Unreachable dates.
+
+        [InlineData("* * * 30    2  ?")]
+        [InlineData("* * * 30-31 2  ?")]
+        [InlineData("* * * 31    2  ?")]
         public void Parse_ThrowsAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
             var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
@@ -313,6 +333,10 @@ namespace Cronos.Tests
         [InlineData("* * * 5-8,19,20,28-29 * ?", "2016/12/30", "2017/01/05")]
         [InlineData("* * * 5-8,19,20,29-30 * ?", "2017/02/27", "2017/03/05")]
 
+        [InlineData("* * * 30-31 * ?", "2016/02/27", "2017/03/20")]
+        [InlineData("* * * 30-31 * ?", "2017/02/27", "2017/03/30")]
+        [InlineData("* * * 31    * ?", "2017/04/27", "2017/05/31")]
+
         // Month specified.
 
         [InlineData("* * * * 11      ?", "2016/10/09", "2016/11/01")]
@@ -405,9 +429,12 @@ namespace Cronos.Tests
 
         [InlineData("0 0 * * * ?", "2017/01/14 12:59", "2017/01/14 13:00")]
         [InlineData("0 0 0 * * ?", "2017/01/14 23:00", "2017/01/15 00:00")]
-        [InlineData("0 0 0 1 * ?", "2017/01/31 00:00", "2017/02/01 00:00")]
+
+        [InlineData("0 0 0 1 * ?", "2016/02/10 00:00", "2016/03/01 00:00")]
+        [InlineData("0 0 0 1 * ?", "2017/02/10 00:00", "2016/03/01 00:00")]
+        [InlineData("0 0 0 1 * ?", "2017/04/10 00:00", "2016/05/01 00:00")]
+        [InlineData("0 0 0 1 * ?", "2017/01/30 00:00", "2017/02/01 00:00")]
         [InlineData("0 0 0 * * ?", "2017/12/31 23:59", "2018/01/01 00:00")]
-        [InlineData("0 0 0 * * ?", "2017/12/31 00:00", "2018/01/01 00:00")]
 
         // Skip month if day of month is specified and month has less days.
 
@@ -526,62 +553,28 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData(2017, 01, 25, "* * * ? * 0#5", 2017, 01, 29)]
-        [InlineData(2017, 01, 30, "* * * ? * 0#5", 2017, 04, 30)]
-        public void Next_ReturnsCorrectValue_WhenSharpIsUsedInDayOfWeek(
-           int startYear,
-           int startMonth,
-           int startDay,
-           string cronExpression,
-           int expectedYear,
-           int expectedMonth,
-           int expectedDay)
-        {
-            var dateTime = new LocalDateTime(startYear, startMonth, startDay, 0, 0);
-            var expression = CronExpression.Parse(cronExpression);
-            var now = dateTime.InZoneStrictly(TimeZone);
 
-            var result = expression.Next(now);
+        // 2016/03/13 is date when the clock jumps forward from 1:59 am standard time (ST) to 3:00 am DST in America.
+        // ________1:59 ST///invalid///3:00 DST________
 
-            Assert.Equal(new LocalDateTime(expectedYear, expectedMonth, expectedDay, 0, 0), result?.LocalDateTime);
-        }
+        // Run missed.
 
-        [Theory]
+        [InlineData("0 */30 *      *  *  ?    ", "2016/03/13 01:45 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 */30 */2    *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 1-58 */2    *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 0,30 0-23/2 *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 */30 2      *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 0,30 2      *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 */30 2      13 03 ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 0,30 02     13 03 ?    ", "2016/03/13 01:45 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 30   2      *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 0    */2    *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+        [InlineData("0 30   0-23/2 *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
+                                              
+        [InlineData("0 0,59 *      *  *  ?    ", "2016/03/13 01:59 ST ", "2016/03/13 01:59 ST ")]
+        [InlineData("0 0,59 *      *  *  ?    ", "2016/03/13 03:00 DST", "2016/03/13 03:00 DST")]
 
-        // 2016/03/13 is date when the clock jumps forward from 1:59 ST to 3:00 DST in America.
-        // Period from 2016/03/13 2:00 am to 2016/03/13 2:59 am is invalid.
-
-        // Skipped due to intervals, no problems here
-        [InlineData("0 */30 * * * ?"     , "2016/03/13 01:45 ST", "2016/03/13 03:00 DST")]
-
-        // Skipped due to intervals, can be avoided by enumerating hours and minutes
-        // "0,30 0-23/2 * * *"
-        [InlineData("0 */30 */2 * * ?"   , "2016/03/13 01:59 ST", "2016/03/13 04:00 DST")]
-
-        // Run missed, strict
-        [InlineData("0 0,30 0-23/2 * * ?", "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
-
-        // TODO: may be confusing!
-        // Skipped due to intervals, can be avoided by using "0,30 02 * * *"
-        [InlineData("0 */30 2 * * ?"     , "2016/03/13 01:59 ST", "2016/03/14 02:00 DST")]
-
-        // Run missed
-        [InlineData("0 0,30 2 * * ?"     , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
-        [InlineData("0 30 02 13 03 ?"    , "2016/03/13 01:45 ST", "2016/03/13 03:00 DST")]
-
-        // Run missed, delay
-        [InlineData("0 30 2 * * ?"       , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
-
-        // Skipped due to intervals, "0 0-23/2 * * *" can be used to avoid skipping
-        // TODO: differ from Linux Cron
-        [InlineData("0 0 */2 * * ?"      , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
-
-        // Run missed
-        [InlineData("0 0 0-23/2 * * ?"   , "2016/03/13 01:59 ST", "2016/03/13 03:00 DST")]
-
-        [InlineData("0 */30 2 * * ?", "2016/03/12 23:59", "2016/03/14 02:00")]
-        [InlineData("0 30 2 13 03 ?", "2016/03/13 23:59", "2017/03/13 02:30")]
-        [InlineData("0 */30 2 13 3 ?", "2016/03/13 23:59", "2017/03/13 02:00")]
+        [InlineData("0 30   *      ?  3  SUN#2", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
         public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
@@ -593,35 +586,34 @@ namespace Cronos.Tests
 
         [Theory]
 
-        // As usual due to intervals
-        [InlineData("0 */30 * * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 */30 * * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST")]
-        [InlineData("0 */30 * * * ?", "2016/11/06 01:15 ST", "2016/11/06 01:30 ST")]
+        // 2016/11/06 is date when the clock jumps backward from 2:00 am DST to 1:00 am ST in America.
+        // _______1:00 DST____1:59 DST -> 1:00 ST____2:00 ST_______
 
-        // As usual due to intervals
-        [InlineData("0 */30 */2 * * ?", "2016/11/06 01:30 DST", "2016/11/06 02:00 ST")]
+        // Run at 2:00 ST because 2:00 DST is unreachable.
+        [InlineData("0 */30 */2 * * ?", "2016/11/06 01:30 DST", "2016/11/06 02:00 ST ")]
+        [InlineData("0 0    */2 * * ?", "2016/11/06 00:30 DST", "2016/11/06 02:00 ST ")]
 
-        // As usual due to intervals
-        [InlineData("0 0 1 * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 0 1 * * ?", "2016/11/06 01:00 ST", "2016/11/07 01:00 ST")]
+        // Run twice due to intervals.
+        [InlineData("0 */30 *   * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 */30 *   * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 */30 *   * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST ")]
+        [InlineData("0 */30 *   * * ?", "2016/11/06 01:15 ST ", "2016/11/06 01:30 ST ")]
+                                
+        [InlineData("0 */30 1   * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 */30 1   * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 */30 1   * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST ")]
+        [InlineData("0 */30 1   * * ?", "2016/11/06 01:20 ST ", "2016/11/06 01:30 ST ")]
+                                
+        [InlineData("0 30   *   * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 30   *   * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:30 ST ")]
 
-        // TODO: differ from Linux Cron
-        // Duplicates skipped due to non-wildcard hour
-        [InlineData("0 */30 1 * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 */30 1 * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST")]
-        [InlineData("0 */30 1 * * ?", "2016/11/06 01:30 ST", "2016/11/06 01:30 ST")]
+        // Duplicates skipped due to certain time.
+        [InlineData("0 0,30 1   * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 0,30 1   * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
+        [InlineData("0 0,30 1   * * ?", "2016/11/06 01:00 ST ", "2016/11/07 01:00 ST ")]
 
-        // Duplicates skipped due to non-wildcard minute
-        [InlineData("0 0 */2 * * ?", "2016/11/06 00:30 DST", "2016/11/06 02:00 ST")]
-
-        // Duplicates skipped due to non-wildcard
-        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 0,30 1 * * ?", "2016/11/06 01:00 ST", "2016/11/07 01:00 ST")]
-
-        // Duplicates skipped due to non-wildcard
-        [InlineData("0 30 * * * ?", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 30 * * * ?", "2016/11/06 01:59 DST", "2016/11/06 01:30 ST")]
+        [InlineData("0 0    1   * * ?", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
+        [InlineData("0 0    1   * * ?", "2016/11/06 01:00 ST ", "2016/11/07 01:00 ST ")]
         public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
