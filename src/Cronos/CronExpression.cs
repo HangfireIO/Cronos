@@ -489,8 +489,6 @@ namespace Cronos
                 {
                     if (nextTime.Month != nextTime.PlusWeeks(1).Month)
                         return nextTime;
-
-                    return Next(new LocalDateTime(year, month, day - 1, 23, 59, 59, 59).PlusWeeks(1), endTime);
                 }
 
                 return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
