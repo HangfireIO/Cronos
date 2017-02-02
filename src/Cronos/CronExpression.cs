@@ -183,7 +183,10 @@ namespace Cronos
 
         public ZonedDateTime? Next(LocalDateTime now, Offset currentOffset, DateTimeZone zone)
         {
-            // TODO: add short path for UTC
+            if (zone.Equals(DateTimeZone.Utc))
+            {
+                return Next(now, LocalDateTime.FromDateTime(DateTime.MaxValue))?.InUtc();
+            }
 
             var mapping = zone.MapLocal(now);
 

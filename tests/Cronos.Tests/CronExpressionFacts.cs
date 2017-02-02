@@ -532,9 +532,9 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuting = expression.Next(GetZonedDateTime(startTime));
+            var nextExecuting = expression.Next(GetAmericaDateTime(startTime));
 
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuting);
+            Assert.Equal(GetAmericaDateTime(expectedTime), nextExecuting);
         }
 
         // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.
@@ -550,18 +550,6 @@ namespace Cronos.Tests
 
         //    Assert.Equal(result, GetZonedDateTime(expectedTime));
         //}
-
-        [Theory]
-        [InlineData("* * * * * ?", "15:30", "15:30")]
-        [InlineData("0 5 * * * ?", "00:00", "00:05")]
-        public void Next_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var nextExecuting = expression.Next(GetZonedDateTime(startTime));
-
-            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuting);
-        }
 
         [Theory]
 
@@ -590,9 +578,9 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetZonedDateTime(startTime));
+            var executed = expression.Next(GetAmericaDateTime(startTime));
 
-            Assert.Equal(GetZonedDateTime(expectedTime), executed);
+            Assert.Equal(GetAmericaDateTime(expectedTime), executed);
         }
 
         [Theory]
@@ -629,12 +617,57 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetZonedDateTime(startTime));
+            var executed = expression.Next(GetAmericaDateTime(startTime));
 
-            Assert.Equal(GetZonedDateTime(expectedTime), executed);
+            Assert.Equal(GetAmericaDateTime(expectedTime), executed);
         }
 
-        private static ZonedDateTime GetZonedDateTime(string dateTimeString)
+        [Theory]
+        [InlineData("* * * * * ?", "15:30", "15:30")]
+        [InlineData("0 5 * * * ?", "00:00", "00:05")]
+
+        // Dst doesn't affect result.
+
+        [InlineData("0 */30 * * * ?", "2016/03/12 23:15", "2016/03/12 23:30")]
+        [InlineData("0 */30 * * * ?", "2016/03/12 23:45", "2016/03/13 00:00")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 00:15", "2016/03/13 00:30")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 00:45", "2016/03/13 01:00")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 01:45", "2016/03/13 02:00")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 02:15", "2016/03/13 02:30")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 02:45", "2016/03/13 03:00")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 03:15", "2016/03/13 03:30")]
+        [InlineData("0 */30 * * * ?", "2016/03/13 03:45", "2016/03/13 04:00")]
+
+        [InlineData("0 */30 * * * ?", "2016/11/05 23:10", "2016/11/05 23:30")]
+        [InlineData("0 */30 * * * ?", "2016/11/05 23:50", "2016/11/06 00:00")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 00:10", "2016/11/06 00:30")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 00:50", "2016/11/06 01:00")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 01:10", "2016/11/06 01:30")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 01:50", "2016/11/06 02:00")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 02:10", "2016/11/06 02:30")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 02:50", "2016/11/06 03:00")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 03:10", "2016/11/06 03:30")]
+        [InlineData("0 */30 * * * ?", "2016/11/06 03:50", "2016/11/06 04:00")]
+        public void Next_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var nextExecuting = expression.Next(GetUtcDateTime(startTime));
+
+            Assert.Equal(GetUtcDateTime(expectedTime), nextExecuting);
+        }
+
+        private static ZonedDateTime GetAmericaDateTime(string dateTimeString)
+        {
+            return GetZonedDateTime(dateTimeString, America);
+        }
+
+        private static ZonedDateTime GetUtcDateTime(string dateTimeString)
+        {
+            return GetZonedDateTime(dateTimeString, DateTimeZone.Utc);
+        }
+
+        private static ZonedDateTime GetZonedDateTime(string dateTimeString, DateTimeZone zone)
         {
             var isDst = dateTimeString.Contains("DST");
             dateTimeString = dateTimeString.Replace("DST", "");
@@ -665,11 +698,11 @@ namespace Cronos.Tests
                 dateTime.Minute,
                 dateTime.Second);
 
-            if(!isDst && !isSt) return localDateTime.InZoneStrictly(America);
+            if (!isDst && !isSt) return localDateTime.InZoneStrictly(zone);
 
             return isDst ?
-              localDateTime.InZone(America, mapping => mapping.First()) :
-              localDateTime.InZone(America, mapping => mapping.Last());
+              localDateTime.InZone(zone, mapping => mapping.First()) :
+              localDateTime.InZone(zone, mapping => mapping.Last());
         }
     }
 }
