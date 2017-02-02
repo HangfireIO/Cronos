@@ -456,7 +456,8 @@ namespace Cronos.Tests
 
         // Leap year.
 
-        [InlineData("0 0 0 29 2 ?", "2017/02/25 00:00", "2020/02/29 00:00")]
+        [InlineData("0 0 0 29 2 ?", "2016/03/10 00:00", "2020/02/29 00:00")]
+        [InlineData("0 0 0 29 2 ?", "2096/03/10 00:00", "2104/02/29 00:00")]
 
         // Support 'L' character in day of month field.
 
@@ -533,9 +534,7 @@ namespace Cronos.Tests
 
             var nextExecuting = expression.Next(GetZonedDateTime(startTime));
 
-            var expectedDateTime = expectedTime != null ? GetZonedDateTime(expectedTime) : (ZonedDateTime?)null;
-
-            Assert.Equal(expectedDateTime, nextExecuting);
+            Assert.Equal(GetZonedDateTime(expectedTime), nextExecuting);
         }
 
         // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.

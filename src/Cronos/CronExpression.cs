@@ -234,7 +234,7 @@ namespace Cronos
                     }
 
                     // Try to find anything starting from late offset
-                    found = Next(late.IsoLocalStart, now.PlusMonths(24));
+                    found = Next(late.IsoLocalStart, LocalDateTime.FromDateTime(DateTime.MaxValue));
                     if (found.HasValue)
                     {
                         return Next(found.Value, late.WallOffset, zone);
@@ -243,7 +243,7 @@ namespace Cronos
             }
 
             // Does not match, find next
-            var nextFound = Next(now.PlusSeconds(1), now.PlusMonths(24));
+            var nextFound = Next(now.PlusSeconds(1), LocalDateTime.FromDateTime(DateTime.MaxValue));
             if (nextFound == null) return null;
 
             return Next(nextFound.Value, currentOffset, zone);
