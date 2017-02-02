@@ -4,19 +4,130 @@
 
 TBD.
 
-## Overview
+## Features
 
-High performance, full-featured Cron implementation for .NET.
+* Parse cron expressions comprising six or seven fields.
+* Calculate next execution in zoned time and UTC.
+* Support extended format with non-standard characters: ?, L, W, #.
+* Handle the transition from standard time to daylight saving time and vice versa.
 
 ## Installation
 
 TBD
 
+## Near-term plans
+
+* Support of year field and 'W' symbol.
+* Remove dependency from NodaTime lib.
+
 ## Usage
 
-### Format
+### Parse
 
-A CRON expression is a string comprising six or seven fields separated by white space that represents a set of times, normally as a schedule to execute some routine.
+```csharp
+var expression = CronExpression.Parse("0 30 * * * ?");
+```
+
+### Calculate next execution in zoned time
+
+```csharp
+var expression = CronExpression.Parse("0 30 * * * ?");
+var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+var startTime = new LocalDateTime(2017, 02, 01, 02, 54, 00).InZoneStrictly(america);
+
+var nextExecution = expression.Next(startTime);
+
+Console.WriteLine("Next execution at " + nextExecution);
+
+// Next execution at 2017/02/01 03:30:00 AM -05:00
+```
+
+### Calculate next execution in UTC time
+
+```csharp
+var expression = CronExpression.Parse("0 30 * * * ?");
+var startTime = new LocalDateTime(2017, 02, 01, 02, 54, 00).InUtc();
+
+var nextExecution = expression.Next(startTime);
+
+Console.WriteLine("Next execution at " + nextExecution);
+
+// Next execution at 2017/02/01 03:30:00 AM +00:00
+```
+
+### Daylight Saving Time
+
+Cronos handles the transition from standard time (ST) to Daylight saving time (DST). 
+
+**Setting the clocks forward**
+
+If next execution falls on invalid time when the clocks jump forward then next execution will shift to next valid time. See example:
+
+```csharp
+var expression = CronExpression.Parse("0 30 2 * * ?");
+var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+
+// 2016/03/13 - the day when DST starts in America. The clocks jump from 1:59 am ST to 3:00 am DST. 
+// So duration from 2:00 am to 2:59 am is invalid.
+
+var startTime = new LocalDateTime(2016, 03, 13, 01, 50, 00).InZoneStrictly(america);
+
+// Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
+var nextExecution = expression.Next(startTime);
+
+Console.WriteLine("Next execution at " + nextExecution);
+
+// Next execution at 2016/03/13 03:00:00 AM -04:00
+```
+
+**Setting the clocks backward**
+
+When DST ends you set the clocks backward so you have duration which repeats twice. If you are in USA the duration was e.g. 2016/11/06 from 1:00 am to 1:59 am. If next execution falls on this duration behavior depends on cron expression:
+
+* Cron expression describes certain time of a day, e.g. `"0 30 1 * * ?"` - 1:30 am every day, or `"0 0,45 1,2 * * ?"` - 1:00 am, 1:45 am, 2:00 am, 2:45 am every day. In this case each cron job will be scheduled only before clock shifts. Reason is when you describe certain time of day you mean that it should be scheduled once a day regardless whether there is clock shifts in that day.
+
+    ```csharp
+var expression = CronExpression.Parse("0 30 1 * * ?");
+var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+
+var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(america);
+
+var nextExecution = expression.Next(startTime);
+Console.WriteLine("Next execution at " + nextExecution);
+
+nextExecution = expression.Next(nextExecution?.Plus(Duration.FromSeconds(1));
+Console.WriteLine("Next execution at " + nextExecution);
+
+// Next execution at 2016/03/13 01:30:00 AM -04:00
+// Next execution at 2016/03/13 02:30:00 AM -05:00
+    ```
+
+* Cron expression describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
+
+    ```csharp
+var expression = CronExpression.Parse("0 30 * * * ?");
+var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+
+var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(america);
+
+var nextExecution = expression.Next(startTime);
+Console.WriteLine("Next execution at " + nextExecution);
+
+nextExecution = expression.Next(nextExecution?.Plus(Duration.FromSeconds(1));
+Console.WriteLine("Next execution at " + nextExecution);
+
+nextExecution = expression.Next(nextExecution?.Plus(Duration.FromSeconds(1));
+Console.WriteLine("Next execution at " + nextExecution);
+
+// Next execution at 2016/11/06 01:30:00 AM -04:00
+// Next execution at 2016/11/06 01:30:00 AM -05:00
+// Next execution at 2016/11/06 02:30:00 AM -05:00
+    ```
+
+
+### Cron format
+
+Cronos uses a cron expression comprising six or seven fields separated by white space that represents a set of times, normally as a schedule to execute some routine.
 
 | Field        | Required | Allowed values  | Allowed special charecters | Comment                  |
 |--------------|----------|-----------------|----------------------------|--------------------------|
@@ -51,33 +162,6 @@ A CRON expression is a string comprising six or seven fields separated by white 
 
 **/**
 :  Slashes can be combined with ranges to specify step values. For example, */5 in the minutes field indicates every 5 minutes. It is shorthand for the more verbose form 5,10,15,20,25,30,35,40,45,50,55,00.
-
-
-### Daylight Saving Time (DST)
-
-For ease of understanding, we consider a case, where a one-hour shift occurs at 02:00 local time, in spring the clock jumps forward from the last instant of 01:59 standard time to 03:00 DST, whereas in autumn the clock jumps backward from the last instant of 01:59 am DST to 01:00 am standard time, repeating that hour.
-
-Cron behavior is clear and logical until Daylight saving time comes. Lots of implementations don't handle the DST. Thus if a job is scheduled for 1:30 am then it can be performed twice: before and after shifting clock backward. Or worse, if your job should be performed at 2:30 every day when time will jump from 2:00 am to 3:00 am the job won't be performed. Very bad.
-
-The easiest solution: do not schedule any cron jobs from 1:00 am to 3:00 am on Sunday morning! But who rememberes about DST until it comes?
-
-Cronos solution: properly handle the daylight saving time. But before we should answer to questions:
-- If a job should be performed in the period of the clock jumping should we perform it?
-- How many times?
-
-**Shift clocks forward**.
-A job will be skipped if it is secondly or minutely (second or minute field conatains '*') and it should be performed from 2:00 am to 2:59 am. In other cases, a job will be performed once at 3:00 am. See examples:
-* `0 30 * * * ?`, `0 30 1-12 * * ?` - job will be performed at 1:30 am, then at 3:00 am and then at 3:30 am. 
-* `0 30 2 * * ?` - job will be perfomed at 3:00 am.
-* `0 * * * * ?` - job will be performed every minute from 1:00 am to 2:00 am. Then time will jump from 2:00 am to 3:00 am. Then the job will continue to run every minute. So all jobs which had to be perfomed from 2:00 am to 2:59 am will be skipped. 
-* `0 * 2 ? * *` - job will be skipped in that day. So it will be performed just next day every minute from 2:00 am to 2:59 am.
-
-**Shift clocks backward**. 
-A job will be performed twice before and after the clock shifting if it is secondly, minutely or hourly (an cron expression contains '*' in second, minute or hour field). In other cases a job will be performed only before the clock shifting. See examples:
-* `0 30 * * * ?` - job will be scheduled at 1:30 am before and after shifting clock backward. 
-* `0 30 1 * * ?`, `0 30 1,2,10-12 * * ?` - job will be scheduled once at 1:30 before shifting clock backward.
-* `0 * * * * ?` - job will be perfomed every minute from 1:00 am to 1:59 am. After shifting clock backward job will continue to run every second.
-* `0 * 1 ? * *` - job will be perfomed every minute from 1:00 am to 1:59 am. After shifting clock backward job will continue to run every second from 1:00 am to 1:59 am.
 
 ## License
 
