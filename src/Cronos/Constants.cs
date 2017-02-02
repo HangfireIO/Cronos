@@ -18,28 +18,24 @@
 
         public const int FirstSecond = 0;
         public const int LastSecond = 59;
-        public const int SecondCount = LastSecond - FirstSecond + 1;
 
         public const int FirstMinute = 0;
         public const int LastMinute = 59;
-        public const int MinuteCount = LastMinute - FirstMinute + 1;
 
         public const int FirstHour = 0;
         public const int LastHour = 23;
-        public const int HourCount = LastHour - FirstHour + 1;
 
         public const int FirstDayOfMonth = 1;
         public const int LastDayOfMonth = 31;
-        public const int DayOfMonthCount = LastDayOfMonth - FirstDayOfMonth + 1;
 
         public const int FirstMonth = 1;
         public const int LastMonth = 12;
-        public const int MonthCount = LastMonth - FirstMonth + 1;
 
         // Note on DOW: 0 and 7 are both Sunday, for compatibility reasons. 
         public const int FirstDayOfWeek = 0;
         public const int LastDayOfWeek = 7;
-        public const int DayOfWeekCount = LastDayOfWeek - FirstDayOfWeek + 1;
+
+        public const long DaysPerWeekCount = 7;
 
         // 101011010101 0
         public const long MonthsWith31Days = 0x15AA;

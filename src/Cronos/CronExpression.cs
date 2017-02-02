@@ -534,11 +534,11 @@ namespace Cronos
             }
             else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
-                if (dayOfMonth + 7 <= Calendar.GetDaysInMonth(year, month)) return false;
+                if (dayOfMonth + Constants.DaysPerWeekCount <= Calendar.GetDaysInMonth(year, month)) return false;
             }
             else if (_nthdayOfWeek != 0)
             {
-                if ((dayOfMonth - (_nthdayOfWeek - 1) * 7 <= 0) || (dayOfMonth - _nthdayOfWeek * 7) > 0)
+                if ((dayOfMonth - (_nthdayOfWeek - 1) * Constants.DaysPerWeekCount <= 0) || (dayOfMonth - _nthdayOfWeek * Constants.DaysPerWeekCount) > 0)
                 {
                     return false;
                 }
