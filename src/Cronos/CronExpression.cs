@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using NodaTime;
@@ -38,7 +37,7 @@ namespace Cronos
             {
                 fixed (char* value = cronExpression)
                 {
-                    // Seconds.
+                    // Second.
 
                     var pointer = value;
 
@@ -54,7 +53,7 @@ namespace Cronos
                         throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
                     }
 
-                    // Minutes.
+                    // Minute.
 
                     if (*pointer == '*')
                     {
@@ -66,7 +65,7 @@ namespace Cronos
                         throw new ArgumentException($"minute '{cronExpression}'", nameof(cronExpression));
                     }
 
-                    // Hours.
+                    // Hour.
 
                     if (*pointer == '*')
                     {
@@ -78,7 +77,7 @@ namespace Cronos
                         throw new ArgumentException("hour", nameof(cronExpression));
                     }
 
-                    // Days of month.
+                    // Day of month.
 
                     if (*pointer == '*')
                     {
@@ -102,7 +101,7 @@ namespace Cronos
                         pointer = SkipWhiteSpaces(pointer);
                     }
 
-                    // Months.
+                    // Month.
 
                     if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month)) == null)
                     {
@@ -119,7 +118,7 @@ namespace Cronos
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // Days of week.
+                    // Day of week.
 
                     if (*pointer == '*')
                     {
@@ -204,7 +203,7 @@ namespace Cronos
                         // Ambiguous
 
                         // Interval jobs should be fired in both offsets
-                        if (Flags.HasFlag(CronExpressionFlag.SecondStar) || Flags.HasFlag(CronExpressionFlag.MinuteStar) || Flags.HasFlag(CronExpressionFlag.HourStar))
+                        if ((Flags & (CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar)) != 0)
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
                         }
@@ -272,167 +271,167 @@ namespace Cronos
             var minute = baseMinute;
             var second = baseSecond;
 
-            var seconds = GetSet(_second, Constants.FirstSecond, Constants.LastSecond);
-            var minutes = GetSet(_minute, Constants.FirstMinute, Constants.LastMinute);
-            var hours = GetSet(_hour, Constants.FirstHour, Constants.LastHour);
-            var days = GetSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
-            var months = GetSet(_month, Constants.FirstMonth, Constants.LastMonth);
-            var daysOfWeek = GetSet(_dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek);
+            var minSecond = FindFirstSet(_second, Constants.FirstSecond, Constants.LastSecond);
+            var minMinute = FindFirstSet(_minute, Constants.FirstMinute, Constants.LastSecond);
+            var minHour = FindFirstSet(_hour, Constants.FirstHour, Constants.LastHour);
+            var minDayOfMonth = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+            var minMonth = FindFirstSet(_month, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
 
             //
-            // Second
+            // Second.
             //
 
-            var secondsView = seconds.GetViewBetween(second, Constants.LastSecond);
+            var nextSecond = FindFirstSet(_second, second, Constants.LastSecond);
 
-            if (secondsView.Count > 0)
+            if (nextSecond != -1)
             {
-                second = secondsView.Min;
+                second = nextSecond;
             }
             else
             {
-                second = seconds.Min;
+                second = minSecond;
                 minute++;
             }
 
             //
-            // Minute
+            // Minute.
             //
+
+            var nextMinute = FindFirstSet(_minute, minute, Constants.LastMinute);
 
             if (minute <= Constants.LastMinute)
             {
-                var minutesView = minutes.GetViewBetween(minute, Constants.LastMinute);
-
-                if (minutesView.Count > 0)
+                if (nextMinute != -1)
                 {
-                    minute = minutesView.Min;
+                    minute = nextMinute;
 
                     if (minute > baseMinute)
                     {
-                        second = seconds.Min;
+                        second = minSecond;
                     }
                 }
                 else
                 {
-                    second = seconds.Min;
-                    minute = minutes.Min;
+                    second = minSecond;
+                    minute = minMinute;
                     hour++;
                 }
             }
             else
             {
-                second = seconds.Min;
-                minute = minutes.Min;
+                second = minSecond;
+                minute = minMinute;
                 hour++;
             }
 
             //
-            // Hour
+            // Hour.
             //
+
+            var nextHour = FindFirstSet(_hour, hour, Constants.LastHour);
 
             if (hour <= Constants.LastHour)
             {
-                var hoursView = hours.GetViewBetween(hour, Constants.LastHour);
-
-                if (hoursView.Count > 0)
+                if (nextHour != -1)
                 {
-                    hour = hoursView.Min;
+                    hour = nextHour;
 
                     if (hour > baseHour)
                     {
-                        second = seconds.Min;
-                        minute = minutes.Min;
+                        second = minSecond;
+                        minute = minMinute;
                     }
                 }
                 else
                 {
-                    second = seconds.Min;
-                    minute = minutes.Min;
-                    hour = hours.Min;
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
                     day++;
                     if (day > Constants.LastDayOfMonth)
                     {
-                        day = days.Min;
+                        day = minDayOfMonth;
                         month++;
                     }
                 }
             }
             else
             {
-                second = seconds.Min;
-                minute = minutes.Min;
-                hour = hours.Min;
+                second = minSecond;
+                minute = minMinute;
+                hour = minHour;
                 day++;
                 if (day > Constants.LastDayOfMonth)
                 {
-                    day = days.Min;
+                    day = minDayOfMonth;
                     month++;
                 }
             }
 
             //
-            // Day of month
+            // Day of month.
             //
 
-            var daysView = days.GetViewBetween(day, Constants.LastDayOfMonth);
+            var daysView = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
 
-            if (daysView.Count > 0)
+            if (daysView != -1)
             {
-                day = daysView.Min;
+                day = daysView;
             }
 
             RetryDayMonth:
 
-            if (daysView.Count == 0 || day == -1)
+            if (daysView == -1 || day == -1)
             {
-                minute = minutes.Min;
-                hour = hours.Min;
-                day = days.Min;
+                minute = minMinute;
+                hour = minHour;
+                day = minDayOfMonth;
                 month++;
             }
             else if (day > baseDay)
             {
-                second = seconds.Min;
-                minute = minutes.Min;
-                hour = hours.Min;
+                second = minSecond;
+                minute = minMinute;
+                hour = minHour;
             }
 
             //
-            // Month
+            // Month.
             //
+
             if (month <= Constants.LastMonth)
             {
-                var monthsView = months.GetViewBetween(month, Constants.LastMonth);
+                var monthsView = FindFirstSet(_month, month, Constants.LastMonth);
 
-                if (monthsView.Count > 0)
+                if (monthsView != -1)
                 {
-                    month = monthsView.Min;
+                    month = monthsView;
                 }
 
-                if (monthsView.Count == 0)
+                if (monthsView == -1)
                 {
-                    second = seconds.Min;
-                    minute = minutes.Min;
-                    hour = hours.Min;
-                    day = days.Min;
-                    month = months.Min;
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
+                    day = minDayOfMonth;
+                    month = minMonth;
                     year++;
                 }
                 else if (month > baseMonth)
                 {
-                    second = seconds.Min;
-                    minute = minutes.Min;
-                    hour = hours.Min;
-                    day = days.Min;
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
+                    day = minDayOfMonth;
                 }
             }
             else
             {
-                second = seconds.Min;
-                minute = minutes.Min;
-                hour = hours.Min;
-                day = days.Min;
-                month = months.Min;
+                second = minSecond;
+                minute = minMinute;
+                hour = minHour;
+                day = minDayOfMonth;
+                month = minMonth;
                 year++;
             }
 
@@ -470,10 +469,10 @@ namespace Cronos
                 return null;
 
             //
-            // L Symbol
+            // L character.
             //
 
-            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
             {
                 var lastDayOfMonth = Calendar.GetDaysInMonth(nextTime.Year, nextTime.Month);
                 if (nextTime.Day == lastDayOfMonth)
@@ -481,9 +480,9 @@ namespace Cronos
 
                 return Next(new LocalDateTime(year, month, lastDayOfMonth, 0, 0, 0, 0), endTime);
             }
-            if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
+            if ((Flags & CronExpressionFlag.DayOfWeekLast) != 0)
             {
-                if (daysOfWeek.Contains(nextTime.DayOfWeek))
+                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
                 {
                     if (nextTime.Month != nextTime.PlusWeeks(1).Month)
                         return nextTime;
@@ -493,7 +492,7 @@ namespace Cronos
             }
             if (_nthdayOfWeek != 0)
             {
-                if (daysOfWeek.Contains(nextTime.DayOfWeek))
+                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
                 {
                     if (nextTime.Month != nextTime.PlusWeeks(-1 * _nthdayOfWeek).Month &&
                         nextTime.Month == nextTime.PlusWeeks(-1 * (_nthdayOfWeek - 1)).Month)
@@ -504,35 +503,29 @@ namespace Cronos
 
                 return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
             }
-            
+
             //
-            // Day of week
+            // Day of week.
             //
 
-            if (daysOfWeek.Contains(nextTime.DayOfWeek))
+            if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
                 return nextTime;
 
             return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
         }
 
-        private SortedSet<int> GetSet(long bits, int low, int high)
+        private static int FindFirstSet(long value, int startBit, int endBit)
         {
-            var result = new SortedSet<int>();
-            for (var i = low; i <= high; i++)
-            {
-                if (GetBit(bits, i)) result.Add(i);
-            }
-
-            return result;
+            return DeBruijin.FindFirstSet(value, startBit, endBit);
         }
 
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
-            if (Flags.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
             {
                 if (dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
             }
-            else if (Flags.HasFlag(CronExpressionFlag.DayOfWeekLast))
+            else if ((Flags & CronExpressionFlag.DayOfWeekLast) != 0)
             {
                 if (dayOfMonth + Constants.DaysPerWeekCount <= Calendar.GetDaysInMonth(year, month)) return false;
             }
@@ -596,6 +589,7 @@ namespace Cronos
             return pointer;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetList(
           ref long bits, /* one bit per flag, default=FALSE */
           int low, int high, /* bounds, impl. offset for bitstr */
@@ -631,6 +625,7 @@ namespace Cronos
             return pointer;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetRange(
             ref long bits, 
             int low, 
@@ -765,6 +760,7 @@ namespace Cronos
             return pointer;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetNumber(
             out int num, /* where does the result go? */
             int low, /* offset applied to result if symbolic enum used */
