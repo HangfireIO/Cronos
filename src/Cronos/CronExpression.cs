@@ -122,7 +122,7 @@ namespace Cronos
 
                     if (*pointer == '*')
                     {
-                        if(expression.Flags.HasFlag(CronExpressionFlag.DayOfMonthStar)) throw new ArgumentException("day of week", nameof(cronExpression));
+                        if((expression.Flags & CronExpressionFlag.DayOfMonthStar) != 0) throw new ArgumentException("day of week", nameof(cronExpression));
 
                         // expression._dayOfMonth == -1 means here that '?' is specified.
                         if (expression._dayOfMonth != -1) throw new ArgumentException("day of week", nameof(cronExpression));
@@ -131,7 +131,7 @@ namespace Cronos
                     }
                     else if (*pointer != '?')
                     {
-                        if (expression.Flags.HasFlag(CronExpressionFlag.DayOfMonthStar)) throw new ArgumentException("day of week", nameof(cronExpression));
+                        if ((expression.Flags & CronExpressionFlag.DayOfMonthStar) != 0) throw new ArgumentException("day of week", nameof(cronExpression));
                     }
 
                     if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek)) == null)
