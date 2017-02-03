@@ -9,9 +9,8 @@ namespace Cronos
         SecondStar = 0x1,
         MinuteStar = 0x2,
         HourStar = 0x4,
-        DayOfMonthStar = 0x8,
-        DayOfMonthQuestion = 0x10,
-        DayOfMonthLast = 0x20,
-        DayOfWeekLast = 0x40
+        DayOfMonthQuestion = 0x8,
+        DayOfMonthLast = 0x10,
+        DayOfWeekLast = 0x20
     }
 }
