@@ -125,14 +125,10 @@ namespace Cronos
                     if (*pointer == '*')
                     {
                         if (!expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion)) throw new ArgumentException("day of week", nameof(cronExpression));
-
-                        expression.Flags |= CronExpressionFlag.DayOfWeekStar;
                     }
-                    else if (*pointer == '?')
+                    else if (*pointer == '?' && expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
-                        if(expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion)) throw new ArgumentException("day of week", nameof(cronExpression));
-
-                        expression.Flags |= CronExpressionFlag.DayOfWeekQuestion;
+                        throw new ArgumentException("day of week", nameof(cronExpression));
                     }
                     else if (expression.HasFlag(CronExpressionFlag.DayOfMonthStar))
                     {
