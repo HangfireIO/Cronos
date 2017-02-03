@@ -110,8 +110,8 @@ namespace Cronos
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // If Month field doesn't contain months with 31 days and Day-of-month contains only 31 or
-                    // Month field doesn't contain months with 30 or 31 days Day-of-month contains only 30 or 31
+                    // If Month field doesn't contain months with 31 days and Day of month contains only 31 or
+                    // Month field doesn't contain months with 30 or 31 days Day of month contains only 30 or 31
                     // it means that date is unreachable.
 
                     if (((expression._month & Constants.MonthsWith31Days) == 0 && (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
@@ -149,9 +149,9 @@ namespace Cronos
                     if (*pointer == '#')
                     {
                         pointer++;
-                        pointer = GetNumber(out expression._nthdayOfWeek, 1, null, pointer);
+                        pointer = GetNumber(out expression._nthdayOfWeek, Constants.MinNthDayOfWeek, null, pointer);
 
-                        if (expression._nthdayOfWeek < 1 || expression._nthdayOfWeek > 5)
+                        if (expression._nthdayOfWeek < Constants.MinNthDayOfWeek || expression._nthdayOfWeek > Constants.MaxNthDayOfWeek)
                         {
                             throw new ArgumentException("day of week", nameof(cronExpression));
                         }
@@ -164,7 +164,7 @@ namespace Cronos
                         throw new ArgumentException("invalid cron", nameof(cronExpression));
                     }
 
-                    /* make sundays equivilent */
+                    // Make sundays equivilent.
                     if (GetBit(expression._dayOfWeek, 0) || GetBit(expression._dayOfWeek, 7))
                     {
                         SetBit(ref expression._dayOfWeek, 0);
@@ -201,15 +201,15 @@ namespace Cronos
                         // Strict
                         return now.InZoneStrictly(zone);
                     case 2:
-                        // Ambiguous
+                        // Ambiguous.
 
-                        // Interval jobs should be fired in both offsets
+                        // Interval jobs should be fired in both offsets.
                         if (HasFlag(CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar))
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
                         }
 
-                        // Strict jobs should be fired in lowest offset only
+                        // Strict jobs should be fired in lowest offset only.
                         if (currentOffset == mapping.EarlyInterval.WallOffset)
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
@@ -229,14 +229,14 @@ namespace Cronos
 
                 if (early.WallOffset == currentOffset)
                 {
-                    // Current period, try to find anything here
+                    // Current period, try to find anything here.
                     var found = Next(now, early.IsoLocalEnd.PlusMinutes(-1));
                     if (found.HasValue)
                     {
                         return Next(found.Value, currentOffset, zone);
                     }
 
-                    // Try to find anything starting from late offset
+                    // Try to find anything starting from late offset.
                     found = Next(late.IsoLocalStart, LocalDateTime.FromDateTime(DateTime.MaxValue));
                     if (found.HasValue)
                     {
@@ -245,7 +245,7 @@ namespace Cronos
                 }
             }
 
-            // Does not match, find next
+            // Does not match, find next.
             var nextFound = Next(now.PlusSeconds(1), LocalDateTime.FromDateTime(DateTime.MaxValue));
             if (nextFound == null) return null;
 
@@ -273,10 +273,10 @@ namespace Cronos
             var second = baseSecond;
 
             var minSecond = FindFirstSet(_second, Constants.FirstSecond, Constants.LastSecond);
-            var minMinute = FindFirstSet(_minute, Constants.FirstMinute, Constants.LastSecond);
+            var minMinute = FindFirstSet(_minute, Constants.FirstMinute, Constants.LastMinute);
             var minHour = FindFirstSet(_hour, Constants.FirstHour, Constants.LastHour);
             var minDayOfMonth = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
-            var minMonth = FindFirstSet(_month, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+            var minMonth = FindFirstSet(_month, Constants.FirstMonth, Constants.LastMonth);
 
             //
             // Second.

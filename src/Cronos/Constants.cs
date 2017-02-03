@@ -35,7 +35,10 @@
         public const int FirstDayOfWeek = 0;
         public const int LastDayOfWeek = 7;
 
-        public const long DaysPerWeekCount = 7;
+        public const int DaysPerWeekCount = 7;
+
+        public const int MinNthDayOfWeek = 1;
+        public const int MaxNthDayOfWeek = 5;
 
         // 101011010101 0
         public const long MonthsWith31Days = 0x15AA;
