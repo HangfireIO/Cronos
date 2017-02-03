@@ -728,7 +728,7 @@ namespace Cronos
                 // eat the slash
                 pointer++;
 
-                // get the step size -- note: we don't pass the
+                // Get the step size -- note: we don't pass the
                 // names here, because the number is not an
                 // element id, it's a step size.  'low' is
                 // sent as a 0 since there is no offset either.
@@ -739,18 +739,34 @@ namespace Cronos
             }
             else
             {
-                // no step.  default==1.
+                // No step.  Default==1.
                 num3 = 1;
             }
 
-            // range. set all elements from num1 to num2, stepping
-            // by num3.  (the step is a downward-compatible extension
-            // proposed conceptually by bob@acornrc, syntactically
-            // designed then implmented by paul vixie).
+            // If upper bound less than bottom one, e.g. range 55-10 specified
+            // we'll set bits from 0 to 15 then we shift it right by 5 bits.
+            int shift = 0;
+            if (num2 < num1)
+            {
+                // Skip one of sundays.
+                if (cronFieldType == CronFieldType.DayOfWeek) high--;
+
+                shift = high - num1 + 1;
+                num2 = num2 + shift;
+                num1 = low;
+            }
+
+            // Range. set all elements from num1 to num2, stepping
+            // by num3.
             for (var i = num1; i <= num2; i += num3)
             {
                 SetBit(ref bits, i);
             }
+
+            // If we have range like 55-10 or 11-1, so num2 > num1 we have to shift bits right.
+            bits = shift == 0 
+                ? bits 
+                : bits >> shift | bits << (high - low - shift + 1);
 
             return pointer;
         }
