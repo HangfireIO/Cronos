@@ -215,6 +215,7 @@ namespace Cronos.Tests
         [InlineData("* ? * * * ?")]
         [InlineData("* * ? * * ?")]
         [InlineData("* * * * ? ?")]
+        [InlineData("* * * ? * ?")]
 
         // Unreachable dates.
 

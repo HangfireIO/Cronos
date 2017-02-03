@@ -6,12 +6,14 @@ namespace Cronos
     public enum CronExpressionFlag
     {
         None = 0x0,
-        DayOfMonthStar = 0x1,
-        DayOfWeekStar = 0x2,
-        MinuteStar = 0x4,
-        HourStar = 0x8,
-        SecondStar = 0x10,
-        DayOfMonthLast = 0x20,
-        DayOfWeekLast = 0x40,
+        SecondStar = 0x1,
+        MinuteStar = 0x2,
+        HourStar = 0x4,
+        DayOfMonthStar = 0x8,
+        DayOfWeekStar = 0x10, // TODO Remove.
+        DayOfMonthQuestion = 0x40,
+        DayOfWeekQuestion = 0x80, // TODO Remove.
+        DayOfMonthLast = 0x100,
+        DayOfWeekLast = 0x200
     }
 }

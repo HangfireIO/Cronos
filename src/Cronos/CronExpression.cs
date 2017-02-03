@@ -17,8 +17,6 @@ namespace Cronos
         private int _nthdayOfWeek;
         private bool _nearestWeekday;
 
-        // May be packed into 135 bits / 17 bytes, or 19 bytes unpacked + 4(2?) for Flags
-        // Regular CRON string is 9 + 1(\0) bytes minimum
         private CronExpression()
         {
         }
@@ -83,6 +81,10 @@ namespace Cronos
                     {
                         expression.Flags |= CronExpressionFlag.DayOfMonthStar;
                     }
+                    else if (*pointer == '?')
+                    {
+                        expression.Flags |= CronExpressionFlag.DayOfMonthQuestion;
+                    }
                     else if (*pointer == 'L')
                     {
                         expression.Flags |= CronExpressionFlag.DayOfMonthLast;
@@ -108,8 +110,8 @@ namespace Cronos
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // If Month doesn't contain months with 31 days and Day-of-month contains only 31 or
-                    // Month doesn't contain months with 30 or 31 days Day-of-month contains only 30 or 31
+                    // If Month field doesn't contain months with 31 days and Day-of-month contains only 31 or
+                    // Month field doesn't contain months with 30 or 31 days Day-of-month contains only 30 or 31
                     // it means that date is unreachable.
 
                     if (((expression._month & Constants.MonthsWith31Days) == 0 && (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
@@ -122,16 +124,19 @@ namespace Cronos
 
                     if (*pointer == '*')
                     {
-                        if((expression.Flags & CronExpressionFlag.DayOfMonthStar) != 0) throw new ArgumentException("day of week", nameof(cronExpression));
-
-                        // expression._dayOfMonth == -1 means here that '?' is specified.
-                        if (expression._dayOfMonth != -1) throw new ArgumentException("day of week", nameof(cronExpression));
+                        if (!expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion)) throw new ArgumentException("day of week", nameof(cronExpression));
 
                         expression.Flags |= CronExpressionFlag.DayOfWeekStar;
                     }
-                    else if (*pointer != '?')
+                    else if (*pointer == '?')
                     {
-                        if ((expression.Flags & CronExpressionFlag.DayOfMonthStar) != 0) throw new ArgumentException("day of week", nameof(cronExpression));
+                        if(expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion)) throw new ArgumentException("day of week", nameof(cronExpression));
+
+                        expression.Flags |= CronExpressionFlag.DayOfWeekQuestion;
+                    }
+                    else if (expression.HasFlag(CronExpressionFlag.DayOfMonthStar))
+                    {
+                         throw new ArgumentException("day of week", nameof(cronExpression));
                     }
 
                     if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek)) == null)
@@ -203,7 +208,7 @@ namespace Cronos
                         // Ambiguous
 
                         // Interval jobs should be fired in both offsets
-                        if ((Flags & (CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar)) != 0)
+                        if (HasFlag(CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar))
                         {
                             return new ZonedDateTime(now, zone, currentOffset);
                         }
@@ -514,6 +519,17 @@ namespace Cronos
             return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
         }
 
+        private static int FindFirstSet(long value, int startBit, int endBit)
+        {
+            return DeBruijin.FindFirstSet(value, startBit, endBit);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasFlag(CronExpressionFlag flag)
+        {
+            return (Flags & flag) != 0;
+        }
+
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
             if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
@@ -571,11 +587,6 @@ namespace Cronos
                 dateTime.Month,
                 dateTime.DayOfWeek,
                 dateTime.Year);
-        }
-
-        private static int FindFirstSet(long value, int startBit, int endBit)
-        {
-            return DeBruijin.FindFirstSet(value, startBit, endBit);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
