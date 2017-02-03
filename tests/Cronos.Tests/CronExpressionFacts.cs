@@ -7,7 +7,7 @@ namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
-        private static readonly DateTimeZone America = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+        private static readonly DateTimeZone EasternStandardTime = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
         private static readonly LocalDate Today = new LocalDate(2016, 12, 09);
 
@@ -527,9 +527,9 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuting = expression.Next(GetAmericaDateTime(startTime));
+            var nextExecuting = expression.Next(GetEasternTimeZoneDateTime(startTime));
 
-            Assert.Equal(GetAmericaDateTime(expectedTime), nextExecuting);
+            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), nextExecuting);
         }
 
         // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.
@@ -548,7 +548,7 @@ namespace Cronos.Tests
 
         [Theory]
 
-        // 2016/03/13 is date when the clock jumps forward from 1:59 am standard time (ST) to 3:00 am DST in America.
+        // 2016/03/13 is date when the clock jumps forward from 1:59 am standard time (ST) to 3:00 am DST in Eastern Time Zone.
         // ________1:59 ST///invalid///3:00 DST________
 
         // Run missed.
@@ -573,14 +573,14 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetAmericaDateTime(startTime));
+            var executed = expression.Next(GetEasternTimeZoneDateTime(startTime));
 
-            Assert.Equal(GetAmericaDateTime(expectedTime), executed);
+            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), executed);
         }
 
         [Theory]
 
-        // 2016/11/06 is date when the clock jumps backward from 2:00 am DST to 1:00 am ST in America.
+        // 2016/11/06 is date when the clock jumps backward from 2:00 am DST to 1:00 am ST in Eastern Time Zone.
         // _______1:00 DST____1:59 DST -> 1:00 ST____2:00 ST_______
 
         // Run at 2:00 ST because 2:00 DST is unreachable.
@@ -612,9 +612,9 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetAmericaDateTime(startTime));
+            var executed = expression.Next(GetEasternTimeZoneDateTime(startTime));
 
-            Assert.Equal(GetAmericaDateTime(expectedTime), executed);
+            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), executed);
         }
 
         [Theory]
@@ -652,9 +652,9 @@ namespace Cronos.Tests
             Assert.Equal(GetUtcDateTime(expectedTime), nextExecuting);
         }
 
-        private static ZonedDateTime GetAmericaDateTime(string dateTimeString)
+        private static ZonedDateTime GetEasternTimeZoneDateTime(string dateTimeString)
         {
-            return GetZonedDateTime(dateTimeString, America);
+            return GetZonedDateTime(dateTimeString, EasternStandardTime);
         }
 
         private static ZonedDateTime GetUtcDateTime(string dateTimeString)
