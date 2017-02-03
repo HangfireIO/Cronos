@@ -251,7 +251,7 @@ namespace Cronos
             return Next(nextFound.Value, currentOffset, zone);
         }
 
-        public LocalDateTime? Next(LocalDateTime baseTime, LocalDateTime endTime)
+        private LocalDateTime? Next(LocalDateTime baseTime, LocalDateTime endTime)
         {
             var baseYear = baseTime.Year;
             var baseMonth = baseTime.Month;
@@ -514,11 +514,6 @@ namespace Cronos
             return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
         }
 
-        private static int FindFirstSet(long value, int startBit, int endBit)
-        {
-            return DeBruijin.FindFirstSet(value, startBit, endBit);
-        }
-
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
             if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
@@ -576,6 +571,11 @@ namespace Cronos
                 dateTime.Month,
                 dateTime.DayOfWeek,
                 dateTime.Year);
+        }
+
+        private static int FindFirstSet(long value, int startBit, int endBit)
+        {
+            return DeBruijin.FindFirstSet(value, startBit, endBit);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

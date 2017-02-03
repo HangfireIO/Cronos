@@ -22,10 +22,10 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0);
-            var result = expression.Next(dateTime, dateTime.PlusYears(1));
+            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc();
+            var result = expression.Next(dateTime);
 
-            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0), result);
+            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc(), result);
         }
 
         [Fact]
