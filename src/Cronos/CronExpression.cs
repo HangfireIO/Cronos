@@ -411,6 +411,20 @@ namespace Cronos
                 goto RetryDayMonth;
             }
 
+            // L character.
+
+            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
+            {
+                var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
+                if (lastDayOfMonth > day)
+                {
+                    day = lastDayOfMonth;
+                    hour = minHour;
+                    minute = minMinute;
+                    second = minSecond;
+                }
+            }
+
             // W character.
 
             if (_nearestWeekday)
@@ -479,18 +493,6 @@ namespace Cronos
             if (nextTime > endTime)
                 return null;
 
-            //
-            // L character.
-            //
-
-            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
-            {
-                var lastDayOfMonth = Calendar.GetDaysInMonth(nextTime.Year, nextTime.Month);
-                if (nextTime.Day == lastDayOfMonth)
-                    return nextTime;
-
-                return Next(new LocalDateTime(year, month, lastDayOfMonth, 0, 0, 0, 0), endTime);
-            }
             if ((Flags & CronExpressionFlag.DayOfWeekLast) != 0)
             {
                 if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
@@ -538,11 +540,11 @@ namespace Cronos
 
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
-            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !_nearestWeekday)
             {
                 if (dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
             }
-            else if ((Flags & CronExpressionFlag.DayOfWeekLast) != 0)
+            else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
                 if (dayOfMonth + Constants.DaysPerWeekCount <= Calendar.GetDaysInMonth(year, month)) return false;
             }
@@ -563,6 +565,14 @@ namespace Cronos
                                    GetBit(_dayOfMonth, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
 
                 if (!isDayMatched) return false;
+
+                if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+                {
+                    isDayMatched = dayOfMonth == daysInMonth ||
+                                   dayOfWeek == 5 && (dayOfMonth == daysInMonth - 1 || dayOfMonth == daysInMonth - 2);
+
+                    if (!isDayMatched) return false;
+                }
             }
 
             // Make 0-based values out of these so we can use them as indicies

@@ -156,6 +156,7 @@ namespace Cronos.Tests
         [InlineData("* * * 1,2W   *  *")]
         [InlineData("* * * 1/2W   *  *")]
         [InlineData("* * * 1-2/2W *  *")]
+        [InlineData("* * * 1LW    *  *")]
         [InlineData("* * * ?/2    *  *")]
 
         // Month field is invalid.
@@ -621,6 +622,19 @@ namespace Cronos.Tests
 
         [InlineData("0 30    17 31W * *", "2018/03/30 17:45", "2018/05/31 17:30")]
         [InlineData("0 30    17 15W * *", "2016/12/30 17:45", "2017/01/16 17:30")]
+
+        // Support 'LW' in day of month field.
+
+        [InlineData("* * * LW * *", "2017/01/01", "2017/01/31")]
+        [InlineData("* * * LW * *", "2017/09/01", "2017/09/29")]
+        [InlineData("* * * LW * *", "2017/09/29", "2017/09/29")]
+        [InlineData("* * * LW * *", "2017/09/30", "2017/10/31")]
+        [InlineData("* * * LW * *", "2017/04/01", "2017/04/28")]
+        [InlineData("* * * LW * *", "2017/04/28", "2017/04/28")]
+        [InlineData("* * * LW * *", "2017/04/29", "2017/05/31")]
+        [InlineData("* * * LW * *", "2017/05/30", "2017/05/31")]
+
+        [InlineData("0 30 17 LW * *", "2017/09/29 17:45", "2017/10/31 17:30")]
 
         // Support '?'.
 
