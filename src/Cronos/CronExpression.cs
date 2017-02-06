@@ -288,22 +288,13 @@ namespace Cronos
 
             var nextMinute = FindFirstSet(_minute, minute, Constants.LastMinute);
 
-            if (minute <= Constants.LastMinute)
+            if (nextMinute != -1)
             {
-                if (nextMinute != -1)
-                {
-                    minute = nextMinute;
+                minute = nextMinute;
 
-                    if (minute > baseMinute)
-                    {
-                        second = minSecond;
-                    }
-                }
-                else
+                if (minute > baseMinute)
                 {
                     second = minSecond;
-                    minute = minMinute;
-                    hour++;
                 }
             }
             else
@@ -319,29 +310,14 @@ namespace Cronos
 
             var nextHour = FindFirstSet(_hour, hour, Constants.LastHour);
 
-            if (hour <= Constants.LastHour)
+            if (nextHour != -1)
             {
-                if (nextHour != -1)
-                {
-                    hour = nextHour;
+                hour = nextHour;
 
-                    if (hour > baseHour)
-                    {
-                        second = minSecond;
-                        minute = minMinute;
-                    }
-                }
-                else
+                if (hour > baseHour)
                 {
                     second = minSecond;
                     minute = minMinute;
-                    hour = minHour;
-                    day++;
-                    if (day > Constants.LastDayOfMonth)
-                    {
-                        day = minDayOfMonth;
-                        month++;
-                    }
                 }
             }
             else
@@ -383,25 +359,13 @@ namespace Cronos
             // Month.
             //
 
-            if (month <= Constants.LastMonth)
+            var nextMonth = FindFirstSet(_month, month, Constants.LastMonth);
+
+            if (nextMonth != -1)
             {
-                var nextMonth = FindFirstSet(_month, month, Constants.LastMonth);
+                month = nextMonth;
 
-                if (nextMonth != -1)
-                {
-                    month = nextMonth;
-                }
-
-                if (nextMonth == -1)
-                {
-                    second = minSecond;
-                    minute = minMinute;
-                    hour = minHour;
-                    day = minDayOfMonth;
-                    month = minMonth;
-                    year++;
-                }
-                else if (month > baseMonth)
+                if (month > baseMonth)
                 {
                     second = minSecond;
                     minute = minMinute;
