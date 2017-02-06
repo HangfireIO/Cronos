@@ -17,42 +17,26 @@ TBD
 
 ## Near-term plans
 
-* Support of year field and 'W' symbol.
+* Support of year field.
 * Remove dependency from NodaTime lib.
 
 ## Usage
-
-### Parse
-
-```csharp
-var expression = CronExpression.Parse("0 30 * * * ?");
-```
 
 ### Calculate next execution in zoned time
 
 ```csharp
 var expression = CronExpression.Parse("0 30 * * * ?");
-var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
-var startTime = new LocalDateTime(2017, 02, 01, 02, 54, 00).InZoneStrictly(america);
+var etc = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
-var nextExecution = expression.Next(startTime);
-
-Console.WriteLine("Next execution at " + nextExecution);
-
-// Next execution at 2017/02/01 03:30:00 AM -05:00
+var nextTime = expression.Next(SystemClock.Instance.Now.InZone(etc));
 ```
 
 ### Calculate next execution in UTC time
 
 ```csharp
 var expression = CronExpression.Parse("0 30 * * * ?");
-var startTime = new LocalDateTime(2017, 02, 01, 02, 54, 00).InUtc();
 
-var nextExecution = expression.Next(startTime);
-
-Console.WriteLine("Next execution at " + nextExecution);
-
-// Next execution at 2017/02/01 03:30:00 AM +00:00
+var nextTime = expression.Next(SystemClock.Instance.Now.InUtc());
 ```
 
 ### Daylight Saving Time
@@ -65,12 +49,12 @@ If next execution falls on invalid time when the clocks jump forward then next e
 
 ```csharp
 var expression = CronExpression.Parse("0 30 2 * * ?");
-var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+var est = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
-// 2016/03/13 - the day when DST starts in America. The clocks jump from 1:59 am ST to 3:00 am DST. 
+// 2016/03/13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
 // So duration from 2:00 am to 2:59 am is invalid.
 
-var startTime = new LocalDateTime(2016, 03, 13, 01, 50, 00).InZoneStrictly(america);
+var startTime = new LocalDateTime(2016, 03, 13, 01, 50, 00).InZoneStrictly(est);
 
 // Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
 var nextExecution = expression.Next(startTime);
@@ -88,9 +72,9 @@ When DST ends you set the clocks backward so you have duration which repeats twi
 
     ```csharp
 var expression = CronExpression.Parse("0 30 1 * * ?");
-var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+var est = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
-var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(america);
+var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(est);
 
 var nextExecution = expression.Next(startTime);
 Console.WriteLine("Next execution at " + nextExecution);
@@ -106,9 +90,9 @@ Console.WriteLine("Next execution at " + nextExecution);
 
     ```csharp
 var expression = CronExpression.Parse("0 30 * * * ?");
-var america = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+var est = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
-var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(america);
+var startTime = new LocalDateTime(2016, 11, 06, 00, 59, 00).InZoneStrictly(est);
 
 var nextExecution = expression.Next(startTime);
 Console.WriteLine("Next execution at " + nextExecution);
