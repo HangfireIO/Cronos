@@ -361,16 +361,11 @@ namespace Cronos
             // Day of month.
             //
 
-            var daysView = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
-
-            if (daysView != -1)
-            {
-                day = daysView;
-            }
+            day = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
 
             RetryDayMonth:
 
-            if (daysView == -1 || day == -1)
+            if (day == -1)
             {
                 minute = minMinute;
                 hour = minHour;
@@ -390,14 +385,14 @@ namespace Cronos
 
             if (month <= Constants.LastMonth)
             {
-                var monthsView = FindFirstSet(_month, month, Constants.LastMonth);
+                var nextMonth = FindFirstSet(_month, month, Constants.LastMonth);
 
-                if (monthsView != -1)
+                if (nextMonth != -1)
                 {
-                    month = monthsView;
+                    month = nextMonth;
                 }
 
-                if (monthsView == -1)
+                if (nextMonth == -1)
                 {
                     second = minSecond;
                     minute = minMinute;
@@ -452,6 +447,69 @@ namespace Cronos
                 goto RetryDayMonth;
             }
 
+            // W character.
+
+            if (_nearestWeekday)
+            {
+                var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
+
+                if (lastDayOfMonth < day)
+                {
+                    day = -1;
+                }
+                else
+                {
+                    var dayOfWeek = Calendar.GetDayOfWeek(new DateTime(year, month, day));
+
+                    if (dayOfWeek == DayOfWeek.Sunday)
+                    {
+                        day = day == lastDayOfMonth
+                            ? day - 2
+                            : day + 1;
+                    }
+                    else if (dayOfWeek == DayOfWeek.Saturday)
+                    {
+                        day = day == Constants.FirstDayOfMonth
+                            ? day + 2
+                            : day - 1;
+                    }
+                    if (month == baseMonth && year == baseYear)
+                    {
+                        if (day < baseDay)
+                        {
+                            day = -1;
+                            goto RetryDayMonth;
+                        }
+                        if (day == baseDay)
+                        {
+                            // There is not matched time in that day after base time.
+                            if (nextHour == -1)
+                            {
+                                day = -1;
+                                goto RetryDayMonth;
+                            }
+
+                            // Recover hour, minute and second matched for baseDay.
+                            hour = nextHour;
+                            minute = nextMinute == -1 ? minMinute : nextMinute;
+                            second = nextSecond == -1 ? minSecond : nextSecond;
+
+                            if (new LocalDateTime(year, month, day, hour, minute, second, 0) < baseTime)
+                            {
+                                day = -1;
+                                goto RetryDayMonth;
+                            }
+                        }
+                        else
+                        {
+                            hour = minHour;
+                            minute = minMinute;
+                            second = minSecond;
+                        }
+                    }
+                }
+            }
+
             var nextTime = new LocalDateTime(year, month, day, hour, minute, second, 0);
 
             if (nextTime > endTime)
@@ -473,7 +531,7 @@ namespace Cronos
             {
                 if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
                 {
-                    if (nextTime.Month != nextTime.PlusWeeks(1).Month)
+                    if (month != nextTime.PlusWeeks(1).Month)
                         return nextTime;
                 }
 
@@ -483,8 +541,8 @@ namespace Cronos
             {
                 if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
                 {
-                    if (nextTime.Month != nextTime.PlusWeeks(-1 * _nthdayOfWeek).Month &&
-                        nextTime.Month == nextTime.PlusWeeks(-1 * (_nthdayOfWeek - 1)).Month)
+                    if (month != nextTime.PlusWeeks(-1 * _nthdayOfWeek).Month &&
+                        month == nextTime.PlusWeeks(-1 * (_nthdayOfWeek - 1)).Month)
                     {
                         return nextTime;
                     }
@@ -533,10 +591,12 @@ namespace Cronos
             }
             else if (_nearestWeekday)
             {
+                var daysInMonth = Calendar.GetDaysInMonth(year, month);
                 var isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
                                    GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
                                    GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
-                                   GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3);
+                                   GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
+                                   GetBit(_dayOfMonth, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
 
                 if (!isDayMatched) return false;
             }
@@ -592,6 +652,7 @@ namespace Cronos
           char* pointer,
           CronFieldType cronFieldType)
         {
+            var singleValue = true;
             while (true)
             {
                 if ((pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType)) == null)
@@ -601,12 +662,18 @@ namespace Cronos
 
                 if (*pointer == ',')
                 {
+                    singleValue = false;
                     pointer++;
                 }
                 else
                 {
                     break;
                 }
+            }
+
+            if (*pointer == 'W' && !singleValue)
+            {
+                return null;
             }
 
             // exiting.  skip to some blanks, then skip over the blanks.
@@ -709,8 +776,12 @@ namespace Cronos
                     {
                         return null;
                     }
+                    if (*pointer == 'W')
+                    {
+                        return null;
+                    }
                 }
-                else if(*pointer == '/')
+                else if (*pointer == '/')
                 {
                     num2 = high;
                 }
@@ -733,6 +804,10 @@ namespace Cronos
                 // element id, it's a step size.  'low' is
                 // sent as a 0 since there is no offset either.
                 if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0 || num3 > high)
+                {
+                    return null;
+                }
+                if (*pointer == 'W')
                 {
                     return null;
                 }

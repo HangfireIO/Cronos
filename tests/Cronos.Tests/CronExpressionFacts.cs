@@ -127,32 +127,36 @@ namespace Cronos.Tests
 
         // Day of month field is invalid.
 
-        [InlineData("* * * 32    *  *")]
-        [InlineData("* * * 31    4  *")]
-        [InlineData("* * * 31    6  *")]
-        [InlineData("* * * 31    9  *")]
-        [InlineData("* * * 31    11 *")]
-        [InlineData("* * * 30    2  *")]
-        [InlineData("* * * 10-32 *  *")]
-        [InlineData("* * * 31-32 *  *")]
-        [InlineData("* * * -1    *  *")]
-        [InlineData("* * * -     *  *")]
-        [InlineData("* * * 8-    *  *")]
-        [InlineData("* * * ,     *  *")]
-        [InlineData("* * * ,1    *  *")]
-        [InlineData("* * * /     *  *")]
-        [InlineData("* * * 1/    *  *")]
-        [InlineData("* * * 1/0   *  *")]
-        [InlineData("* * * 1/32  *  *")]
-        [InlineData("* * * 1/k   *  *")]
-        [InlineData("* * * 1m    *  *")]
-        [InlineData("* * * T     *  *")]
-        [InlineData("* * * MON   *  *")]
-        [InlineData("* * * #     *  *")]
-        [InlineData("* * * *#3   *  *")]
-        [InlineData("* * * 4#1   *  *")]
-        [InlineData("* * * W     *  *")]
-        [InlineData("* * * ?/2   *  *")]
+        [InlineData("* * * 32     *  *")]
+        [InlineData("* * * 31     4  *")]
+        [InlineData("* * * 31     6  *")]
+        [InlineData("* * * 31     9  *")]
+        [InlineData("* * * 31     11 *")]
+        [InlineData("* * * 30     2  *")]
+        [InlineData("* * * 10-32  *  *")]
+        [InlineData("* * * 31-32  *  *")]
+        [InlineData("* * * -1     *  *")]
+        [InlineData("* * * -      *  *")]
+        [InlineData("* * * 8-     *  *")]
+        [InlineData("* * * ,      *  *")]
+        [InlineData("* * * ,1     *  *")]
+        [InlineData("* * * /      *  *")]
+        [InlineData("* * * 1/     *  *")]
+        [InlineData("* * * 1/0    *  *")]
+        [InlineData("* * * 1/32   *  *")]
+        [InlineData("* * * 1/k    *  *")]
+        [InlineData("* * * 1m     *  *")]
+        [InlineData("* * * T      *  *")]
+        [InlineData("* * * MON    *  *")]
+        [InlineData("* * * #      *  *")]
+        [InlineData("* * * *#3    *  *")]
+        [InlineData("* * * 4#1    *  *")]
+        [InlineData("* * * W      *  *")]
+        [InlineData("* * * 1-2W   *  *")]
+        [InlineData("* * * 1,2W   *  *")]
+        [InlineData("* * * 1/2W   *  *")]
+        [InlineData("* * * 1-2/2W *  *")]
+        [InlineData("* * * ?/2    *  *")]
 
         // Month field is invalid.
 
@@ -589,6 +593,34 @@ namespace Cronos.Tests
         [InlineData("* * * * * 5#3  ", "2017/01/21", "2017/02/17")]
         [InlineData("* * * * * 3#2  ", "2017/01/01", "2017/01/11")]
         [InlineData("* * * * * 2#5  ", "2017/02/01", "2017/05/30")]
+
+        // Support 'W' in day of month field.
+
+        [InlineData("* * * 1W * *", "2017/01/01", "2017/01/02")]
+        [InlineData("* * * 2W * *", "2017/01/02", "2017/01/02")]
+        [InlineData("* * * 6W * *", "2017/01/02", "2017/01/06")]
+        [InlineData("* * * 7W * *", "2017/01/02", "2017/01/06")]
+        [InlineData("* * * 7W * *", "2017/01/07", "2017/02/07")]
+        [InlineData("* * * 8W * *", "2017/01/02", "2017/01/09")]
+
+        [InlineData("* * * 30W * *", "2017/04/27", "2017/04/28")]
+        [InlineData("* * * 30W * *", "2017/04/28", "2017/04/28")]
+        [InlineData("* * * 30W * *", "2017/04/29", "2017/05/30")]
+
+        [InlineData("* * * 1W * *", "2017/04/01", "2017/04/03")]
+
+        [InlineData("0 30    17 7W * *", "2017/01/06 17:45", "2017/02/07 17:30")]
+        [InlineData("0 30,45 17 7W * *", "2017/01/06 17:45", "2017/01/06 17:45")]
+        [InlineData("0 30,55 17 7W * *", "2017/01/06 17:45", "2017/01/06 17:55")]
+
+        [InlineData("0 30    17 30W * *", "2017/04/28 17:45", "2017/05/30 17:30")]
+        [InlineData("0 30,45 17 30W * *", "2017/04/28 17:45", "2017/04/28 17:45")]
+        [InlineData("0 30,55 17 30W * *", "2017/04/28 17:45", "2017/04/28 17:55")]
+
+        [InlineData("0 30    17 30W * *", "2017/02/06 00:00", "2017/03/30 17:30")]
+
+        [InlineData("0 30    17 31W * *", "2018/03/30 17:45", "2018/05/31 17:30")]
+        [InlineData("0 30    17 15W * *", "2016/12/30 17:45", "2017/01/16 17:30")]
 
         // Support '?'.
 
