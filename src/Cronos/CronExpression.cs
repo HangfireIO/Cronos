@@ -110,8 +110,7 @@ namespace Cronos
                     // Month field doesn't contain months with 30 or 31 days Day of month contains only 30 or 31
                     // it means that date is unreachable.
 
-                    if (((expression._month & Constants.MonthsWith31Days) == 0 && (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
-                        ((expression._month & Constants.MonthsWith30Or31Days) == 0 && (expression._dayOfMonth | Constants.The30ThOr31ThDayOfMonth) == Constants.The30ThOr31ThDayOfMonth))
+                    if (!IsCronExpressionReachable(expression))
                     {
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
@@ -328,8 +327,8 @@ namespace Cronos
                 day++;
                 if (day > Constants.LastDayOfMonth)
                 {
-                    day = minDayOfMonth;
                     month++;
+                    day = GetMinDayOfMonth(year, month);
                 }
             }
 
@@ -337,7 +336,17 @@ namespace Cronos
             // Day of month.
             //
 
-            day = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
+            // Supprt L character.
+
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                var lastDay = GetLastDayWithOffset(year, month);
+                day = day <= lastDay ? lastDay : -1;
+            }
+            else
+            {
+                day = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
+            }                
 
             RetryDayMonth:
 
@@ -345,8 +354,8 @@ namespace Cronos
             {
                 minute = minMinute;
                 hour = minHour;
-                day = minDayOfMonth;
                 month++;
+                day = GetMinDayOfMonth(year, month);
             }
             else if (day > baseDay)
             {
@@ -370,7 +379,7 @@ namespace Cronos
                     second = minSecond;
                     minute = minMinute;
                     hour = minHour;
-                    day = minDayOfMonth;
+                    day = GetMinDayOfMonth(year, month);
                 }
             }
             else
@@ -378,9 +387,9 @@ namespace Cronos
                 second = minSecond;
                 minute = minMinute;
                 hour = minHour;
-                day = minDayOfMonth;
                 month = minMonth;
                 year++;
+                day = GetMinDayOfMonth(year, month);
             }
 
             //
@@ -409,20 +418,6 @@ namespace Cronos
 
                 day = -1;
                 goto RetryDayMonth;
-            }
-
-            // L character.
-
-            if ((Flags & CronExpressionFlag.DayOfMonthLast) != 0)
-            {
-                var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
-                if (lastDayOfMonth > day)
-                {
-                    day = lastDayOfMonth;
-                    hour = minHour;
-                    minute = minMinute;
-                    second = minSecond;
-                }
             }
 
             // W character.
@@ -527,9 +522,27 @@ namespace Cronos
             return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
             return DeBruijin.FindFirstSet(value, startBit, endBit);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetLastDayWithOffset(int year, int month)
+        {
+            // TODO: Conseder using Constants.MonthsWith31Days and Constants.MonthsWith30Or31Days instead of Calendar.GetDaysInMonth(year, month).
+            return FindFirstSet(_dayOfMonth, 0, Constants.LastDayOfMonth) - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetMinDayOfMonth(int year, int month)
+        {
+            if (month < Constants.FirstMonth || month > Constants.LastMonth) return -1;
+
+            return HasFlag(CronExpressionFlag.DayOfMonthLast) 
+                ? GetLastDayWithOffset(year, month)
+                : FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -540,9 +553,17 @@ namespace Cronos
 
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
+            var daysInMonth = Calendar.GetDaysInMonth(year, month);
+            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
+                    ? _dayOfMonth >> Constants.LastDayOfMonth - daysInMonth
+                    : _dayOfMonth;
+
             if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !_nearestWeekday)
             {
-                if (dayOfMonth != Calendar.GetDaysInMonth(year, month)) return false;
+                
+                var lastDayOfMonthWithOffset = GetLastDayWithOffset(year, month);
+
+                if (dayOfMonth != lastDayOfMonthWithOffset) return false;
             }
             else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
@@ -557,22 +578,14 @@ namespace Cronos
             }
             else if (_nearestWeekday)
             {
-                var daysInMonth = Calendar.GetDaysInMonth(year, month);
-                var isDayMatched = GetBit(_dayOfMonth, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
-                                   GetBit(_dayOfMonth, dayOfMonth - 1) && dayOfWeek == 1 ||
-                                   GetBit(_dayOfMonth, dayOfMonth + 1) && dayOfWeek == 5 ||
-                                   GetBit(_dayOfMonth, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
-                                   GetBit(_dayOfMonth, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
+                var isDayMatched = GetBit(dayOfMonthField, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
+                                   GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
+                                   GetBit(dayOfMonthField, dayOfMonth + 1) && dayOfWeek == 5 ||
+                                   GetBit(dayOfMonthField, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
+                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 &&
+                                   dayOfWeek == 5;
 
                 if (!isDayMatched) return false;
-
-                if (HasFlag(CronExpressionFlag.DayOfMonthLast))
-                {
-                    isDayMatched = dayOfMonth == daysInMonth ||
-                                   dayOfWeek == 5 && (dayOfMonth == daysInMonth - 1 || dayOfMonth == daysInMonth - 2);
-
-                    if (!isDayMatched) return false;
-                }
             }
 
             // Make 0-based values out of these so we can use them as indicies
@@ -592,7 +605,7 @@ namespace Cronos
                    GetBit(_hour, hour) &&
                    GetBit(_month, month) &&
                    GetBit(_dayOfWeek, dayOfWeek) &&
-                   (_nearestWeekday || GetBit(_dayOfMonth, dayOfMonth));
+                   (_nearestWeekday || GetBit(dayOfMonthField, dayOfMonth));
         }
 
         private bool IsMatch(LocalDateTime dateTime)
@@ -605,6 +618,36 @@ namespace Cronos
                 dateTime.Month,
                 dateTime.DayOfWeek,
                 dateTime.Year);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsCronExpressionReachable(CronExpression expression)
+        {
+            if (expression.HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                if (((expression._month & Constants.MonthsWith31Days) == 0 &&
+                 (FindFirstSet(expression._dayOfMonth, 0, Constants.LastDayOfMonth) - 1 < Constants.FirstDayOfMonth) ||
+                ((expression._month & Constants.MonthsWith30Or31Days) == 0 &&
+                 (FindFirstSet(expression._dayOfMonth, 0, Constants.LastDayOfMonth) - 2 < Constants.FirstDayOfMonth))))
+                {
+                    return false;
+                }
+            }
+            else if (((expression._month & Constants.MonthsWith31Days) == 0 &&
+                 (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
+                ((expression._month & Constants.MonthsWith30Or31Days) == 0 &&
+                 (expression._dayOfMonth | Constants.The30ThOr31ThDayOfMonth) == Constants.The30ThOr31ThDayOfMonth))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetAllBits(out long bits)
+        {
+            bits = ~0L;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -674,7 +717,7 @@ namespace Cronos
             
             if (*pointer == '*')
             {
-                // '*' means "first-last" but can still be modified by /step
+                // '*' means "first-last" but can still be modified by /step.
                 num1 = low;
                 num2 = high;
 
@@ -682,7 +725,7 @@ namespace Cronos
 
                 if (*pointer != '/')
                 {
-                    bits = ~0L;
+                    SetAllBits(out bits);
                     return pointer;
                 }
             }
@@ -697,7 +740,7 @@ namespace Cronos
 
                 if (*pointer == '/') return null;
 
-                bits = ~0L;
+                SetAllBits(out bits);
                 return pointer;
             }
             else if(*pointer == 'L')
@@ -706,7 +749,25 @@ namespace Cronos
 
                 pointer++;
 
-                bits = ~0L;
+                SetBit(ref bits, Constants.LastDayOfMonth);
+
+                if (*pointer == '-')
+                {
+                    // Eat the dash.
+                    pointer++;
+
+                    int lastMonthOffset;
+
+                    // Get the number following the dash.
+                    if ((pointer = GetNumber(out lastMonthOffset, 0, null, pointer)) == null)
+                    {
+                        return null;
+                    }
+
+                    if (lastMonthOffset < 0 || lastMonthOffset >= high) return null;
+
+                    bits = bits >> lastMonthOffset;
+                }
                 return pointer;
             }
             else
@@ -730,10 +791,10 @@ namespace Cronos
 
                 if (*pointer == '-')
                 {
-                    // eat the dash
+                    // Eat the dash.
                     pointer++;
 
-                    // get the number following the dash
+                    // Get the number following the dash.
                     if ((pointer = GetNumber(out num2, low, names, pointer)) == null)
                     {
                         return null;
@@ -744,16 +805,9 @@ namespace Cronos
                     // eg:
                     //     5-64/30 * * * *
                     //
-                    // Code adapted from set_elements() where this error was probably intended
-                    // to be catched.
-                    if (num2 < low || num2 > high)
-                    {
-                        return null;
-                    }
-                    if (*pointer == 'W')
-                    {
-                        return null;
-                    }
+                    if (num2 < low || num2 > high) return null;
+
+                    if (*pointer == 'W') return null;
                 }
                 else if (*pointer == '/')
                 {
