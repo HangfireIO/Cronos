@@ -6,7 +6,7 @@ TBD.
 
 ## Features
 
-* Parse cron expressions comprising six or seven fields.
+* Parse cron expressions comprising five or six fields.
 * Calculate next execution in zoned time and UTC.
 * Support extended format with non-standard characters: ?, L, W, #.
 * Handle the transition from standard time to daylight saving time and vice versa.
@@ -17,7 +17,6 @@ TBD
 
 ## Near-term plans
 
-* Support of year field.
 * Remove dependency from NodaTime lib.
 
 ## Usage
@@ -25,7 +24,7 @@ TBD
 ### Calculate next execution in zoned time
 
 ```csharp
-var expression = CronExpression.Parse("0 30 * * * ?");
+var expression = CronExpression.Parse("0 30 * * * *");
 var etc = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
 var nextTime = expression.Next(SystemClock.Instance.Now.InZone(etc));
@@ -34,7 +33,7 @@ var nextTime = expression.Next(SystemClock.Instance.Now.InZone(etc));
 ### Calculate next execution in UTC time
 
 ```csharp
-var expression = CronExpression.Parse("0 30 * * * ?");
+var expression = CronExpression.Parse("0 30 * * * *");
 
 var nextTime = expression.Next(SystemClock.Instance.Now.InUtc());
 ```
@@ -48,10 +47,10 @@ Cronos handles the transition from standard time (ST) to Daylight saving time (D
 If next execution falls on invalid time when the clocks jump forward then next execution will shift to next valid time. See example:
 
 ```csharp
-var expression = CronExpression.Parse("0 30 2 * * ?");
+var expression = CronExpression.Parse("0 30 2 * * *");
 var est = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
 
-// 2016/03/13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
+// 2016-03-13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
 // So duration from 2:00 am to 2:59 am is invalid.
 
 var startTime = new LocalDateTime(2016, 03, 13, 01, 50, 00).InZoneStrictly(est);
@@ -61,7 +60,7 @@ var nextExecution = expression.Next(startTime);
 
 Console.WriteLine("Next execution at " + nextExecution);
 
-// Next execution at 2016/03/13 03:00:00 AM -04:00
+// Next execution at 2016-03-13 03:00:00 AM -04:00
 ```
 
 **Setting the clocks backward**
@@ -82,8 +81,8 @@ Console.WriteLine("Next execution at " + nextExecution);
 nextExecution = expression.Next(nextExecution?.Plus(Duration.FromSeconds(1));
 Console.WriteLine("Next execution at " + nextExecution);
 
-// Next execution at 2016/03/13 01:30:00 AM -04:00
-// Next execution at 2016/03/13 02:30:00 AM -05:00
+// Next execution at 2016-03-13 01:30:00 AM -04:00
+// Next execution at 2016-03-13 02:30:00 AM -05:00
     ```
 
 * Cron expression describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
@@ -103,9 +102,9 @@ Console.WriteLine("Next execution at " + nextExecution);
 nextExecution = expression.Next(nextExecution?.Plus(Duration.FromSeconds(1));
 Console.WriteLine("Next execution at " + nextExecution);
 
-// Next execution at 2016/11/06 01:30:00 AM -04:00
-// Next execution at 2016/11/06 01:30:00 AM -05:00
-// Next execution at 2016/11/06 02:30:00 AM -05:00
+// Next execution at 2016-11-06 01:30:00 AM -04:00
+// Next execution at 2016-11-06 01:30:00 AM -05:00
+// Next execution at 2016-11-06 02:30:00 AM -05:00
     ```
 
 
@@ -115,13 +114,12 @@ Cronos uses a cron expression comprising six or seven fields separated by white 
 
 | Field        | Required | Allowed values  | Allowed special charecters | Comment                  |
 |--------------|----------|-----------------|----------------------------|--------------------------|
-| Seconds      | Yes      | 0-59            | * , - /                    |                          |
+| Seconds      | No       | 0-59            | * , - /                    |                          |
 | Minutes      | Yes      | 0-59            | * , - /                    |                          |
 | Hours        | Yes      | 0-23            | * , - /                    |                          |
 | Day of month | Yes      | 1-31            | * , - / ? L W              |                          |
 | Month        | Yes      | 1-12 or JAN-DEC | * , - /                    |                          |
 | Day of week  | Yes      | 0-7 or SUN-SAT  | * , - / ? L #              | 0 and 7 standing for SUN |
-| Year         | No       | 1970–2099       | * , - /                    |                          |
 
 *
 :  "All values". Used to select all values within a field. For example, '*'' in the hour field means "every hour".
@@ -130,7 +128,7 @@ Cronos uses a cron expression comprising six or seven fields separated by white 
 :  Commas are used to separate items of a list. For example, using "MON,WED,FRI" in the 5th field (day of week) means Mondays, Wednesdays and Fridays.
 
 **-**
-:  Hyphens define ranges. For example, 2000-2010 indicates every year between 2000 and 2010, inclusive.
+:  Hyphens define ranges. For example, 04-06 indicates every month between april and june, inclusive.
 
 **L**
 :  'L' stands for "last". When used in the day-of-week field, it allows you to specify constructs such as "the last Friday" ("5L") of a given month. In the day-of-month field, it specifies the last day of the month.
