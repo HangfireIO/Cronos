@@ -35,20 +35,29 @@ namespace Cronos
             {
                 fixed (char* value = cronExpression)
                 {
-                    // Second.
+                    var fieldsCount = CountFields(value);
 
                     var pointer = value;
 
                     pointer = SkipWhiteSpaces(pointer);
 
-                    if (*pointer == '*')
-                    {
-                        expression.Flags |= CronExpressionFlag.SecondStar;
-                    }
+                    // Second.
 
-                    if ((pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second)) == null)
+                    if (fieldsCount == Constants.CronWithSecondsFieldsCount)
                     {
-                        throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
+                        if (*pointer == '*')
+                        {
+                            expression.Flags |= CronExpressionFlag.SecondStar;
+                        }
+
+                        if ((pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second)) == null)
+                        {
+                            throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
+                        }
+                    }
+                    else
+                    {
+                        SetAllBits(out expression._second);
                     }
 
                     // Minute.
@@ -464,8 +473,8 @@ namespace Cronos
 
                             // Recover hour, minute and second matched for baseDay.
                             hour = nextHour;
-                            minute = nextMinute == -1 ? minMinute : nextMinute;
-                            second = nextSecond == -1 ? minSecond : nextSecond;
+                            minute = nextMinute == -1 || nextHour> baseHour ? minMinute : nextMinute;
+                            second = nextSecond == -1 || nextMinute > baseMinute ? minSecond : nextSecond;
 
                             if (new LocalDateTime(year, month, day, hour, minute, second, 0) < baseTime)
                             {
@@ -969,6 +978,20 @@ namespace Cronos
             }
 
             return code;
+        }
+
+        private static unsafe int CountFields(char* pointer)
+        {
+            int length = 0;
+            while (*(pointer = SkipWhiteSpaces(pointer)) != '\0')
+            {
+                while (*pointer != '\t' && *pointer != ' ' && *pointer != '\0')
+                {
+                    pointer++;
+                }
+                length++;
+            }
+            return length;
         }
     }
 }

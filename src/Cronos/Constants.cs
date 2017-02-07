@@ -16,6 +16,8 @@
             "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
         };
 
+        public const int CronWithSecondsFieldsCount = 6;
+
         public const int FirstSecond = 0;
         public const int LastSecond = 59;
 
