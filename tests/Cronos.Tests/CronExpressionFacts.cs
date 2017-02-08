@@ -8,6 +8,7 @@ namespace Cronos.Tests
     public class CronExpressionFacts
     {
         private static readonly DateTimeZone EasternStandardTime = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+        private static readonly DateTimeZone JordanStandardTime = DateTimeZoneProviders.Bcl.GetZoneOrNull("Jordan Standard Time");
 
         private static readonly LocalDate Today = new LocalDate(2016, 12, 09);
 
@@ -823,6 +824,40 @@ namespace Cronos.Tests
         }
 
         [Theory]
+        [InlineData("30 0 L  * *", "2017/03/30 23:59 ST ", "2017/03/31 01:00 DST")]
+        [InlineData("30 0 L  * *", "2017/03/31 01:00 DST", "2017/04/30 00:30 DST")]
+        [InlineData("30 0 LW * *", "2018/03/29 23:59 ST ", "2018/03/30 01:00 DST")]
+        [InlineData("30 0 LW * *", "2018/03/30 01:00 DST", "2018/04/30 00:30 DST")]
+        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsForwardOnFriday(string cronExpression, string startTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var executed = expression.Next(GetJordanTimeZoneDateTime(startTime));
+
+            // TODO: Rounding error.
+            if (executed.Value.Millisecond == 999)
+            {
+                executed = executed.Value.Plus(Duration.FromMilliseconds(1));
+            }
+
+            Assert.Equal(GetJordanTimeZoneDateTime(expectedTime), executed);
+        }
+
+        [Theory]
+        [InlineData("30 0 L  * *", "2014/10/31 00:30 ST ", "2014/11/30 00:30 ST ")]
+        [InlineData("30 0 L  * *", "2014/10/31 00:30 DST", "2014/10/31 00:30 DST")]
+        [InlineData("30 0 LW * *", "2015/10/30 00:30 ST ", "2015/11/30 00:30 ST ")]
+        [InlineData("30 0 LW * *", "2015/10/30 00:30 DST", "2015/10/30 00:30 DST")]
+        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsBackwardOnFriday(string cronExpression, string startTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var executed = expression.Next(GetJordanTimeZoneDateTime(startTime));
+
+            Assert.Equal(GetJordanTimeZoneDateTime(expectedTime), executed);
+        }
+
+        [Theory]
 
         // Basic facts.
 
@@ -1249,6 +1284,12 @@ namespace Cronos.Tests
 
             Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), nextExecuting);
         }
+
+        private static ZonedDateTime GetJordanTimeZoneDateTime(string dateTimeString)
+        {
+            return GetZonedDateTime(dateTimeString, JordanStandardTime);
+        }
+
 
         private static ZonedDateTime GetEasternTimeZoneDateTime(string dateTimeString)
         {
