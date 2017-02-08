@@ -257,10 +257,6 @@ namespace Cronos
             var baseMinute = baseTime.Minute;
             var baseSecond = baseTime.Second;
 
-            var endYear = endTime.Year;
-            var endMonth = endTime.Month;
-            var endDay = endTime.Day;
-
             var year = baseYear;
             var month = baseMonth;
             var day = baseDay;
@@ -271,7 +267,6 @@ namespace Cronos
             var minSecond = FindFirstSet(_second, Constants.FirstSecond, Constants.LastSecond);
             var minMinute = FindFirstSet(_minute, Constants.FirstMinute, Constants.LastMinute);
             var minHour = FindFirstSet(_hour, Constants.FirstHour, Constants.LastHour);
-            var minDayOfMonth = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
             var minMonth = FindFirstSet(_month, Constants.FirstMonth, Constants.LastMonth);
 
             //
@@ -334,37 +329,23 @@ namespace Cronos
                 minute = minMinute;
                 hour = minHour;
                 day++;
-                if (day > Constants.LastDayOfMonth)
-                {
-                    month++;
-                    day = GetMinDayOfMonth(year, month);
-                }
             }
 
             //
             // Day of month.
-            //
-
-            // Supprt L character.
-
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
-            {
-                var lastDay = GetLastDayWithOffset(year, month);
-                day = day <= lastDay ? lastDay : -1;
-            }
-            else
-            {
-                day = FindFirstSet(_dayOfMonth, day, Constants.LastDayOfMonth);
-            }                
+            //         
 
             RetryDayMonth:
 
-            if (day == -1)
+            day = GetNextDayOfMonth(year, month, day);
+
+            if (day < Constants.FirstDayOfMonth || day > Constants.LastDayOfMonth)
             {
+                month++;
+                day = GetNextDayOfMonth(year, month);
+                second = minSecond;
                 minute = minMinute;
                 hour = minHour;
-                month++;
-                day = GetMinDayOfMonth(year, month);
             }
             else if (day > baseDay)
             {
@@ -381,15 +362,15 @@ namespace Cronos
 
             if (nextMonth != -1)
             {
-                month = nextMonth;
-
-                if (month > baseMonth)
+                if (nextMonth > month)
                 {
                     second = minSecond;
                     minute = minMinute;
                     hour = minHour;
-                    day = GetMinDayOfMonth(year, month);
+                    day = GetNextDayOfMonth(year, month);
                 }
+
+                month = nextMonth;
             }
             else
             {
@@ -398,7 +379,168 @@ namespace Cronos
                 hour = minHour;
                 month = minMonth;
                 year++;
-                day = GetMinDayOfMonth(year, month);
+                day = GetNextDayOfMonth(year, month);
+            }
+
+            if (day < Constants.FirstDayOfMonth || day > Constants.LastDayOfMonth)
+            {
+                day = -1;
+                goto RetryDayMonth;
+            }
+
+            // W character.
+
+            if (_nearestWeekday)
+            {
+                day = GetNearestWeekDay(year, month, day);
+
+                if (month == baseMonth && year == baseYear)
+                {
+                    if (day < baseDay)
+                    {
+                        day = -1;
+                        goto RetryDayMonth;
+                    }
+                    if (day == baseDay)
+                    {
+                        // There is not matched time in that day after base time.
+                        if (nextHour == -1)
+                        {
+                            day = -1;
+                            goto RetryDayMonth;
+                        }
+
+                        // Recover hour, minute and second matched for baseDay.
+                        hour = nextHour;
+                        minute = nextHour > baseHour ? minMinute : nextMinute;
+                        second = nextMinute > baseMinute ? minSecond : nextSecond;
+                    }
+                    else
+                    {
+                        hour = minHour;
+                        minute = minMinute;
+                        second = minSecond;
+                    }
+                }
+            }
+
+            var nextTime = new LocalDateTime(year, month, day, hour, minute, second, 0);
+
+            if (nextTime > endTime)
+                return null;
+
+            // L character in day of week.
+
+            if (HasFlag(CronExpressionFlag.DayOfWeekLast))
+            {
+                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
+                {
+                    if (month != nextTime.PlusWeeks(1).Month)
+                        return nextTime;
+                }
+
+                second = minSecond;
+                minute = minMinute;
+                hour = minHour;
+                day++;
+
+                goto RetryDayMonth;
+            }
+
+            // # character.
+
+            if (_nthdayOfWeek != 0)
+            {
+                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
+                {
+                    if (month != nextTime.PlusWeeks(-1 * _nthdayOfWeek).Month &&
+                        month == nextTime.PlusWeeks(-1 * (_nthdayOfWeek - 1)).Month)
+                    {
+                        return nextTime;
+                    }
+                }
+
+                second = minSecond;
+                minute = minMinute;
+                hour = minHour;
+                day++;
+
+                goto RetryDayMonth;
+            }
+
+            //
+            // Day of week.
+            //
+
+            if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
+                return nextTime;
+
+            second = minSecond;
+            minute = minMinute;
+            hour = minHour;
+            day++;
+
+            goto RetryDayMonth;
+        }
+
+        private int GetNearestWeekDay(int year, int month, int day)
+        {
+            var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
+
+            var dayOfWeek = Calendar.GetDayOfWeek(new DateTime(year, month, day));
+
+            if (dayOfWeek == DayOfWeek.Sunday)
+            {
+                return day == lastDayOfMonth
+                    ? day - 2
+                    : day + 1;
+            }
+            if (dayOfWeek == DayOfWeek.Saturday)
+            {
+                return day == Constants.FirstDayOfMonth
+                    ? day + 2
+                    : day - 1;
+            }
+
+            return day;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int FindFirstSet(long value, int startBit, int endBit)
+        {
+            return DeBruijin.FindFirstSet(value, startBit, endBit);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetLastDayWithOffset(int year, int month)
+        {
+            if (month > Constants.LastMonth) return -1;
+
+            var minDay = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+
+            if (minDay == -1) return -1;
+
+            return minDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int GetNextDayOfMonth(int year, int month, int startDay = Constants.FirstDayOfMonth)
+        {
+            if (month < Constants.FirstMonth || month > Constants.LastMonth) return -1;
+
+            if (startDay == -1) return -1;
+
+            var nextDay = FindFirstSet(_dayOfMonth, startDay, Constants.LastDayOfMonth);
+
+            if (nextDay == -1) return -1;
+
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                nextDay = nextDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
+
+                if (nextDay < Constants.FirstDayOfMonth) return -1;
+
+                return nextDay;
             }
 
             //
@@ -411,147 +553,16 @@ namespace Cronos
             // and the date part has changed then we need to determine whether
             // the day still makes sense for the given year and month. If the
             // day is beyond the last possible value, then the day/month part
-            // for the schedule is re-evaluated. So an expression like "0 0
-            // 15,31 * *" will yield the following sequence starting on midnight
+            // for the schedule is re-evaluated. So an expression like "0 0 15,31 * *" 
+            // will yield the following sequence starting on midnight
             // of Jan 1, 2000:
             //
             //  Jan 15, Jan 31, Feb 15, Mar 15, Apr 15, Apr 31, ...
             //
 
-            var dateChanged = day != baseDay || month != baseMonth || year != baseYear;
-
-            if (day > 28 && dateChanged && day > Calendar.GetDaysInMonth(year, month))
-            {
-                if (year >= endYear && month >= endMonth && day >= endDay)
-                    return endTime;
-
-                day = -1;
-                goto RetryDayMonth;
-            }
-
-            // W character.
-
-            if (_nearestWeekday)
-            {
-                var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
-
-                if (lastDayOfMonth < day)
-                {
-                    day = -1;
-                }
-                else
-                {
-                    var dayOfWeek = Calendar.GetDayOfWeek(new DateTime(year, month, day));
-
-                    if (dayOfWeek == DayOfWeek.Sunday)
-                    {
-                        day = day == lastDayOfMonth
-                            ? day - 2
-                            : day + 1;
-                    }
-                    else if (dayOfWeek == DayOfWeek.Saturday)
-                    {
-                        day = day == Constants.FirstDayOfMonth
-                            ? day + 2
-                            : day - 1;
-                    }
-                    if (month == baseMonth && year == baseYear)
-                    {
-                        if (day < baseDay)
-                        {
-                            day = -1;
-                            goto RetryDayMonth;
-                        }
-                        if (day == baseDay)
-                        {
-                            // There is not matched time in that day after base time.
-                            if (nextHour == -1)
-                            {
-                                day = -1;
-                                goto RetryDayMonth;
-                            }
-
-                            // Recover hour, minute and second matched for baseDay.
-                            hour = nextHour;
-                            minute = nextMinute == -1 || nextHour> baseHour ? minMinute : nextMinute;
-                            second = nextSecond == -1 || nextMinute > baseMinute ? minSecond : nextSecond;
-
-                            if (new LocalDateTime(year, month, day, hour, minute, second, 0) < baseTime)
-                            {
-                                day = -1;
-                                goto RetryDayMonth;
-                            }
-                        }
-                        else
-                        {
-                            hour = minHour;
-                            minute = minMinute;
-                            second = minSecond;
-                        }
-                    }
-                }
-            }
-
-            var nextTime = new LocalDateTime(year, month, day, hour, minute, second, 0);
-
-            if (nextTime > endTime)
-                return null;
-
-            if ((Flags & CronExpressionFlag.DayOfWeekLast) != 0)
-            {
-                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
-                {
-                    if (month != nextTime.PlusWeeks(1).Month)
-                        return nextTime;
-                }
-
-                return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
-            }
-            if (_nthdayOfWeek != 0)
-            {
-                if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
-                {
-                    if (month != nextTime.PlusWeeks(-1 * _nthdayOfWeek).Month &&
-                        month == nextTime.PlusWeeks(-1 * (_nthdayOfWeek - 1)).Month)
-                    {
-                        return nextTime;
-                    }
-                }
-
-                return Next(new LocalDateTime(year, month, day, 0, 0, 0, 0).PlusDays(1), endTime);
-            }
-
-            //
-            // Day of week.
-            //
-
-            if (((_dayOfWeek >> nextTime.DayOfWeek) & 1) != 0)
-                return nextTime;
-
-            return Next(new LocalDateTime(year, month, day, 23, 59, 59, 0).PlusSeconds(1), endTime);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int FindFirstSet(long value, int startBit, int endBit)
-        {
-            return DeBruijin.FindFirstSet(value, startBit, endBit);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetLastDayWithOffset(int year, int month)
-        {
-            // TODO: Conseder using Constants.MonthsWith31Days and Constants.MonthsWith30Or31Days instead of Calendar.GetDaysInMonth(year, month).
-            return FindFirstSet(_dayOfMonth, 0, Constants.LastDayOfMonth) - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetMinDayOfMonth(int year, int month)
-        {
-            if (month < Constants.FirstMonth || month > Constants.LastMonth) return -1;
-
-            return HasFlag(CronExpressionFlag.DayOfMonthLast) 
-                ? GetLastDayWithOffset(year, month)
-                : FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+            return nextDay > 28 && nextDay > Calendar.GetDaysInMonth(year, month)
+                    ? -1
+                    : nextDay;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -569,7 +580,6 @@ namespace Cronos
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !_nearestWeekday)
             {
-                
                 var lastDayOfMonthWithOffset = GetLastDayWithOffset(year, month);
 
                 if (dayOfMonth != lastDayOfMonthWithOffset) return false;

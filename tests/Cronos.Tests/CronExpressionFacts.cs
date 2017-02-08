@@ -204,7 +204,6 @@ namespace Cronos.Tests
         [InlineData("* * * * * W     ")]
         [InlineData("* * * * * LW    ")]
 
-
         // '?' can be specfied only for day of month or day of week.
 
         [InlineData("? * * * * *")]
@@ -702,20 +701,6 @@ namespace Cronos.Tests
 
             Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), nextExecuting);
         }
-
-        // TODO: StackOverflow exception. Next method should handle 'W' symbol in cron expression.
-
-        //[Theory]
-        //[InlineData("* * * 1W * ?", "2017/1/2", "2017/1/2")]
-        //[InlineData("* * * 1W * ?", "2017/1/1", "2017/1/2")]
-        //public void Next_ReturnsCorrectValue_WhenWIsUsedInDayOfMonth(string cronExpression, string startTime, string expectedTime)
-        //{
-        //    var expression = CronExpression.Parse(cronExpression);
-
-        //    var result = expression.Next(GetZonedDateTime(startTime));
-
-        //    Assert.Equal(result, GetZonedDateTime(expectedTime));
-        //}
 
         [Theory]
 
