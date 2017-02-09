@@ -532,53 +532,23 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetLastDayWithOffset(int year, int month)
-        {
-            var lastDay = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
-
-            return lastDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetNextDayOfMonth(int year, int month, int startDay)
         {
             if (month < Constants.FirstMonth || month > Constants.LastMonth) return -1;
 
             if (startDay == -1) return -1;
 
-            var nextDay = FindFirstSet(_dayOfMonth, startDay, Constants.LastDayOfMonth);
+            var daysInMonth = Calendar.GetDaysInMonth(year, month);
+
+            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
+                   ? _dayOfMonth >> (Constants.LastDayOfMonth - daysInMonth)
+                   : _dayOfMonth;
+
+            var nextDay = FindFirstSet(dayOfMonthField, startDay, daysInMonth);
 
             if (nextDay == -1) return -1;
 
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
-            {
-                nextDay = nextDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
-
-                if (nextDay < startDay) return -1;
-
-                return nextDay;
-            }
-
-            //
-            // The day field in a cron expression spans the entire range of days
-            // in a month, which is from 1 to 31. However, the number of days in
-            // a month tend to be variable depending on the month (and the year
-            // in case of February). So a check is needed here to see if the
-            // date is a border case. If the day happens to be beyond 28
-            // (meaning that we're dealing with the suspicious range of 29-31)
-            // and the date part has changed then we need to determine whether
-            // the day still makes sense for the given year and month. If the
-            // day is beyond the last possible value, then the day/month part
-            // for the schedule is re-evaluated. So an expression like "0 0 15,31 * *" 
-            // will yield the following sequence starting on midnight
-            // of Jan 1, 2000:
-            //
-            //  Jan 15, Jan 31, Feb 15, Mar 15, Apr 15, Apr 31, ...
-            //
-
-            return nextDay > 28 && nextDay > Calendar.GetDaysInMonth(year, month)
-                    ? -1
-                    : nextDay;
+            return nextDay;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -590,26 +560,22 @@ namespace Cronos
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
             var daysInMonth = Calendar.GetDaysInMonth(year, month);
+
             var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
-                    ? _dayOfMonth >> Constants.LastDayOfMonth - daysInMonth
+                    ? _dayOfMonth >> (Constants.LastDayOfMonth - daysInMonth)
                     : _dayOfMonth;
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !_nearestWeekday)
             {
-                var lastDayOfMonthWithOffset = GetLastDayWithOffset(year, month);
-
-                if (dayOfMonth != lastDayOfMonthWithOffset) return false;
+                if (!GetBit(dayOfMonthField, dayOfMonth)) return false;
             }
             else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
-                if (dayOfMonth + Constants.DaysPerWeekCount <= Calendar.GetDaysInMonth(year, month)) return false;
+                if (!IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
             }
             else if (_nthdayOfWeek != 0)
             {
-                if ((dayOfMonth - (_nthdayOfWeek - 1) * Constants.DaysPerWeekCount <= 0) || (dayOfMonth - _nthdayOfWeek * Constants.DaysPerWeekCount) > 0)
-                {
-                    return false;
-                }
+                if(!IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
             }
             else if (_nearestWeekday)
             {
@@ -617,8 +583,7 @@ namespace Cronos
                                    GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
                                    GetBit(dayOfMonthField, dayOfMonth + 1) && dayOfWeek == 5 ||
                                    GetBit(dayOfMonthField, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
-                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 &&
-                                   dayOfWeek == 5;
+                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
 
                 if (!isDayMatched) return false;
             }
