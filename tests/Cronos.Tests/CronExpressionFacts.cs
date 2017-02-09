@@ -896,6 +896,12 @@ namespace Cronos.Tests
         [InlineData("* * L-2  4    SUN#5", "1970/01/01")]
         [InlineData("* * L-3  *    SUN#5", "1970/01/01")]
         [InlineData("* * L-10 *    SUN#4", "1970/01/01")]
+
+        [InlineData("* * 1W   *    SUN  ", "1970/01/01")]
+        [InlineData("* * 4W   *    0    ", "1970/01/01")]
+        [InlineData("* * 7W   *    7    ", "1970/01/01")]
+        [InlineData("* * 5W   *    SAT  ", "1970/01/01")]
+        [InlineData("* * 5W   *    SAT  ", "1970/01/01")]
         public void Next_ReturnNull_WhenCronExpressionIsUnreachable(string cronExpression, string startTime)
         {
             var expression = CronExpression.Parse(cronExpression);
