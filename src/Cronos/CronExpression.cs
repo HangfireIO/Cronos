@@ -115,15 +115,6 @@ namespace Cronos
                         throw new ArgumentException("month", nameof(cronExpression));
                     }
 
-                    // If Month field doesn't contain months with 31 days and Day of month contains only 31 or
-                    // Month field doesn't contain months with 30 or 31 days Day of month contains only 30 or 31
-                    // it means that date is unreachable.
-
-                    if (!IsCronExpressionReachable(expression))
-                    {
-                        throw new ArgumentException("month", nameof(cronExpression));
-                    }
-
                     // Day of week.
 
                     if (*pointer == '?' && expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
@@ -389,6 +380,8 @@ namespace Cronos
 
             if (day < Constants.FirstDayOfMonth || day > Constants.LastDayOfMonth)
             {
+                if (new LocalDateTime(year, month, Constants.FirstDayOfMonth, hour, minute, second, 0) > endTime) return null;
+
                 day = -1;
                 goto RetryDayMonth;
             }
@@ -541,13 +534,9 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetLastDayWithOffset(int year, int month)
         {
-            if (month > Constants.LastMonth) return -1;
+            var lastDay = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
 
-            var minDay = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
-
-            if (minDay == -1) return -1;
-
-            return minDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
+            return lastDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -664,30 +653,6 @@ namespace Cronos
                 dateTime.Month,
                 dateTime.DayOfWeek,
                 dateTime.Year);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsCronExpressionReachable(CronExpression expression)
-        {
-            if (expression.HasFlag(CronExpressionFlag.DayOfMonthLast))
-            {
-                if (((expression._month & Constants.MonthsWith31Days) == 0 &&
-                 (FindFirstSet(expression._dayOfMonth, 0, Constants.LastDayOfMonth) - 1 < Constants.FirstDayOfMonth) ||
-                ((expression._month & Constants.MonthsWith30Or31Days) == 0 &&
-                 (FindFirstSet(expression._dayOfMonth, 0, Constants.LastDayOfMonth) - 2 < Constants.FirstDayOfMonth))))
-                {
-                    return false;
-                }
-            }
-            else if (((expression._month & Constants.MonthsWith31Days) == 0 &&
-                 (expression._dayOfMonth | Constants.The31ThDayOfMonth) == Constants.The31ThDayOfMonth) ||
-                ((expression._month & Constants.MonthsWith30Or31Days) == 0 &&
-                 (expression._dayOfMonth | Constants.The30ThOr31ThDayOfMonth) == Constants.The30ThOr31ThDayOfMonth))
-            {
-                return false;
-            }
-
-            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

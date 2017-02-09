@@ -42,15 +42,6 @@
         public const int MinNthDayOfWeek = 1;
         public const int MaxNthDayOfWeek = 5;
 
-        // 101011010101 0
-        public const long MonthsWith31Days = 0x15AA;
-        // 111111111101 0
-        public const long MonthsWith30Or31Days = 0x1FFA;
-
-        public const long The31ThDayOfMonth = 0x80000000;
-        public const long The30ThDayOfMonth = 0x40000000;
-        public const long The30ThOr31ThDayOfMonth = The30ThDayOfMonth | The31ThDayOfMonth;
-
         static Constants()
         {
             MonthNamesArray = new int[MonthNames.Length];
