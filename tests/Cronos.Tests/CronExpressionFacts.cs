@@ -902,6 +902,41 @@ namespace Cronos.Tests
         [InlineData("* * 7W   *    7    ", "1970/01/01")]
         [InlineData("* * 5W   *    SAT  ", "1970/01/01")]
         [InlineData("* * 5W   *    SAT  ", "1970/01/01")]
+
+        [InlineData("* * 14W  *    6#2  ", "1970/01/01")]
+
+        [InlineData("* * 7W   *    FRI#2", "1970/01/01")]
+        [InlineData("* * 14W  *    TUE#3", "1970/01/01")]
+        [InlineData("* * 11W  *    MON#3", "1970/01/01")]
+        [InlineData("* * 21W  *    TUE#4", "1970/01/01")]
+        [InlineData("* * 28W  *    SAT#5", "1970/01/01")]
+
+        [InlineData("* * 21W  *    0L   ", "1970/01/01")]
+        [InlineData("* * 19W  *    1L   ", "1970/01/01")]
+        [InlineData("* * 1W   *    1L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    2L   ", "1970/01/01")]
+        [InlineData("* * 2W   *    2L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    3L   ", "1970/01/01")]
+        [InlineData("* * 3W   *    3L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    4L   ", "1970/01/01")]
+        [InlineData("* * 4W   *    4L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    5L   ", "1970/01/01")]
+        [InlineData("* * 5W   *    5L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    6L   ", "1970/01/01")]
+        [InlineData("* * 21W  *    7L   ", "1970/01/01")]
+
+        [InlineData("* * LW   *    SUN  ", "1970/01/01")]
+        [InlineData("* * LW   *    0    ", "1970/01/01")]
+        [InlineData("* * LW   *    0L   ", "1970/01/01")]
+        [InlineData("* * LW   *    SAT  ", "1970/01/01")]
+        [InlineData("* * LW   *    6    ", "1970/01/01")]
+        [InlineData("* * LW   *    6L   ", "1970/01/01")]
+
+        [InlineData("* * LW   *    1#1  ", "1970/01/01")]
+        [InlineData("* * LW   *    2#2  ", "1970/01/01")]
+        [InlineData("* * LW   *    3#3  ", "1970/01/01")]
+        [InlineData("* * LW   1    4#4  ", "1970/01/01")]
+        [InlineData("* * LW   3-12 4#4  ", "1970/01/01")]
         public void Next_ReturnNull_WhenCronExpressionIsUnreachable(string cronExpression, string startTime)
         {
             var expression = CronExpression.Parse(cronExpression);
@@ -909,9 +944,9 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant + Duration.FromStandardDays(365 * 200);
 
-            var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
+            var nextTime = expression.Next(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Null(executed);
+            Assert.Null(nextTime);
         }
 
         [Theory]

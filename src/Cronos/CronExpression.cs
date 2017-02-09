@@ -436,7 +436,17 @@ namespace Cronos
 
                 if (((_dayOfWeek >> (int)dayOfWeek) & 1) == 0) day = -1;
 
-                if(day == -1) goto RetryDayMonth;
+                if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !IsLastDayOfWeek(nearestWeekDay, lastDayOfMonth))
+                {
+                    day = -1;
+                }
+
+                if (_nthdayOfWeek != 0 && !IsNthDayOfWeek(nearestWeekDay, _nthdayOfWeek))
+                {
+                    day = -1;
+                }
+
+                if (day == -1) goto RetryDayMonth;
 
                 day = nearestWeekDay;
             }
@@ -462,10 +472,8 @@ namespace Cronos
 
             // L character in day of week.
 
-            if (HasFlag(CronExpressionFlag.DayOfWeekLast))
+            if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !IsLastDayOfWeek(day, lastDayOfMonth))
             {
-                if (day + Constants.DaysPerWeekCount > lastDayOfMonth) return new LocalDateTime(year, month, day, hour, minute, second, 0);
-
                 second = minSecond;
                 minute = minMinute;
                 hour = minHour;
@@ -476,14 +484,8 @@ namespace Cronos
 
             // # character.
 
-            if (_nthdayOfWeek != 0)
+            if (_nthdayOfWeek != 0 && !IsNthDayOfWeek(day, _nthdayOfWeek))
             {
-                if (day - Constants.DaysPerWeekCount * _nthdayOfWeek < Constants.FirstDayOfMonth &&
-                    day - Constants.DaysPerWeekCount * (_nthdayOfWeek - 1) >= Constants.FirstDayOfMonth)
-                {
-                    return new LocalDateTime(year, month, day, hour, minute, second, 0);
-                }
-
                 second = minSecond;
                 minute = minMinute;
                 hour = minHour;
@@ -493,6 +495,19 @@ namespace Cronos
             }
 
             return new LocalDateTime(year, month, day, hour, minute, second, 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsNthDayOfWeek(int day, int n)
+        {
+            return day - Constants.DaysPerWeekCount * n < Constants.FirstDayOfMonth &&
+                   day - Constants.DaysPerWeekCount * (n - 1) >= Constants.FirstDayOfMonth;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsLastDayOfWeek(int day, int lastDayOfMonth)
+        {
+            return day + Constants.DaysPerWeekCount > lastDayOfMonth;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
