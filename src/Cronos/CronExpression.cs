@@ -151,9 +151,9 @@ namespace Cronos
                         {
                             throw new ArgumentException("day of week", nameof(cronExpression));
                         }
-
-                        pointer = SkipWhiteSpaces(pointer);
                     }
+
+                    pointer = SkipWhiteSpaces(pointer);
 
                     if (*pointer != '\0')
                     {
@@ -172,43 +172,48 @@ namespace Cronos
             }
         }
 
-        public ZonedDateTime? Next(ZonedDateTime now)
+        public Instant? Next(Instant startInstant, Instant endInstant, DateTimeZone zone)
         {
-            return Next(now.LocalDateTime, now.Offset, now.Zone);
+            return Next(startInstant.InZone(zone).ToOffsetDateTime(), endInstant.InZone(zone).ToOffsetDateTime(), zone)?.ToInstant();
         }
 
-        public ZonedDateTime? Next(LocalDateTime now, Offset currentOffset, DateTimeZone zone)
+        private OffsetDateTime? Next(OffsetDateTime startOffsetDateTime, OffsetDateTime endOffsetDateTime, DateTimeZone zone)
         {
+            LocalDateTime startLocalDateTime = startOffsetDateTime.LocalDateTime;
+            LocalDateTime endLocalDateTime = endOffsetDateTime.LocalDateTime;
+
+            var currentOffset = startOffsetDateTime.Offset;
+
             if (zone.Equals(DateTimeZone.Utc))
             {
-                return Next(now, LocalDateTime.FromDateTime(DateTime.MaxValue))?.InUtc();
+                return Next(startLocalDateTime, endLocalDateTime)?.WithOffset(Offset.Zero);
             }
 
-            var mapping = zone.MapLocal(now);
+            var mapping = zone.MapLocal(startLocalDateTime);
 
-            if (IsMatch(now))
+            if (IsMatch(startLocalDateTime))
             {
                 switch (mapping.Count)
                 {
                     case 0:
                         // Strict jobs should be shifted to next valid time.
-                        return now.InZoneLeniently(zone);
+                        return startLocalDateTime.InZoneLeniently(zone).ToOffsetDateTime();
                     case 1:
                         // Strict
-                        return now.InZoneStrictly(zone);
+                        return startLocalDateTime.InZoneStrictly(zone).ToOffsetDateTime();
                     case 2:
                         // Ambiguous.
 
                         // Interval jobs should be fired in both offsets.
                         if (HasFlag(CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar))
                         {
-                            return new ZonedDateTime(now, zone, currentOffset);
+                            return startLocalDateTime.WithOffset(currentOffset);
                         }
 
                         // Strict jobs should be fired in lowest offset only.
                         if (currentOffset == mapping.EarlyInterval.WallOffset)
                         {
-                            return new ZonedDateTime(now, zone, currentOffset);
+                            return startLocalDateTime.WithOffset(currentOffset);
                         }
 
                         break;
@@ -226,26 +231,26 @@ namespace Cronos
                 if (early.WallOffset == currentOffset)
                 {
                     // Current period, try to find anything here.
-                    var found = Next(now, early.IsoLocalEnd.PlusMinutes(-1));
+                    var found = Next(startLocalDateTime, early.IsoLocalEnd.PlusMinutes(-1));
                     if (found.HasValue)
                     {
-                        return Next(found.Value, currentOffset, zone);
+                        return Next(found.Value.WithOffset(currentOffset), endOffsetDateTime, zone);
                     }
 
                     // Try to find anything starting from late offset.
-                    found = Next(late.IsoLocalStart, LocalDateTime.FromDateTime(DateTime.MaxValue));
+                    found = Next(late.IsoLocalStart, endLocalDateTime);
                     if (found.HasValue)
                     {
-                        return Next(found.Value, late.WallOffset, zone);
+                        return Next(found.Value.WithOffset(late.WallOffset), endOffsetDateTime, zone);
                     }
                 }
             }
 
             // Does not match, find next.
-            var nextFound = Next(now.PlusSeconds(1), LocalDateTime.FromDateTime(DateTime.MaxValue));
+            var nextFound = Next(startLocalDateTime.PlusSeconds(1), endLocalDateTime);
             if (nextFound == null) return null;
 
-            return Next(nextFound.Value, currentOffset, zone);
+            return Next(nextFound.Value.WithOffset(currentOffset), endOffsetDateTime, zone);
         }
 
         private LocalDateTime? Next(LocalDateTime baseTime, LocalDateTime endTime)
@@ -367,7 +372,7 @@ namespace Cronos
                     second = minSecond;
                     minute = minMinute;
                     hour = minHour;
-                    day = GetNextDayOfMonth(year, month);
+                    day = GetNextDayOfMonth(year, nextMonth);
                 }
 
                 month = nextMonth;
@@ -538,7 +543,7 @@ namespace Cronos
             {
                 nextDay = nextDay - (Constants.LastDayOfMonth - Calendar.GetDaysInMonth(year, month));
 
-                if (nextDay < Constants.FirstDayOfMonth) return -1;
+                if (nextDay < startDay) return -1;
 
                 return nextDay;
             }

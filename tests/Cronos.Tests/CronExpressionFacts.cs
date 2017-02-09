@@ -7,8 +7,8 @@ namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
-        private static readonly DateTimeZone EasternStandardTime = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
-        private static readonly DateTimeZone JordanStandardTime = DateTimeZoneProviders.Bcl.GetZoneOrNull("Jordan Standard Time");
+        private static readonly DateTimeZone EasternTimeZone = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
+        private static readonly DateTimeZone JordanTimeZone = DateTimeZoneProviders.Bcl.GetZoneOrNull("Jordan Standard Time");
 
         private static readonly LocalDate Today = new LocalDate(2016, 12, 09);
 
@@ -23,10 +23,12 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var dateTime = new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc();
-            var result = expression.Next(dateTime);
+            var startInstant = new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc().ToInstant();
+            var endInstant = new LocalDateTime(2017, 03, 18, 12, 0, 0).InUtc().ToInstant();
 
-            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc(), result);
+            var result = expression.Next(startInstant, endInstant, DateTimeZone.Utc);
+
+            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc().ToInstant(), result);
         }
 
         [Fact]
@@ -697,80 +699,89 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuting = expression.Next(GetEasternTimeZoneDateTime(startTime));
+            var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), nextExecuting);
+            var nextExecuting = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextExecuting);
         }
 
         [Theory]
 
-        // 2016/03/13 is date when the clock jumps forward from 1:59 am standard time (ST) to 3:00 am DST in Eastern Time Zone.
+        // 2016/03/13 is date when the clock jumps forward from 1:59 am -05:00 standard time (ST) to 3:00 am -04:00 DST in Eastern Time Zone.
         // ________1:59 ST///invalid///3:00 DST________
 
         // Run missed.
 
-        [InlineData("0 */30 *      *  *  *    ", "2016/03/13 01:45 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 */30 */2    *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 1-58 */2    *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 0,30 0-23/2 *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 */30 2      *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 0,30 2      *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 */30 2      13 03 *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 0,30 02     13 03 *    ", "2016/03/13 01:45 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 30   2      *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 0    */2    *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        [InlineData("0 30   0-23/2 *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-                                             
-        [InlineData("0 0,59 *      *  *  *    ", "2016/03/13 01:59 ST ", "2016/03/13 01:59 ST ")]
-        [InlineData("0 0,59 *      *  *  *    ", "2016/03/13 03:00 DST", "2016/03/13 03:00 DST")]
-
-        [InlineData("0 30   *      *  3  SUN#2", "2016/03/13 01:59 ST ", "2016/03/13 03:00 DST")]
-        public void Next_HandleDST_WhenTheClockJumpsForward(string cronExpression, string startTime, string expectedTime)
+        [InlineData("0 */30 *      *  *  *    ", "2016/03/13 01:45 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 */30 */2    *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 1-58 */2    *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 0,30 0-23/2 *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 */30 2      *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 0,30 2      *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 */30 2      13 03 *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 0,30 02     13 03 *    ", "2016/03/13 01:45 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 30   2      *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 0    */2    *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        [InlineData("0 30   0-23/2 *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+                                                                                               
+        [InlineData("0 0,59 *      *  *  *    ", "2016/03/13 01:59 -05:00", "2016/03/13 01:59 -05:00")]
+        [InlineData("0 0,59 *      *  *  *    ", "2016/03/13 03:00 -04:00", "2016/03/13 03:00 -04:00")]
+                                                                                               
+        [InlineData("0 30   *      *  3  SUN#2", "2016/03/13 01:59 -05:00", "2016/03/13 03:00 -04:00")]
+        public void Next_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetEasternTimeZoneDateTime(startTime));
+            var startInstant = GetInstant(startTime);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), executed);
+            var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstant(expectedTime), executed);
         }
 
         [Theory]
 
-        // 2016/11/06 is date when the clock jumps backward from 2:00 am DST to 1:00 am ST in Eastern Time Zone.
+        // 2016/11/06 is date when the clock jumps backward from 2:00 am -04:00 DST to 1:00 am -05:00 ST in Eastern Time Zone.
         // _______1:00 DST____1:59 DST -> 1:00 ST____2:00 ST_______
 
         // Run at 2:00 ST because 2:00 DST is unreachable.
-        [InlineData("0 */30 */2 * * *", "2016/11/06 01:30 DST", "2016/11/06 02:00 ST ")]
-        [InlineData("0 0    */2 * * *", "2016/11/06 00:30 DST", "2016/11/06 02:00 ST ")]
+        [InlineData("0 */30 */2 * * *", "2016/11/06 01:30 -04:00", "2016/11/06 02:00 -05:00")]
+        [InlineData("0 0    */2 * * *", "2016/11/06 00:30 -04:00", "2016/11/06 02:00 -05:00")]
 
         // Run twice due to intervals.
-        [InlineData("0 */30 *   * * *", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 */30 *   * * *", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 */30 *   * * *", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST ")]
-        [InlineData("0 */30 *   * * *", "2016/11/06 01:15 ST ", "2016/11/06 01:30 ST ")]
+        [InlineData("0 */30 *   * * *", "2016/11/06 01:00 -04:00", "2016/11/06 01:00 -04:00")]
+        [InlineData("0 */30 *   * * *", "2016/11/06 01:30 -04:00", "2016/11/06 01:30 -04:00")]
+        [InlineData("0 */30 *   * * *", "2016/11/06 01:59 -04:00", "2016/11/06 01:00 -05:00")]
+        [InlineData("0 */30 *   * * *", "2016/11/06 01:15 -05:00", "2016/11/06 01:30 -05:00")]
                                     
-        [InlineData("0 */30 1   * * *", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 */30 1   * * *", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 */30 1   * * *", "2016/11/06 01:59 DST", "2016/11/06 01:00 ST ")]
-        [InlineData("0 */30 1   * * *", "2016/11/06 01:20 ST ", "2016/11/06 01:30 ST ")]
+        [InlineData("0 */30 1   * * *", "2016/11/06 01:00 -04:00", "2016/11/06 01:00 -04:00")]
+        [InlineData("0 */30 1   * * *", "2016/11/06 01:20 -04:00", "2016/11/06 01:30 -04:00")]
+        [InlineData("0 */30 1   * * *", "2016/11/06 01:59 -04:00", "2016/11/06 01:00 -05:00")]
+        [InlineData("0 */30 1   * * *", "2016/11/06 01:20 -05:00", "2016/11/06 01:30 -05:00")]
                                     
-        [InlineData("0 30   *   * * *", "2016/11/06 01:30 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 30   *   * * *", "2016/11/06 01:59 DST", "2016/11/06 01:30 ST ")]
+        [InlineData("0 30   *   * * *", "2016/11/06 01:30 -04:00", "2016/11/06 01:30 -04:00")]
+        [InlineData("0 30   *   * * *", "2016/11/06 01:59 -04:00", "2016/11/06 01:30 -05:00")]
 
         // Duplicates skipped due to certain time.
-        [InlineData("0 0,30 1   * * *", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 0,30 1   * * *", "2016/11/06 01:20 DST", "2016/11/06 01:30 DST")]
-        [InlineData("0 0,30 1   * * *", "2016/11/06 01:00 ST ", "2016/11/07 01:00 ST ")]
+        [InlineData("0 0,30 1   * * *", "2016/11/06 01:00 -04:00", "2016/11/06 01:00 -04:00")]
+        [InlineData("0 0,30 1   * * *", "2016/11/06 01:20 -04:00", "2016/11/06 01:30 -04:00")]
+        [InlineData("0 0,30 1   * * *", "2016/11/06 01:00 -05:00", "2016/11/07 01:00 -05:00")]
 
-        [InlineData("0 0    1   * * *", "2016/11/06 01:00 DST", "2016/11/06 01:00 DST")]
-        [InlineData("0 0    1   * * *", "2016/11/06 01:00 ST ", "2016/11/07 01:00 ST ")]
-        public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTime, string expectedTime)
+        [InlineData("0 0    1   * * *", "2016/11/06 01:00 -04:00", "2016/11/06 01:00 -04:00")]
+        [InlineData("0 0    1   * * *", "2016/11/06 01:00 -05:00", "2016/11/07 01:00 -05:00")]
+        public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetEasternTimeZoneDateTime(startTime));
+            var startInstant = GetInstant(startTimeWithOffset);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), executed);
+            var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
         }
 
         [Theory]
@@ -803,43 +814,98 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuting = expression.Next(GetUtcDateTime(startTime));
+            var startInstant = GetInstantFromLocalTime(startTime, DateTimeZone.Utc);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetUtcDateTime(expectedTime), nextExecuting);
+            var nextTime = expression.Next(startInstant, endInstant, DateTimeZone.Utc);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, DateTimeZone.Utc), nextTime);
         }
 
         [Theory]
-        [InlineData("30 0 L  * *", "2017/03/30 23:59 ST ", "2017/03/31 01:00 DST")]
-        [InlineData("30 0 L  * *", "2017/03/31 01:00 DST", "2017/04/30 00:30 DST")]
-        [InlineData("30 0 LW * *", "2018/03/29 23:59 ST ", "2018/03/30 01:00 DST")]
-        [InlineData("30 0 LW * *", "2018/03/30 01:00 DST", "2018/04/30 00:30 DST")]
-        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsForwardOnFriday(string cronExpression, string startTime, string expectedTime)
+        [InlineData("30 0 L  * *", "2017/03/30 23:59 +02:00", "2017/03/31 01:00 +03:00")]
+        [InlineData("30 0 L  * *", "2017/03/31 01:00 +03:00", "2017/04/30 00:30 +03:00")]
+        [InlineData("30 0 LW * *", "2018/03/29 23:59 +02:00", "2018/03/30 01:00 +03:00")]
+        [InlineData("30 0 LW * *", "2018/03/30 01:00 +03:00", "2018/04/30 00:30 +03:00")]
+        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsForwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetJordanTimeZoneDateTime(startTime));
+            var startInstant = GetInstant(startTimeWithOffset);
+            var endInstant = startInstant.Plus(Duration.FromStandardDays(365));
+
+            var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
 
             // TODO: Rounding error.
-            if (executed.Value.Millisecond == 999)
+            if (executed?.ToDateTimeOffset().Millisecond == 999)
             {
                 executed = executed.Value.Plus(Duration.FromMilliseconds(1));
             }
 
-            Assert.Equal(GetJordanTimeZoneDateTime(expectedTime), executed);
+            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
         }
 
         [Theory]
-        [InlineData("30 0 L  * *", "2014/10/31 00:30 ST ", "2014/11/30 00:30 ST ")]
-        [InlineData("30 0 L  * *", "2014/10/31 00:30 DST", "2014/10/31 00:30 DST")]
-        [InlineData("30 0 LW * *", "2015/10/30 00:30 ST ", "2015/11/30 00:30 ST ")]
-        [InlineData("30 0 LW * *", "2015/10/30 00:30 DST", "2015/10/30 00:30 DST")]
-        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsBackwardOnFriday(string cronExpression, string startTime, string expectedTime)
+        [InlineData("30 0 L  * *", "2014/10/31 00:30 +02:00", "2014/11/30 00:30 +02:00")]
+        [InlineData("30 0 L  * *", "2014/10/31 00:30 +03:00", "2014/10/31 00:30 +03:00")]
+        [InlineData("30 0 LW * *", "2015/10/30 00:30 +02:00", "2015/11/30 00:30 +02:00")]
+        [InlineData("30 0 LW * *", "2015/10/30 00:30 +03:00", "2015/10/30 00:30 +03:00")]
+        public void Next_HandleDifficultDSTCases_WhenTheClockJumpsBackwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var executed = expression.Next(GetJordanTimeZoneDateTime(startTime));
+            var startInstant = GetInstant(startTimeWithOffset);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetJordanTimeZoneDateTime(expectedTime), executed);
+            var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
+
+            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
+        }
+
+        [Theory]
+        [InlineData("* * 1    *    SUN#2", "1970/01/01")]
+        [InlineData("* * 7    *    SUN#2", "1970/01/01")]
+        [InlineData("* * 1    *    SUN#3", "1970/01/01")]
+        [InlineData("* * 14   *    SUN#3", "1970/01/01")]
+        [InlineData("* * 1    *    SUN#4", "1970/01/01")]
+        [InlineData("* * 21   *    SUN#4", "1970/01/01")]
+        [InlineData("* * 1    *    SUN#5", "1970/01/01")]
+        [InlineData("* * 28   *    SUN#5", "1970/01/01")]
+                                   
+        [InlineData("* * 8    *    MON#1", "1970/01/01")]
+        [InlineData("* * 31   *    MON#1", "1970/01/01")]
+        [InlineData("* * 15   *    TUE#2", "1970/01/01")]
+        [InlineData("* * 31   *    TUE#2", "1970/01/01")]
+        [InlineData("* * 22   *    WED#3", "1970/01/01")]
+        [InlineData("* * 31   *    WED#3", "1970/01/01")]
+        [InlineData("* * 29   *    THU#4", "1970/01/01")]
+        [InlineData("* * 31   *    THU#4", "1970/01/01")]
+                                   
+        [InlineData("* * 21   *    7L   ", "1970/01/01")]
+        [InlineData("* * 21   *    0L   ", "1970/01/01")]
+        [InlineData("* * 11   *    0L   ", "1970/01/01")]
+        [InlineData("* * 1    *    0L   ", "1970/01/01")]
+
+        [InlineData("* * L    *    SUN#1", "1970/01/01")]
+        [InlineData("* * L    *    SUN#2", "1970/01/01")]
+        [InlineData("* * L    *    SUN#3", "1970/01/01")]
+        [InlineData("* * L    1    SUN#4", "1970/01/01")]
+        [InlineData("* * L    3-12 SUN#4", "1970/01/01")]
+
+        [InlineData("* * L-1  2    SUN#5", "1970/01/01")]
+        [InlineData("* * L-2  4    SUN#5", "1970/01/01")]
+        [InlineData("* * L-3  *    SUN#5", "1970/01/01")]
+        [InlineData("* * L-10 *    SUN#4", "1970/01/01")]
+        public void Next_ReturnNull_WhenCronExpressionIsUnreachable(string cronExpression, string startTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 200);
+
+            var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Null(executed);
         }
 
         [Theory]
@@ -1265,39 +1331,20 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var nextExecuting = expression.Next(GetEasternTimeZoneDateTime(startTime));
+            var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
+            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
 
-            Assert.Equal(GetEasternTimeZoneDateTime(expectedTime), nextExecuting);
+            var nextExecuting = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextExecuting);
         }
 
-        private static ZonedDateTime GetJordanTimeZoneDateTime(string dateTimeString)
+        private static Instant GetInstantFromLocalTime(string localDateTimeString, DateTimeZone zone)
         {
-            return GetZonedDateTime(dateTimeString, JordanStandardTime);
-        }
-
-
-        private static ZonedDateTime GetEasternTimeZoneDateTime(string dateTimeString)
-        {
-            return GetZonedDateTime(dateTimeString, EasternStandardTime);
-        }
-
-        private static ZonedDateTime GetUtcDateTime(string dateTimeString)
-        {
-            return GetZonedDateTime(dateTimeString, DateTimeZone.Utc);
-        }
-
-        private static ZonedDateTime GetZonedDateTime(string dateTimeString, DateTimeZone zone)
-        {
-            var isDst = dateTimeString.Contains("DST");
-            dateTimeString = dateTimeString.Replace("DST", "");
-
-            var isSt = dateTimeString.Contains("ST");
-            dateTimeString = dateTimeString.Replace("ST", "");
-
-            dateTimeString = dateTimeString.Trim();
+            localDateTimeString = localDateTimeString.Trim();
 
             var dateTime = DateTime.ParseExact(
-                dateTimeString,
+                localDateTimeString,
                 new[]
                 {
                     "HH:mm:ss",
@@ -1317,11 +1364,24 @@ namespace Cronos.Tests
                 dateTime.Minute,
                 dateTime.Second);
 
-            if (!isDst && !isSt) return localDateTime.InZoneStrictly(zone);
+            return localDateTime.InZoneStrictly(zone).ToInstant();
+        }
 
-            return isDst ?
-              localDateTime.InZone(zone, mapping => mapping.First()) :
-              localDateTime.InZone(zone, mapping => mapping.Last());
+        private static Instant GetInstant(string dateTimeOffsetString)
+        {
+            dateTimeOffsetString = dateTimeOffsetString.Trim();
+
+            var dateTime = DateTimeOffset.ParseExact(
+                dateTimeOffsetString,
+                new[]
+                {
+                    "yyyy/MM/dd HH:mm:ss zzz",
+                    "yyyy/MM/dd HH:mm zzz",
+                },
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None);
+
+            return Instant.FromDateTimeOffset(dateTime);
         }
     }
 }
