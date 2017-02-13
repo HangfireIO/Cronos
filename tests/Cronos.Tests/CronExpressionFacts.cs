@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Globalization;
-using NodaTime;
 using Xunit;
 
 namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
-        private static readonly DateTimeZone EasternTimeZone = DateTimeZoneProviders.Bcl.GetZoneOrNull("Eastern Standard Time");
-        private static readonly DateTimeZone JordanTimeZone = DateTimeZoneProviders.Bcl.GetZoneOrNull("Jordan Standard Time");
+        private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
 
-        private static readonly LocalDate Today = new LocalDate(2016, 12, 09);
+        private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
         [Theory]
 
@@ -23,12 +22,12 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var startInstant = new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc().ToInstant();
-            var endInstant = new LocalDateTime(2017, 03, 18, 12, 0, 0).InUtc().ToInstant();
+            var startDateTimeOffset = new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero);
+            var endDateTimeOffset = new DateTimeOffset(2017, 03, 18, 12, 0, 0, TimeSpan.Zero);
 
-            var result = expression.Next(startInstant, endInstant, DateTimeZone.Utc);
+            var result = expression.Next(startDateTimeOffset, endDateTimeOffset, TimeZoneInfo.Utc);
 
-            Assert.Equal(new LocalDateTime(2016, 03, 18, 12, 0, 0).InUtc().ToInstant(), result);
+            Assert.Equal(new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero), result);
         }
 
         [Fact]
@@ -686,7 +685,7 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            var endInstant = startInstant.AddYears(100);
 
             var nextExecuting = expression.Next(startInstant, endInstant, EasternTimeZone);
 
@@ -721,7 +720,7 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTime);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
 
@@ -763,7 +762,8 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            //var endInstant = startInstant + Duration.FromStandardWeeks(365);
+            var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
 
@@ -800,12 +800,12 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression);
 
-            var startInstant = GetInstantFromLocalTime(startTime, DateTimeZone.Utc);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            var startInstant = GetInstantFromLocalTime(startTime, TimeZoneInfo.Utc);
+            var endInstant = startInstant.AddYears(100);
 
-            var nextTime = expression.Next(startInstant, endInstant, DateTimeZone.Utc);
+            var nextTime = expression.Next(startInstant, endInstant, TimeZoneInfo.Utc);
 
-            Assert.Equal(GetInstantFromLocalTime(expectedTime, DateTimeZone.Utc), nextTime);
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc), nextTime);
         }
 
         [Theory]
@@ -818,14 +818,16 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant.Plus(Duration.FromStandardDays(365));
+            //var endInstant = startInstant + Duration.FromStandardWeeks(365);
+            var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
 
             // TODO: Rounding error.
-            if (executed?.ToDateTimeOffset().Millisecond == 999)
+            if (executed?.Millisecond == 999)
             {
-                executed = executed.Value.Plus(Duration.FromMilliseconds(1));
+                //executed = executed.Value.Plus(Duration.FromMilliseconds(1));
+                executed = executed.Value.AddMilliseconds(1);
             }
 
             Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
@@ -841,7 +843,7 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
 
@@ -940,7 +942,7 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 200);
+            var endInstant = startInstant.AddYears(200);
 
             var nextTime = expression.Next(startInstant, endInstant, EasternTimeZone);
 
@@ -1371,14 +1373,14 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant + Duration.FromStandardDays(365 * 100);
+            var endInstant = startInstant.AddYears(100);
 
             var nextExecuting = expression.Next(startInstant, endInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextExecuting);
         }
 
-        private static Instant GetInstantFromLocalTime(string localDateTimeString, DateTimeZone zone)
+        private static DateTimeOffset GetInstantFromLocalTime(string localDateTimeString, TimeZoneInfo zone)
         {
             localDateTimeString = localDateTimeString.Trim();
 
@@ -1395,7 +1397,7 @@ namespace Cronos.Tests
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.NoCurrentDateDefault);
 
-            var localDateTime = new LocalDateTime(
+            var localDateTime = new DateTime(
                 dateTime.Year != 1 ? dateTime.Year : Today.Year,
                 dateTime.Year != 1 ? dateTime.Month : Today.Month,
                 dateTime.Year != 1 ? dateTime.Day : Today.Day,
@@ -1403,10 +1405,10 @@ namespace Cronos.Tests
                 dateTime.Minute,
                 dateTime.Second);
 
-            return localDateTime.InZoneStrictly(zone).ToInstant();
+            return new DateTimeOffset(localDateTime, zone.GetUtcOffset(localDateTime));
         }
 
-        private static Instant GetInstant(string dateTimeOffsetString)
+        private static DateTimeOffset GetInstant(string dateTimeOffsetString)
         {
             dateTimeOffsetString = dateTimeOffsetString.Trim();
 
@@ -1420,7 +1422,7 @@ namespace Cronos.Tests
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None);
 
-            return Instant.FromDateTimeOffset(dateTime);
+            return dateTime;
         }
     }
 }

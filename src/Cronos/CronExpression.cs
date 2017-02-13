@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using NodaTime;
 
 namespace Cronos
 {
@@ -163,88 +162,101 @@ namespace Cronos
             }
         }
 
-        public Instant? Next(Instant startInstant, Instant endInstant, DateTimeZone zone)
+        public DateTimeOffset? Next(DateTimeOffset startDateTimeOffset, DateTimeOffset endDateTimeOffset, TimeZoneInfo zone)
         {
-            return Next(startInstant.InZone(zone).ToOffsetDateTime(), endInstant.InZone(zone).ToOffsetDateTime(), zone)?.ToInstant();
-        }
-
-        private OffsetDateTime? Next(OffsetDateTime startOffsetDateTime, OffsetDateTime endOffsetDateTime, DateTimeZone zone)
-        {
-            LocalDateTime startLocalDateTime = startOffsetDateTime.LocalDateTime;
-            LocalDateTime endLocalDateTime = endOffsetDateTime.LocalDateTime;
-
-            var currentOffset = startOffsetDateTime.Offset;
-
-            if (zone.Equals(DateTimeZone.Utc))
+            if (zone.Equals(TimeZoneInfo.Utc))
             {
-                return Next(startLocalDateTime, endLocalDateTime)?.WithOffset(Offset.Zero);
+                var found = Next(startDateTimeOffset.DateTime, endDateTimeOffset.DateTime);
+
+                return found != null
+                    ? new DateTimeOffset(found.Value, TimeSpan.Zero)
+                    : (DateTimeOffset?)null;
             }
 
-            var mapping = zone.MapLocal(startLocalDateTime);
+            var startLocalDateTime = startDateTimeOffset.DateTime;
+            var endLocalDateTime = endDateTimeOffset.DateTime;
+
+            var currentOffset = startDateTimeOffset.Offset;
+
+            var currentAdjusmentRule = GetCurrentAdjusmentRule(zone, startLocalDateTime);
+
+            var dstOffset = currentAdjusmentRule != null
+                ? zone.BaseUtcOffset.Add(currentAdjusmentRule.DaylightDelta)
+                : zone.BaseUtcOffset;
 
             if (IsMatch(startLocalDateTime))
             {
-                switch (mapping.Count)
+                if (zone.IsInvalidTime(startLocalDateTime))
                 {
-                    case 0:
-                        // Strict jobs should be shifted to next valid time.
-                        return startLocalDateTime.InZoneLeniently(zone).ToOffsetDateTime();
-                    case 1:
-                        // Strict
-                        return startLocalDateTime.InZoneStrictly(zone).ToOffsetDateTime();
-                    case 2:
-                        // Ambiguous.
+                    var dstTransitionStartDateTimeOffset = GetDstTransitionStartDateTime(currentAdjusmentRule, startLocalDateTime, zone.BaseUtcOffset);
 
-                        // Interval jobs should be fired in both offsets.
-                        if (HasFlag(CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar))
-                        {
-                            return startLocalDateTime.WithOffset(currentOffset);
-                        }
+                    return dstTransitionStartDateTimeOffset.ToOffset(dstOffset);
+                }
+                if (zone.IsAmbiguousTime(startLocalDateTime))
+                {
+                    // Ambiguous.
 
-                        // Strict jobs should be fired in lowest offset only.
-                        if (currentOffset == mapping.EarlyInterval.WallOffset)
-                        {
-                            return startLocalDateTime.WithOffset(currentOffset);
-                        }
+                    // Interval jobs should be fired in both offsets.
+                    if (HasFlag(CronExpressionFlag.SecondStar | CronExpressionFlag.MinuteStar | CronExpressionFlag.HourStar))
+                    {
+                        return new DateTimeOffset(startLocalDateTime, currentOffset);
+                    }
 
-                        break;
-                    default:
-                        // TODO: or what?
-                        throw new InvalidOperationException();
+                    TimeSpan earlyOffset = dstOffset;
+
+                    // Strict jobs should be fired in lowest offset only.
+                    if (currentOffset == earlyOffset)
+                    {
+                        return new DateTimeOffset(startLocalDateTime, currentOffset);
+                    }
+                }
+                else
+                {
+                    // Strict
+                    return new DateTimeOffset(startLocalDateTime, zone.GetUtcOffset(startLocalDateTime));
                 }
             }
 
-            if (mapping.Count == 2)
+            if (zone.IsAmbiguousTime(startLocalDateTime.AddTicks(-1)))
             {
-                var early = mapping.EarlyInterval;
-                var late = mapping.LateInterval;
+                TimeSpan earlyOffset = dstOffset;
+                TimeSpan lateOffset = zone.BaseUtcOffset;
 
-                if (early.WallOffset == currentOffset)
+                if (earlyOffset == currentOffset)
                 {
-                    // Current period, try to find anything here.
-                    var found = Next(startLocalDateTime, early.IsoLocalEnd.PlusSeconds(-1));
+                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(currentAdjusmentRule, startLocalDateTime, earlyOffset);
+
+                    var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
+
+                     // Current period, try to find anything here.
+                    var found = Next(startLocalDateTime, earlyIntervalLocalEnd);
+
                     if (found.HasValue)
                     {
-                        return Next(found.Value.WithOffset(currentOffset), endOffsetDateTime, zone);
+                        return Next(new DateTimeOffset(found.Value, currentOffset), endDateTimeOffset, zone);
                     }
 
-                    // Try to find anything starting from late offset.
-                    found = Next(late.IsoLocalStart, endLocalDateTime);
+                    var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
+
+                    //Try to find anything starting from late offset.
+                    found = Next(lateIntervalLocalStart, endLocalDateTime);
+
                     if (found.HasValue)
                     {
-                        return Next(found.Value.WithOffset(late.WallOffset), endOffsetDateTime, zone);
+                        return Next(new DateTimeOffset(found.Value, lateOffset), endDateTimeOffset, zone);
                     }
                 }
             }
 
             // Does not match, find next.
-            var nextFound = Next(startLocalDateTime.PlusSeconds(1), endLocalDateTime);
+            var nextFound = Next(startLocalDateTime.AddSeconds(1), endLocalDateTime);
+
             if (nextFound == null) return null;
 
-            return Next(nextFound.Value.WithOffset(currentOffset), endOffsetDateTime, zone);
+            return Next(new DateTimeOffset(nextFound.Value, currentOffset), endDateTimeOffset, zone);
         }
 
-        private LocalDateTime? Next(LocalDateTime baseTime, LocalDateTime endTime)
+        private DateTime? Next(DateTime baseTime, DateTime endTime)
         {
             var baseYear = baseTime.Year;
             var baseMonth = baseTime.Month;
@@ -380,7 +392,7 @@ namespace Cronos
 
             if (day < Constants.FirstDayOfMonth || day > Constants.LastDayOfMonth)
             {
-                if (new LocalDateTime(year, month, Constants.FirstDayOfMonth, hour, minute, second, 0) > endTime) return null;
+                if (new DateTime(year, month, Constants.FirstDayOfMonth, hour, minute, second) > endTime) return null;
 
                 day = -1;
                 goto RetryDayMonth;
@@ -403,7 +415,7 @@ namespace Cronos
                     second = minSecond;
                     dayOfWeek = DayOfWeek.Monday;
                 }
-                else if(nearestWeekDay < day)
+                else if (nearestWeekDay < day)
                 {
                     // Day was shifted from Saturday or Sunday to Friday.
                     dayOfWeek = DayOfWeek.Friday;
@@ -424,7 +436,7 @@ namespace Cronos
                     }
                 }
 
-                if (new LocalDateTime(year, month, nearestWeekDay, hour, minute, second, 0) > endTime)
+                if (new DateTime(year, month, nearestWeekDay, hour, minute, second) > endTime)
                     return null;
 
                 if (((_dayOfWeek >> (int)dayOfWeek) & 1) == 0) day = -1;
@@ -444,7 +456,7 @@ namespace Cronos
                 day = nearestWeekDay;
             }
 
-            if (new LocalDateTime(year, month, day, hour, minute, second, 0) > endTime)
+            if (new DateTime(year, month, day, hour, minute, second) > endTime)
             {
                 return null;
             }
@@ -487,7 +499,61 @@ namespace Cronos
                 goto RetryDayMonth;
             }
 
-            return new LocalDateTime(year, month, day, hour, minute, second, 0);
+            return new DateTime(year, month, day, hour, minute, second);
+        }
+
+        private DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo.AdjustmentRule rule, DateTime ambiguousDateTime, TimeSpan dstOffset)
+        {
+            var transitionTime = rule.DaylightTransitionStart.TimeOfDay;
+            
+            var transitionDateTime = new DateTimeOffset(
+                    ambiguousDateTime.Year,
+                    ambiguousDateTime.Month,
+                    ambiguousDateTime.Day,
+                    transitionTime.Hour,
+                    transitionTime.Minute,
+                    transitionTime.Second,
+                    transitionTime.Millisecond,
+                    dstOffset);
+
+            if (transitionDateTime.TimeOfDay < ambiguousDateTime.TimeOfDay)
+            {
+                transitionDateTime = transitionDateTime.AddDays(1);
+            }
+
+            return transitionDateTime;
+        }
+
+        private DateTimeOffset GetDstTransitionStartDateTime(TimeZoneInfo.AdjustmentRule rule, DateTime invalidDateTime, TimeSpan baseOffset)
+        {
+            var transitionTime = rule.DaylightTransitionStart.TimeOfDay;
+
+            var transitionDateTime = new DateTimeOffset(
+                invalidDateTime.Year,
+                invalidDateTime.Month,
+                invalidDateTime.Day,
+                transitionTime.Hour,
+                transitionTime.Minute,
+                transitionTime.Second,
+                transitionTime.Millisecond,
+                baseOffset);
+
+            if (invalidDateTime.TimeOfDay < transitionTime.TimeOfDay)
+            {
+                transitionDateTime = transitionDateTime.AddDays(-1);
+            }
+
+            return transitionDateTime;
+        }
+
+        private TimeZoneInfo.AdjustmentRule GetCurrentAdjusmentRule(TimeZoneInfo zone, DateTime now)
+        {
+            var rules = zone.GetAdjustmentRules();
+            for (var i = 0; i < rules.Length; i++)
+            {
+                if (rules[i].DateStart < now && rules[i].DateEnd > now) return rules[i];
+            }
+            return null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -608,7 +674,7 @@ namespace Cronos
                    (_nearestWeekday || GetBit(dayOfMonthField, dayOfMonth));
         }
 
-        private bool IsMatch(LocalDateTime dateTime)
+        private bool IsMatch(DateTime dateTime)
         {
             return IsMatch(
                 dateTime.Second,
@@ -616,7 +682,7 @@ namespace Cronos
                 dateTime.Hour,
                 dateTime.Day,
                 dateTime.Month,
-                dateTime.DayOfWeek,
+                (int)dateTime.DayOfWeek,
                 dateTime.Year);
         }
 

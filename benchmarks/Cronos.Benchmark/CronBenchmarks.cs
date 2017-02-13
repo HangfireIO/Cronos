@@ -1,23 +1,16 @@
-﻿using BenchmarkDotNet.Attributes;
-using NodaTime;
+﻿using System;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes.Jobs;
 
 namespace Cronos.Benchmark
 {
+    [RyuJitX64Job]
     public class CronBenchmarks
     {
         private static readonly CronExpression SimpleExpression = CronExpression.Parse("* * * * * ?");
-        private static readonly CronExpression ComplexExpression = CronExpression.Parse("* */10 12-20 ? DEC 3");
+        private static readonly CronExpression ComplexExpression = CronExpression.Parse("* */10 12-20 * DEC 3");
 
-        private static readonly Instant NowInstant = SystemClock.Instance.Now;
-        private static readonly ZonedDateTime NowUtc = NowInstant.InUtc();
-        private static readonly LocalDateTime Now = NowUtc.LocalDateTime;
-        private static readonly int Second = Now.Second;
-        private static readonly int Minute = Now.Minute;
-        private static readonly int Hour = Now.Hour;
-        private static readonly int Day = Now.Day;
-        private static readonly int Month = Now.Month;
-        private static readonly int DayOfWeek = Now.DayOfWeek;
-        private static readonly int Year = Now.Year;
+        private static readonly DateTime DateTimeNow = DateTime.Now;
 
         [Benchmark]
         public unsafe string ParseBaseline()
@@ -34,7 +27,7 @@ namespace Cronos.Benchmark
         [Benchmark]
         public CronExpression ParseSimple()
         {
-            return CronExpression.Parse("* * * * * ?");
+            return CronExpression.Parse("* * * * * *");
         }
 
         [Benchmark]
@@ -44,16 +37,15 @@ namespace Cronos.Benchmark
         }
 
         [Benchmark]
-        public ZonedDateTime? NextSimple()
+        public DateTimeOffset? NextSimple()
         {
-            return SimpleExpression.Next(NowUtc);
+            return SimpleExpression.Next(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
         }
 
         [Benchmark]
-        public ZonedDateTime? NextComplex()
+        public DateTimeOffset? NextComplex()
         {
-            return ComplexExpression.Next(NowUtc);
+            return ComplexExpression.Next(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
         }
-
     }
 }
