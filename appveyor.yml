@@ -9,7 +9,7 @@
 configuration: Release
 
 before_build:
-  - nuget restore
+  - .nuget\NuGet.exe install .nuget\packages.config -OutputDirectory packages -Verbosity normal
 
 cache:
   - packages

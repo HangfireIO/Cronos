@@ -60,9 +60,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Cronos\Cronos.csproj">
       <Project>{55afe501-212e-4360-9c4b-d9958ea20124}</Project>
       <Name>Cronos</Name>
