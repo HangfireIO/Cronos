@@ -64,7 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Cronos\Cronos.csproj">
-      <Project>{734a5ea7-d610-4ea1-b37e-a9d59c82b060}</Project>
+      <Project>{55afe501-212e-4360-9c4b-d9958ea20124}</Project>
       <Name>Cronos</Name>
     </ProjectReference>
   </ItemGroup>

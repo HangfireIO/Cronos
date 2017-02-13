@@ -178,19 +178,13 @@ namespace Cronos
 
             var currentOffset = startDateTimeOffset.Offset;
 
-            var currentAdjusmentRule = GetCurrentAdjusmentRule(zone, startLocalDateTime);
-
-            var dstOffset = currentAdjusmentRule != null
-                ? zone.BaseUtcOffset.Add(currentAdjusmentRule.DaylightDelta)
-                : zone.BaseUtcOffset;
-
             if (IsMatch(startLocalDateTime))
             {
                 if (zone.IsInvalidTime(startLocalDateTime))
                 {
-                    var dstTransitionStartDateTimeOffset = GetDstTransitionStartDateTime(currentAdjusmentRule, startLocalDateTime, zone.BaseUtcOffset);
+                    var nextValidTime = GetDstTransitionStartDateTime(zone, startLocalDateTime, zone.BaseUtcOffset);
 
-                    return dstTransitionStartDateTimeOffset.ToOffset(dstOffset);
+                    return nextValidTime;
                 }
                 if (zone.IsAmbiguousTime(startLocalDateTime))
                 {
@@ -202,10 +196,10 @@ namespace Cronos
                         return new DateTimeOffset(startLocalDateTime, currentOffset);
                     }
 
-                    TimeSpan earlyOffset = dstOffset;
+                    TimeSpan lateOffset = zone.BaseUtcOffset;
 
                     // Strict jobs should be fired in lowest offset only.
-                    if (currentOffset == earlyOffset)
+                    if (currentOffset != lateOffset)
                     {
                         return new DateTimeOffset(startLocalDateTime, currentOffset);
                     }
@@ -217,14 +211,15 @@ namespace Cronos
                 }
             }
 
-            if (zone.IsAmbiguousTime(startLocalDateTime.AddTicks(-1)))
+            if (zone.IsAmbiguousTime(startLocalDateTime))
             {
-                TimeSpan earlyOffset = dstOffset;
                 TimeSpan lateOffset = zone.BaseUtcOffset;
+
+                TimeSpan earlyOffset = GetDstOffset(startLocalDateTime, zone);
 
                 if (earlyOffset == currentOffset)
                 {
-                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(currentAdjusmentRule, startLocalDateTime, earlyOffset);
+                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(zone, startLocalDateTime, earlyOffset);
 
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
@@ -502,58 +497,80 @@ namespace Cronos
             return new DateTime(year, month, day, hour, minute, second);
         }
 
-        private DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo.AdjustmentRule rule, DateTime ambiguousDateTime, TimeSpan dstOffset)
+        private DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime, TimeSpan dstOffset)
         {
-            var transitionTime = rule.DaylightTransitionStart.TimeOfDay;
-            
-            var transitionDateTime = new DateTimeOffset(
-                    ambiguousDateTime.Year,
-                    ambiguousDateTime.Month,
-                    ambiguousDateTime.Day,
-                    transitionTime.Hour,
-                    transitionTime.Minute,
-                    transitionTime.Second,
-                    transitionTime.Millisecond,
-                    dstOffset);
+            var dstTransitionDateTime = ambiguousDateTime;
 
-            if (transitionDateTime.TimeOfDay < ambiguousDateTime.TimeOfDay)
+            while (zone.IsAmbiguousTime(dstTransitionDateTime))
             {
-                transitionDateTime = transitionDateTime.AddDays(1);
+                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
             }
 
-            return transitionDateTime;
+            while (!zone.IsAmbiguousTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
+            }
+
+            while (zone.IsAmbiguousTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
+            }
+
+            return new DateTimeOffset(
+                dstTransitionDateTime.Year,
+                dstTransitionDateTime.Month,
+                dstTransitionDateTime.Day,
+                dstTransitionDateTime.Hour,
+                dstTransitionDateTime.Minute,
+                dstTransitionDateTime.Second,
+                dstTransitionDateTime.Millisecond,
+                dstOffset);
         }
 
-        private DateTimeOffset GetDstTransitionStartDateTime(TimeZoneInfo.AdjustmentRule rule, DateTime invalidDateTime, TimeSpan baseOffset)
+        private DateTimeOffset GetDstTransitionStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
         {
-            var transitionTime = rule.DaylightTransitionStart.TimeOfDay;
+            var dstTransitionDateTime = invalidDateTime;
 
-            var transitionDateTime = new DateTimeOffset(
-                invalidDateTime.Year,
-                invalidDateTime.Month,
-                invalidDateTime.Day,
-                transitionTime.Hour,
-                transitionTime.Minute,
-                transitionTime.Second,
-                transitionTime.Millisecond,
+            while (zone.IsInvalidTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(-1);
+            }
+
+            while (!zone.IsInvalidTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(1);
+            }
+
+            while (zone.IsInvalidTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(-1);
+            }
+
+            dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
+
+            return new DateTimeOffset(
+                dstTransitionDateTime.Year,
+                dstTransitionDateTime.Month,
+                dstTransitionDateTime.Day,
+                dstTransitionDateTime.Hour,
+                dstTransitionDateTime.Minute,
+                dstTransitionDateTime.Second,
+                dstTransitionDateTime.Millisecond,
                 baseOffset);
-
-            if (invalidDateTime.TimeOfDay < transitionTime.TimeOfDay)
-            {
-                transitionDateTime = transitionDateTime.AddDays(-1);
-            }
-
-            return transitionDateTime;
         }
 
-        private TimeZoneInfo.AdjustmentRule GetCurrentAdjusmentRule(TimeZoneInfo zone, DateTime now)
+        private TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
         {
-            var rules = zone.GetAdjustmentRules();
-            for (var i = 0; i < rules.Length; i++)
+            var offsets = zone.GetAmbiguousTimeOffsets(ambiguousDateTime);
+
+            var baseOffset = zone.BaseUtcOffset;
+
+            for (var i = 0; i < offsets.Length; i++)
             {
-                if (rules[i].DateStart < now && rules[i].DateEnd > now) return rules[i];
+                if (offsets[i] != baseOffset) return offsets[i];
             }
-            return null;
+
+            throw new InvalidOperationException();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
