@@ -6,8 +6,13 @@ namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
+#if TZDB_SUPPORTED
+        private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
+#else
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
+#endif
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
