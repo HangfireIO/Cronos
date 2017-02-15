@@ -8,5 +8,8 @@
 os: Visual Studio 2017 RC
 configuration: Release
 
+before_build:
+  - .nuget\NuGet.exe restore Cronos.sln -Verbosity normal
+
 cache:
   - packages
