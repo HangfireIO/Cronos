@@ -2,7 +2,7 @@
 
 ## Build status
 
-TBD.
+[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master)
 
 ## Features
 
