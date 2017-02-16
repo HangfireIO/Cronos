@@ -6,7 +6,7 @@ namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
-#if TZDB_SUPPORTED
+#if IANA_SUPPORTED
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
 #else
