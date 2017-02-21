@@ -587,6 +587,7 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
             return DeBruijin.FindFirstSet(value, startBit, endBit);
@@ -703,7 +704,6 @@ namespace Cronos
                 dateTime.Year);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetAllBits(out long bits)
         {
             bits = ~0L;
@@ -712,15 +712,15 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* SkipWhiteSpaces(char* pointer)
         {
-            while (*pointer == '\t' || *pointer == ' ')
-            {
-                pointer++;
-            }
+            CheckWhiteSpace:
 
-            return pointer;
+            if (*pointer != '\t' && *pointer != ' ') return pointer;
+
+            pointer++;
+
+            goto CheckWhiteSpace;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetList(
           ref long bits, /* one bit per flag, default=FALSE */
           int low, int high, /* bounds, impl. offset for bitstr */
@@ -763,7 +763,6 @@ namespace Cronos
             return pointer;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetRange(
             ref long bits, 
             int low, 
@@ -933,7 +932,6 @@ namespace Cronos
             return pointer;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe char* GetNumber(
             out int num, /* where does the result go? */
             int low, /* offset applied to result if symbolic enum used */
@@ -948,18 +946,11 @@ namespace Cronos
 
                 if (!IsDigit(*pointer)) return pointer;
 
-                num = (num << 3) + (num << 1) + GetNumeric(*pointer++);
+                num = num * 10 + GetNumeric(*pointer++);
 
                 if (!IsDigit(*pointer)) return pointer;
 
                 return null;
-
-                /*do
-                {
-                    num = (num << 3) + (num << 1) + GetNumeric(*pointer++);
-                } while (IsDigit(*pointer));
-
-                return pointer;*/
             }
 
             if (names == null) return null;
@@ -1033,15 +1024,29 @@ namespace Cronos
         private static unsafe int CountFields(char* pointer)
         {
             int length = 0;
-            while (*(pointer = SkipWhiteSpaces(pointer)) != '\0')
+            CheckWhiteSpace:
+
+            if (*pointer == '\t' ||  *pointer == ' ')
             {
-                while (*pointer != '\t' && *pointer != ' ' && *pointer != '\0')
-                {
-                    pointer++;
-                }
-                length++;
+                pointer++;
+                goto CheckWhiteSpace;
             }
-            return length;
+
+            if (*pointer == '\0') return length;
+
+            CheckNotWhiteSpace:
+
+            if (*pointer != '\t' && *pointer != ' ' && *pointer != '\0')
+            {
+                pointer++;
+                goto CheckNotWhiteSpace;
+            }
+
+            length++;
+
+            if (*pointer == '\0') return length;
+
+            goto CheckWhiteSpace;
         }
     }
 }
