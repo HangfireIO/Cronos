@@ -4,6 +4,9 @@ using System.Runtime.CompilerServices;
 
 namespace Cronos
 {
+    /// <summary>
+    /// Provides a parser and scheduler for cron expressions.
+    /// </summary>
     public class CronExpression
     {
         private long _second; // 60 bits -> 64 bits in Int64
@@ -20,10 +23,16 @@ namespace Cronos
         {
         }
 
-        public CronExpressionFlag Flags { get; private set; }
+        private CronExpressionFlag Flags { get; set; }
 
         private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
 
+        ///<summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified
+        /// cron expression. It's suppoted expressions consisting of 5 or 6 fields:
+        /// second (optional), minute, hour, day of month, month, day of week. 
+        /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
+        /// </summary>
         public static CronExpression Parse(string cronExpression)
         {
             if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
@@ -54,7 +63,7 @@ namespace Cronos
                     else if(fieldsCount != Constants.CronWithoutSecondsFieldsCount)
                     {
                         throw new FormatException($@"'{cronExpression}'  '* * * *' is an invalid cron expression. 
-It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, hours, days, months and days of week.");
+It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, hours, day of month, months and day of week.");
                     }
                     else
                     {
@@ -142,9 +151,13 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
             }
         }
 
-        public DateTimeOffset? Next(DateTimeOffset startDateTimeOffset, DateTimeOffset endDateTimeOffset, TimeZoneInfo zone)
+        /// <summary>
+        /// Calculate next execution starting with a <paramref name="startDateTimeOffset"/> and 
+        /// up to <paramref name="startDateTimeOffset"/> (all inclusive) in given <paramref name="timeZone"/>.
+        /// </summary>
+        public DateTimeOffset? Next(DateTimeOffset startDateTimeOffset, DateTimeOffset endDateTimeOffset, TimeZoneInfo timeZone)
         {
-            if (zone.Equals(TimeZoneInfo.Utc))
+            if (timeZone.Equals(TimeZoneInfo.Utc))
             {
                 var found = Next(startDateTimeOffset.DateTime, endDateTimeOffset.DateTime);
 
@@ -160,13 +173,13 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
             if (IsMatch(startLocalDateTime))
             {
-                if (zone.IsInvalidTime(startLocalDateTime))
+                if (timeZone.IsInvalidTime(startLocalDateTime))
                 {
-                    var nextValidTime = GetDstTransitionStartDateTime(zone, startLocalDateTime, zone.BaseUtcOffset);
+                    var nextValidTime = GetDstTransitionStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
 
                     return nextValidTime;
                 }
-                if (zone.IsAmbiguousTime(startLocalDateTime))
+                if (timeZone.IsAmbiguousTime(startLocalDateTime))
                 {
                     // Ambiguous.
 
@@ -176,7 +189,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         return new DateTimeOffset(startLocalDateTime, currentOffset);
                     }
 
-                    TimeSpan lateOffset = zone.BaseUtcOffset;
+                    TimeSpan lateOffset = timeZone.BaseUtcOffset;
 
                     // Strict jobs should be fired in lowest offset only.
                     if (currentOffset != lateOffset)
@@ -187,19 +200,19 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 else
                 {
                     // Strict
-                    return new DateTimeOffset(startLocalDateTime, zone.GetUtcOffset(startLocalDateTime));
+                    return new DateTimeOffset(startLocalDateTime, timeZone.GetUtcOffset(startLocalDateTime));
                 }
             }
 
-            if (zone.IsAmbiguousTime(startLocalDateTime))
+            if (timeZone.IsAmbiguousTime(startLocalDateTime))
             {
-                TimeSpan lateOffset = zone.BaseUtcOffset;
+                TimeSpan lateOffset = timeZone.BaseUtcOffset;
 
-                TimeSpan earlyOffset = GetDstOffset(startLocalDateTime, zone);
+                TimeSpan earlyOffset = GetDstOffset(startLocalDateTime, timeZone);
 
                 if (earlyOffset == currentOffset)
                 {
-                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(zone, startLocalDateTime, earlyOffset);
+                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(timeZone, startLocalDateTime, earlyOffset);
 
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
@@ -208,7 +221,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (found.HasValue)
                     {
-                        return Next(new DateTimeOffset(found.Value, currentOffset), endDateTimeOffset, zone);
+                        return Next(new DateTimeOffset(found.Value, currentOffset), endDateTimeOffset, timeZone);
                     }
 
                     var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
@@ -218,7 +231,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (found.HasValue)
                     {
-                        return Next(new DateTimeOffset(found.Value, lateOffset), endDateTimeOffset, zone);
+                        return Next(new DateTimeOffset(found.Value, lateOffset), endDateTimeOffset, timeZone);
                     }
                 }
             }
@@ -228,7 +241,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
             if (nextFound == null) return null;
 
-            return Next(new DateTimeOffset(nextFound.Value, currentOffset), endDateTimeOffset, zone);
+            return Next(new DateTimeOffset(nextFound.Value, currentOffset), endDateTimeOffset, timeZone);
         }
 
         private DateTime? Next(DateTime baseTime, DateTime endTime)
