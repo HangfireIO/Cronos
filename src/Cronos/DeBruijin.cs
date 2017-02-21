@@ -17,7 +17,6 @@ namespace Cronos
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int FindFirstSet(long value, int startBit, int endBit)
         {
             value = value >> startBit;

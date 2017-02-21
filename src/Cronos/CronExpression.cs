@@ -573,27 +573,22 @@ namespace Cronos
             throw new InvalidOperationException();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsNthDayOfWeek(int day, int n)
         {
             return day - Constants.DaysPerWeekCount * n < Constants.FirstDayOfMonth &&
                    day - Constants.DaysPerWeekCount * (n - 1) >= Constants.FirstDayOfMonth;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsLastDayOfWeek(int day, int lastDayOfMonth)
         {
             return day + Constants.DaysPerWeekCount > lastDayOfMonth;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
             return DeBruijin.FindFirstSet(value, startBit, endBit);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetNearestWeekDay(int day, DayOfWeek dayOfWeek, int lastDayOfMonth)
         {
             if (dayOfWeek == DayOfWeek.Sunday)
@@ -615,7 +610,6 @@ namespace Cronos
             return day;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetNextDayOfMonth(int year, int month, int startDay)
         {
             if (month < Constants.FirstMonth || month > Constants.LastMonth) return -1;
@@ -980,13 +974,11 @@ namespace Cronos
             return null;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool GetBit(long value, int index)
         {
             return (value & (1L << index)) != 0;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
