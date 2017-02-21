@@ -17,6 +17,7 @@
         };
 
         public const int CronWithSecondsFieldsCount = 6;
+        public const int MinFieldsCount = 5;
 
         public const int FirstSecond = 0;
         public const int LastSecond = 59;

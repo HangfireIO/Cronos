@@ -49,10 +49,12 @@ namespace Cronos
                             expression.Flags |= CronExpressionFlag.SecondStar;
                         }
 
-                        if ((pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second)) == null)
-                        {
-                            throw new ArgumentException($"second '{cronExpression}'", nameof(cronExpression));
-                        }
+                        pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
+                    }
+                    else if(fieldsCount < Constants.MinFieldsCount)
+                    {
+                        throw new FormatException($@"'{cronExpression}'  '* * * *' is an invalid cron expression. 
+It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, hours, days, months and days of week.");
                     }
                     else
                     {
@@ -66,10 +68,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.MinuteStar;
                     }
 
-                    if ((pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute)) == null)
-                    {
-                        throw new ArgumentException($"minute '{cronExpression}'", nameof(cronExpression));
-                    }
+                    pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute);
 
                     // Hour.
 
@@ -78,10 +77,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.HourStar;
                     }
 
-                    if ((pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour)) == null)
-                    {
-                        throw new ArgumentException("hour", nameof(cronExpression));
-                    }
+                    pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour);
 
                     // Day of month.
 
@@ -94,10 +90,7 @@ namespace Cronos
                         expression.Flags |= CronExpressionFlag.DayOfMonthLast;
                     }
 
-                    if ((pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth)) == null)
-                    {
-                        throw new ArgumentException("day of month", nameof(cronExpression));
-                    }
+                    pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth);
 
                     if (*pointer == 'W')
                     {
@@ -109,22 +102,16 @@ namespace Cronos
 
                     // Month.
 
-                    if ((pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month)) == null)
-                    {
-                        throw new ArgumentException("month", nameof(cronExpression));
-                    }
+                    pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month);
 
                     // Day of week.
 
                     if (*pointer == '?' && expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
-                        throw new ArgumentException("day of week", nameof(cronExpression));
+                        throw new FormatException($"{CronFieldType.DayOfWeek}: '?' is not supported.");
                     }
 
-                    if ((pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek)) == null)
-                    {
-                        throw new ArgumentException("day of week", nameof(cronExpression));
-                    }
+                    pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek);
 
                     if (*pointer == 'L')
                     {
@@ -137,9 +124,9 @@ namespace Cronos
                         pointer++;
                         pointer = GetNumber(out expression._nthdayOfWeek, Constants.MinNthDayOfWeek, null, pointer);
 
-                        if (expression._nthdayOfWeek < Constants.MinNthDayOfWeek || expression._nthdayOfWeek > Constants.MaxNthDayOfWeek)
+                        if (pointer == null || expression._nthdayOfWeek < Constants.MinNthDayOfWeek || expression._nthdayOfWeek > Constants.MaxNthDayOfWeek)
                         {
-                            throw new ArgumentException("day of week", nameof(cronExpression));
+                            throw new FormatException($"'#' must be followed by a number between {Constants.MinNthDayOfWeek} and {Constants.MaxNthDayOfWeek}.");
                         }
                     }
 
@@ -147,7 +134,7 @@ namespace Cronos
 
                     if (*pointer != '\0')
                     {
-                        throw new ArgumentException("invalid cron", nameof(cronExpression));
+                        throw new FormatException("CronExpression must contain 5 or 6 fields.");
                     }
 
                     // Make sundays equivilent.
@@ -725,10 +712,7 @@ namespace Cronos
             var singleValue = true;
             while (true)
             {
-                if ((pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType)) == null)
-                {
-                    return null;
-                }
+                pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType);
 
                 if (*pointer == ',')
                 {
@@ -743,14 +727,8 @@ namespace Cronos
 
             if (*pointer == 'W' && !singleValue)
             {
-                return null;
+                throw new FormatException($"'{cronFieldType}': using some numbers with 'W' is not supported.");
             }
-
-            // exiting.  skip to some blanks, then skip over the blanks.
-            /*while (*pointer != '\t' && *pointer != ' ' && *pointer != '\n' && *pointer != '\0')
-            {
-                pointer++;
-            }*/
 
             pointer = SkipWhiteSpaces(pointer);
 
@@ -785,19 +763,19 @@ namespace Cronos
             {
                 if (cronFieldType != CronFieldType.DayOfMonth && cronFieldType != CronFieldType.DayOfWeek)
                 {
-                    return null;
+                    throw new FormatException($@"'?' is not supported for the '{cronFieldType}' field.");
                 }
 
                 pointer++;
 
-                if (*pointer == '/') return null;
+                if (*pointer == '/') throw new FormatException($@"'{cronFieldType}': '/' is not allowed after '?'.");
 
                 SetAllBits(out bits);
                 return pointer;
             }
             else if(*pointer == 'L')
             {
-                if (cronFieldType != CronFieldType.DayOfMonth) return null;
+                if (cronFieldType != CronFieldType.DayOfMonth) throw new FormatException($@"'L' is not supported for the '{cronFieldType}' field.");
 
                 pointer++;
 
@@ -808,15 +786,11 @@ namespace Cronos
                     // Eat the dash.
                     pointer++;
 
-                    int lastMonthOffset;
-
                     // Get the number following the dash.
-                    if ((pointer = GetNumber(out lastMonthOffset, 0, null, pointer)) == null)
+                    if ((pointer = GetNumber(out int lastMonthOffset, 0, null, pointer)) == null || lastMonthOffset < 0 || lastMonthOffset >= high)
                     {
-                        return null;
+                        throw new FormatException($"Last month offset in '{cronFieldType}' field must be a number between {0} and {high} (all inclusive).");
                     }
-
-                    if (lastMonthOffset < 0 || lastMonthOffset >= high) return null;
 
                     bits = bits >> lastMonthOffset;
                 }
@@ -824,21 +798,9 @@ namespace Cronos
             }
             else
             {
-                if ((pointer = GetNumber(out num1, low, names, pointer)) == null)
+                if ((pointer = GetNumber(out num1, low, names, pointer)) == null || num1 < low || num1 > high)
                 {
-                    return null;
-                }
-
-                // Explicitly check for sane values. Certain combinations of ranges and
-                // steps which should return EOF don't get picked up by the code below,
-                // eg:
-                //     5-64/30 * * * *
-                //
-                // Code adapted from set_elements() where this error was probably intended
-                // to be catched.
-                if (num1 < low || num1 > high)
-                {
-                    return null;
+                    throw new FormatException($"Value of '{cronFieldType}' field must be a number between {low} and {high} (all inclusive).");
                 }
 
                 if (*pointer == '-')
@@ -847,19 +809,12 @@ namespace Cronos
                     pointer++;
 
                     // Get the number following the dash.
-                    if ((pointer = GetNumber(out num2, low, names, pointer)) == null)
+                    if ((pointer = GetNumber(out num2, low, names, pointer)) == null || num2 < low || num2 > high)
                     {
-                        return null;
+                        throw new FormatException($"Range in '{cronFieldType}' field must contain numbers between {low} and {high} (all inclusive).");
                     }
 
-                    // Explicitly check for sane values. Certain combinations of ranges and
-                    // steps which should return EOF don't get picked up by the code below,
-                    // eg:
-                    //     5-64/30 * * * *
-                    //
-                    if (num2 < low || num2 > high) return null;
-
-                    if (*pointer == 'W') return null;
+                    if (*pointer == 'W') throw new FormatException($"'{cronFieldType}': 'W' is not allowed after '-'.");
                 }
                 else if (*pointer == '/')
                 {
@@ -885,11 +840,11 @@ namespace Cronos
                 // sent as a 0 since there is no offset either.
                 if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0 || num3 > high)
                 {
-                    return null;
+                    throw new FormatException($"Step in '{cronFieldType}' field must be a number between {1} and {high} (all inclusive).");
                 }
                 if (*pointer == 'W')
                 {
-                    return null;
+                    throw new FormatException($"'{cronFieldType}': 'W' is not allowed after '/'.");
                 }
             }
             else

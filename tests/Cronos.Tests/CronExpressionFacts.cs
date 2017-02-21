@@ -180,28 +180,29 @@ namespace Cronos.Tests
 
         // Day of week field is invalid.
 
-        [InlineData("* * * * * 8     ")]
-        [InlineData("* * * * * -1    ")]
-        [InlineData("* * * * * -     ")]
-        [InlineData("* * * * * 3-    ")]
-        [InlineData("* * * * * ,     ")]
-        [InlineData("* * * * * ,1    ")]
-        [InlineData("* * * * * /     ")]
-        [InlineData("* * * * * */    ")]
-        [InlineData("* * * * * 1/    ")]
-        [InlineData("* * * * * 1/0   ")]
-        [InlineData("* * * * * 1/8   ")]
-        [InlineData("* * * * * #     ")]
-        [InlineData("* * * * * 0#    ")]
-        [InlineData("* * * * * 5#6   ")]
-        [InlineData("* * * * * SUN#6 ")]
-        [InlineData("* * * * * 0#0   ")]
-        [InlineData("* * * * * SUT   ")]
-        [InlineData("* * * * * SU0   ")]
-        [InlineData("* * * * * SUNDAY")]
-        [InlineData("* * * * * L     ")]
-        [InlineData("* * * * * W     ")]
-        [InlineData("* * * * * LW    ")]
+        [InlineData("* * * * * 8      ")]
+        [InlineData("* * * * * -1     ")]
+        [InlineData("* * * * * -      ")]
+        [InlineData("* * * * * 3-     ")]
+        [InlineData("* * * * * ,      ")]
+        [InlineData("* * * * * ,1     ")]
+        [InlineData("* * * * * /      ")]
+        [InlineData("* * * * * */     ")]
+        [InlineData("* * * * * 1/     ")]
+        [InlineData("* * * * * 1/0    ")]
+        [InlineData("* * * * * 1/8    ")]
+        [InlineData("* * * * * #      ")]
+        [InlineData("* * * * * 0#     ")]
+        [InlineData("* * * * * 5#6    ")]
+        [InlineData("* * * * * SUN#6  ")]
+        [InlineData("* * * * * SUN#050")]
+        [InlineData("* * * * * 0#0    ")]
+        [InlineData("* * * * * SUT    ")]
+        [InlineData("* * * * * SU0    ")]
+        [InlineData("* * * * * SUNDAY ")]
+        [InlineData("* * * * * L      ")]
+        [InlineData("* * * * * W      ")]
+        [InlineData("* * * * * LW     ")]
 
         // '?' can be specfied only for day of month or day of week.
 
@@ -212,9 +213,7 @@ namespace Cronos.Tests
         [InlineData("* * * ? * ?")]
         public void Parse_ThrowsAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
-            var exception = Assert.Throws<ArgumentException>(() => CronExpression.Parse(cronExpression));
-
-            Assert.Equal("cronExpression", exception.ParamName);
+            Assert.Throws<FormatException>(() => CronExpression.Parse(cronExpression));
         }
 
         [Theory]
