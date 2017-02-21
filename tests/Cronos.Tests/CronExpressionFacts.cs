@@ -25,6 +25,7 @@ namespace Cronos.Tests
         [InlineData(" 	*	*	* * * *    ")]
         public void HandleWhiteSpaces(string cronExpression)
         {
+            var a = new DateTime(2016, 03, 13, 01, 50, 00).AddSeconds(1);
             var expression = CronExpression.Parse(cronExpression);
 
             var startDateTimeOffset = new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero);
@@ -1380,9 +1381,34 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant.AddYears(100);
 
-            var nextExecuting = expression.Next(startInstant, endInstant, EasternTimeZone);
+            var nextTime = expression.Next(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextExecuting);
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextTime);
+        }
+
+        [Theory]
+        [InlineData("55 *  *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
+        [InlineData("0  50 *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
+        [InlineData("0  10 *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
+        [InlineData("0  0  22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
+        [InlineData("0  0  11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
+        [InlineData("0  0  0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
+        [InlineData("0  0  0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
+        [InlineData("0  0  0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
+        [InlineData("0  0  0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
+        [InlineData("0  0  0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
+        [InlineData("0  0  0  *  *  SUN", "2017-02-21 12:11   ", "2017-01-25 23:59   ")]
+        [InlineData("0  0  0  *  *  TUE", "2017-02-22 12:11   ", "2017-01-28 23:59   ")]
+        public void Next_ReturnsNull_WhenNextExecutionIsAfterEndTime(string cronExpression, string startTime, string endTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
+            var endInstant = GetInstantFromLocalTime(endTime, EasternTimeZone);
+
+            var nextTime = expression.Next(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(null, nextTime);
         }
 
         private static DateTimeOffset GetInstantFromLocalTime(string localDateTimeString, TimeZoneInfo zone)
