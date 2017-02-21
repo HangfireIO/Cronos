@@ -51,7 +51,7 @@ namespace Cronos
 
                         pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
                     }
-                    else if(fieldsCount < Constants.MinFieldsCount)
+                    else if(fieldsCount != Constants.CronWithoutSecondsFieldsCount)
                     {
                         throw new FormatException($@"'{cronExpression}'  '* * * *' is an invalid cron expression. 
 It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, hours, days, months and days of week.");
@@ -108,7 +108,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (*pointer == '?' && expression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
-                        throw new FormatException($"{CronFieldType.DayOfWeek}: '?' is not supported.");
+                        throw new FormatException($"'{CronFieldType.DayOfWeek}': '?' is not supported.");
                     }
 
                     pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek);
@@ -128,13 +128,6 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         {
                             throw new FormatException($"'#' must be followed by a number between {Constants.MinNthDayOfWeek} and {Constants.MaxNthDayOfWeek}.");
                         }
-                    }
-
-                    pointer = SkipWhiteSpaces(pointer);
-
-                    if (*pointer != '\0')
-                    {
-                        throw new FormatException("CronExpression must contain 5 or 6 fields.");
                     }
 
                     // Make sundays equivilent.
