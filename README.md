@@ -9,9 +9,9 @@
 ## Features
 
 * Parse cron expressions comprising five or six fields. See [Cron format](#cron-format).
-* Calculate next execution in zoned time and UTC.
+* Calculate next execution in the **local time** within given time zone.
 * Support extended format with non-standard characters: `?`, `L`, `W`, `#`.
-* Handle the transition from standard time to daylight saving time and vice versa.
+* Handle the transition from standard time to **daylight saving time** and vice versa.
 
 ## Installation
 
@@ -19,7 +19,7 @@ TBD
 
 ## Usage
 
-### Calculate next execution in zoned time
+### Next execution based on 6 fields expression
 
 ```csharp
 var expression = CronExpression.Parse("0 30 * * * *");
@@ -28,17 +28,34 @@ var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time
 var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone));
 ```
 
-### Calculate next execution in UTC time
+### Next execution based on 5 fields expression
 
 ```csharp
-var expression = CronExpression.Parse("* * * * * *");
+var expression = CronExpression.Parse("30 * * * *");
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone));
+```
+
+### Next execution in UTC time
+
+```csharp
+var expression = CronExpression.Parse("* * * * *");
+
+var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, TimeZoneInfo.Utc);
+```
+
+### Next Friday the thirteenth
+
+```csharp
+var expression = CronExpression.Parse("0 0 13 * FRI");
 
 var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, TimeZoneInfo.Utc);
 ```
 
 ### Daylight Saving Time
 
-Cronos handles the transition from standard time (ST) to Daylight saving time (DST). 
+**Cronos** handles the transition from standard time (ST) to Daylight saving time (DST). 
 
 **Setting the clocks forward**
 
@@ -105,18 +122,22 @@ Console.WriteLine("Next execution at " + nextExecution);
 // Next execution at 2016-11-06 02:30:00 AM -05:00
     ```
 
-### Cron format
+## Cron format
 
-Cronos uses a cron expression comprising five or six fields separated by white space that represents a set of times, normally as a schedule to execute some routine.
+**Cronos** uses a cron expression comprising five or six fields separated by white space that represents a set of times.
 
-| Field        | Required | Allowed values  | Allowed special charecters | Comment                  |
-|--------------|----------|-----------------|----------------------------|--------------------------|
-| Seconds      | No       | 0-59            | * , - /                    |                          |
-| Minutes      | Yes      | 0-59            | * , - /                    |                          |
-| Hours        | Yes      | 0-23            | * , - /                    |                          |
-| Day of month | Yes      | 1-31            | * , - / ? L W              |                          |
-| Month        | Yes      | 1-12 or JAN-DEC | * , - /                    |                          |
-| Day of week  | Yes      | 0-7 or SUN-SAT  | * , - / ? L #              | 0 and 7 standing for SUN |
+                                             Allowed values     Allowed special characters     Comment
+												                                           
+    ┌───────────── second (optional)         0-59               * , - /                    
+    │ ┌───────────── minute                  0-59               * , - /                    
+    │ │ ┌───────────── hour                  0-23               * , - /                    
+    │ │ │ ┌───────────── day of month        1-31               * , - / L W ?              
+    │ │ │ │ ┌───────────── month             1-12 or JAN-DEC    * , - /                    
+    │ │ │ │ │ ┌───────────── day of week     0-7  or MON-SUN    * , - / # L ?                  0 and 7 means SUN
+    │ │ │ │ │ │
+    │ │ │ │ │ │
+    │ │ │ │ │ │
+    * * * * * *
 
 **Star `*`**
 
@@ -137,26 +158,30 @@ Commas are used to separate items of a list.
 |-------------------|---------------------------------------|
 | `15,45 * * * * *` | Every minute at 15 and 45 seconds     |
 | `* * * * SAT,SUN` | Every minute on saturdays and sundays |
+| `* * * * 6,7`     | Every minute on saturdays and sundays |
+| `* * * * 0,6`     | Every minute on saturdays and sundays |
 
 **Hyphens `-`**
 
-Hyphens define ranges. For example, 03-05 indicates every month between march and may, inclusive.
+Hyphens define ranges. 
 
-| Expression        | Description                                |
-|-------------------|--------------------------------------------|
-| `0-30 1 * * *`    | Every minute between 01:05 AM and 01:10 AM |
-| `0 0 * * MON-FRI` | At 00:00, Monday through Friday            |
+| Expression        | Description                                                       |
+|-------------------|-------------------------------------------------------------------|
+| `0-30 1 * * *`    | Every minute between 01:00 AM and 01:30 AM                        |
+| `45-15 1 * * *`   | Every minute from 1:00 AM to 01:15 AM and from 1:45 AM to 1:59 AM |
+| `0 0 * * MON-FRI` | At 00:00, Monday through Friday                                   |
 
-**L**
+**L character**
 
 `L` stands for "last". When used in the day-of-week field, it allows you to specify constructs such as "the last Friday" (`5L`) of a given month. In the day-of-month field, it specifies the last day of the month.
+
 | Expression    | Description                                          |
 |---------------|------------------------------------------------------|
 | `0 0 L * *`   | At 00:00 AM on the last day of the month             |
 | `0 0 L-1 * *` | At 00:00 AM the day before the last day of the month |
 | `0 0 * * 1L`  | At 00:00 AM on the last monday of the month          |
 
-**W**
+**W character**
 
 `W` character is allowed for the day-of-month field. This character is used to specify the weekday (Monday-Friday) nearest the given day. As an example, if you were to specify `15W` as the value for the day-of-month field, the meaning is: "the nearest weekday to the 15th of the month." So, if the 15th is a Saturday, `Next` returns Friday the 14th. If the 15th is a Sunday, `Next` returns Monday the 16th. If the 15th is a Tuesday, then `Next` returns Tuesday the 15th. However, if you specify "1W" as the value for day-of-month, and the 1st is a Saturday, `Next` returns the 3rd, as it does not 'jump' over the boundary of a month's days. The 'W' character can be specified only when the day-of-month is a single day, not a range or list of days.
 
@@ -164,8 +189,9 @@ Hyphens define ranges. For example, 03-05 indicates every month between march an
 |-------------------|----------------------------------------------------------|
 | `0 0 1W * *`      | At 00:00 AM, on the first weekday of every month         |
 | `0 0 10W * *`     | At 00:00 AM on the weekday nearest day 10 of every month |
+| `0 0 LW * *`      | At 00:00, on the last weekday of the month               |
 
-**#**
+**Hash `#`**
 
 `#` is allowed for the day-of-week field, and must be followed by a number between one and five. It allows you to specify constructs such as "the second Friday" of a given month. 
 
@@ -175,11 +201,20 @@ Hyphens define ranges. For example, 03-05 indicates every month between march an
 | `0 0 * * 1#1`     | At 00:00 AM on the first Monday of the month             |
 | `0 0 * 1 1#1`     | At 00:00 AM on the first Monday of the January           |
 
-**?**
+**Question mark `?`**
 
-`?` means "no specific value". Useful when you need to specify something in one of the two fields in which the character is allowed, but not the other. For example, if I want to set a particular day of the month (say, the 10th), but don’t care what day of the week that happens to be, I would put "10" in the day-of-month field, and "?" in the day-of-week field. See the examples below for clarification. 
+`?` is "no specific value" and a synonym of `*`. It's supported but **non-obligatory**. `0 0 5 * *` is the same as `0 0 5 * ?`. You can specify `?` only in one field. For example, `* * ? * ?` is wrong expression.
 
-**/**
+| Expression    | Description                          |
+|---------------|--------------------------------------|
+| `* * * * * ?` | Every second                         |
+| `* * * ? * *` | Every second                         |
+| `* * * * ?`   | Every minute                         |
+| `* * ? * *`   | Every minute                         |
+| `0  0 1 * ?`  | At midnight, on day 1 of every month |
+| `0  0 ? * 1`  | At midnight every Monday             |
+
+**Slash `/`**
 
 Slashes can be combined with ranges to specify step values. 
 
@@ -191,6 +226,16 @@ Slashes can be combined with ranges to specify step values.
 | `0 0  15/2 * *`   | At 00:00, every 2 days, starting on day 15 of the month                                    |
 | `0 0 * 2/3 *`     | At 00:00, every 3 months, February through December                                        |
 | `0 0 * * 1/2`     | At 00:00, every 2 days of the week, starting on Monday                                     |
+
+**Specify Day of month and Day of week**
+
+You can specify both Day of month and Day of week, it allows you to specify constructs such as "Friday the thirteenth". 
+
+| Expression        | Description                                                                                |
+|-------------------|--------------------------------------------------------------------------------------------|
+| `0 0 13 * 5`      | At 00:00, Friday the thirteenth                                                            |
+| `0 0 13 2 5`      | At 00:00, Friday the thirteenth, only in February                                          |
+
 
 ## License
 
