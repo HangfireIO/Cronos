@@ -3,7 +3,7 @@
 namespace Cronos
 {
     [Flags]
-    public enum CronExpressionFlag
+    internal enum CronExpressionFlag
     {
         None = 0x0,
         SecondStar = 0x1,
