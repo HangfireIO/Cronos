@@ -4,7 +4,10 @@
 Task("Restore-NuGet-Packages")
     .Does(()=> 
 {
-    NuGetRestore("Cronos.sln");
+    StartProcess(".nuget/NuGet.exe", new ProcessSettings 
+    { 
+        Arguments = "restore Cronos.sln"
+    });
 });
 
 Task("Build")
