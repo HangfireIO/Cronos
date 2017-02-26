@@ -87,7 +87,7 @@ if(!$PSScriptRoot){
 	Write-Host "Preparing to run build script...2"
 }
 
-$TOOLS_DIR = Join-Path $PSScriptRoot "packages"
+$TOOLS_DIR = Join-Path $PSScriptRoot "tools"
 $NUGET_EXE = Join-Path $PSScriptRoot ".nuget/nuget.exe"
 $CAKE_EXE = Join-Path $TOOLS_DIR "Cake/Cake.exe"
 $PACKAGES_CONFIG = Join-Path $TOOLS_DIR "packages.config"
@@ -138,13 +138,17 @@ $ENV:NUGET_EXE = $NUGET_EXE
 Write-Host -Message $SkipToolPackageRestore.IsPresent
 Write-Host $TOOLS_DIR
 
+Write-Verbose -Message "Restoring Cake from NuGet..."
+$NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install .nuget\packages.config -ExcludeVersion -o `"$TOOLS_DIR`" -ConfigFile .nuget\NuGet.config"
+
+Write-Verbose -Message ($NuGetOutput | out-string)
+
 Write-Verbose -Message "Restoring tools from NuGet..."
 $NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`""
 
 Write-Verbose -Message ($NuGetOutput | out-string)
 Pop-Location
 
-.nuget\NuGet.exe install .nuget\packages.config -ExcludeVersion -o packages
 # Make sure that Cake has been installed.
 if (!(Test-Path $CAKE_EXE)) {
     Throw "Could not find Cake.exe at $CAKE_EXE"
