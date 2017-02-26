@@ -139,7 +139,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         }
                     }
 
-                    // Make sundays equivilent.
+                    // Make sundays equivalent.
                     if (GetBit(expression._dayOfWeek, 0) || GetBit(expression._dayOfWeek, 7))
                     {
                         SetBit(ref expression._dayOfWeek, 0);
@@ -834,10 +834,10 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 }
             }
 
-            // check for step size
+            // Check for step size.
             if (*pointer == '/')
             {
-                // eat the slash
+                // Eat the slash.
                 pointer++;
 
                 // Get the step size -- note: we don't pass the

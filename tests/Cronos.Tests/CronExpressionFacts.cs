@@ -767,7 +767,6 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            //var endInstant = startInstant + Duration.FromStandardWeeks(365);
             var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
@@ -823,7 +822,6 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            //var endInstant = startInstant + Duration.FromStandardWeeks(365);
             var endInstant = startInstant.AddYears(100);
 
             var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
@@ -831,7 +829,6 @@ namespace Cronos.Tests
             // TODO: Rounding error.
             if (executed?.Millisecond == 999)
             {
-                //executed = executed.Value.Plus(Duration.FromMilliseconds(1));
                 executed = executed.Value.AddMilliseconds(1);
             }
 
