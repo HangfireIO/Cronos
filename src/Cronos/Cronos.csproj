@@ -3,7 +3,20 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.0</TargetFramework>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <Version>0.1.0</Version>
     <DocumentationFile>bin\Debug\netstandard1.0\.xml</DocumentationFile>
+   
+    <PackageId>Cronos</PackageId>
+    <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
+    <Owners>aidmsu, odinserj</Owners>
+    <Description></Description>
+    <ProjectUrl>https://github.com/HangfireIO/Cronos</ProjectUrl>
+    <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <Copyright>Copyright © 2016-2017 Andrey Dorokhov.</Copyright>
+    <PackageTags>Cronos Cron Scheduler Recurring Jobs Tasks</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
