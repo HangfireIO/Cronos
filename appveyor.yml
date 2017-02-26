@@ -18,7 +18,7 @@ cache:
 
 # to run your custom scripts instead of automatic MSBuild
 build_script:
-  - build.ps1
+  - powershell .\build.ps1
   
 #---------------------------------#
 #      artifacts configuration    #
