@@ -18,15 +18,14 @@ Task("Build")
     {
         ToolVersion = MSBuildToolVersion.VS2017,
         Configuration = "Release"
-    }
-    .WithProperty("TargetFramework", "net452"));
+    });
 });
 
 Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var testAssemblies = GetFiles("./tests/**/bin/Release/**/*.Tests.dll");
+    var testAssemblies = GetFiles("./tests/**/bin/Release/net452/*.Tests.dll");
     XUnit2(testAssemblies);
 });
 
