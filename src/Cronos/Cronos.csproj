@@ -9,11 +9,11 @@
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
     <Owners>aidmsu, odinserj</Owners>
-    <Description></Description>
+    <Summary>Cronos is free, open source library to calculate next execution time based on cron expression. Handle the transition from standard time to daylight saving time. Support non-standard characters such as L, W, #, ?.</Summary>
+    <Description>Cronos is free, open source library to calculate next execution time based on cron expression comprising five or six fields. Handle the transition from standard time to daylight saving time. Support non-standard characters such as L, W, #, ?.</Description>
     <ProjectUrl>https://github.com/HangfireIO/Cronos</ProjectUrl>
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Copyright © 2016-2017 Andrey Dorokhov.</Copyright>
     <PackageTags>Cronos Cron Scheduler Recurring Jobs Tasks</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

@@ -15,7 +15,9 @@
 
 ## Installation
 
-TBD
+```
+PM> Install-Package Cronos
+```
 
 ## Usage
 
