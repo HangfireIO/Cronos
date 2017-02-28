@@ -7,7 +7,6 @@
         Hour = 2,
         DayOfMonth = 3,
         Month = 4,
-        DayOfWeek = 5,
-        Year = 6
+        DayOfWeek = 5
     }
 }
