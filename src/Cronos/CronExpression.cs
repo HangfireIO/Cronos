@@ -9,12 +9,12 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
-        private long _second; // 60 bits -> 64 bits in Int64
-        private long _minute; // 60 bits -> 64 bits in Int64
-        private long _hour; // 24 bits -> 32 bits in Int32
-        private long _dayOfMonth; // 31 bits -> 32 bits ini Int32
-        private long _month; // 12 bits -> 16 bits in Int16
-        private long _dayOfWeek; // 8 bits -> 8 bits in byte
+        private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
+        private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
+        private long _hour;       // 24 bits -> from 0 bit to 23 bit in Int64
+        private long _dayOfMonth; // 31 bits -> from 1 bit to 31 bit in Int64
+        private long _month;      // 12 bits -> from 1 bit to 12 bit in Int64
+        private long _dayOfWeek;  // 8 bits  -> from 0 bit to 7  bit in Int64
 
         private int _nthdayOfWeek;
         private bool _nearestWeekday;
