@@ -4,19 +4,15 @@
 Task("Restore-NuGet-Packages")
     .Does(()=> 
 {
-    StartProcess(".nuget/NuGet.exe", new ProcessSettings 
-    { 
-        Arguments = "restore Cronos.sln"
-    });
+    DotNetCoreRestore();
 });
 
 Task("Build")
     .IsDependentOn("Restore-NuGet-Packages")
     .Does(()=> 
 {
-    MSBuild("Cronos.sln", new MSBuildSettings 
+    DotNetCoreBuild("src/Cronos/Cronos.csproj",  new DotNetCoreBuildSettings
     {
-        ToolVersion = MSBuildToolVersion.VS2017,
         Configuration = "Release"
     });
 });
@@ -25,8 +21,10 @@ Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var testAssemblies = GetFiles("./tests/**/bin/Release/net452/*.Tests.dll");
-    XUnit2(testAssemblies);
+    DotNetCoreTest("./tests/Cronos.Tests/Cronos.Tests.csproj", new DotNetCoreTestSettings
+    {
+        Configuration = "Release"
+    });
 });
 
 Task("Pack")
