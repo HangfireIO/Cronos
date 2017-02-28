@@ -19,11 +19,11 @@ namespace Cronos
         private int _nthdayOfWeek;
         private bool _nearestWeekday;
 
+        private CronExpressionFlag _flags;
+
         private CronExpression()
         {
         }
-
-        private CronExpressionFlag Flags { get; set; }
 
         private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
 
@@ -55,7 +55,7 @@ namespace Cronos
                     {
                         if (*pointer == '*')
                         {
-                            expression.Flags |= CronExpressionFlag.SecondStar;
+                            expression._flags |= CronExpressionFlag.SecondStar;
                         }
 
                         pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
@@ -74,7 +74,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (*pointer == '*')
                     {
-                        expression.Flags |= CronExpressionFlag.MinuteStar;
+                        expression._flags |= CronExpressionFlag.MinuteStar;
                     }
 
                     pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute);
@@ -83,7 +83,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (*pointer == '*')
                     {
-                        expression.Flags |= CronExpressionFlag.HourStar;
+                        expression._flags |= CronExpressionFlag.HourStar;
                     }
 
                     pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour);
@@ -92,11 +92,11 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (*pointer == '?')
                     {
-                        expression.Flags |= CronExpressionFlag.DayOfMonthQuestion;
+                        expression._flags |= CronExpressionFlag.DayOfMonthQuestion;
                     }
                     else if (*pointer == 'L')
                     {
-                        expression.Flags |= CronExpressionFlag.DayOfMonthLast;
+                        expression._flags |= CronExpressionFlag.DayOfMonthLast;
                     }
 
                     pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth);
@@ -124,7 +124,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     if (*pointer == 'L')
                     {
-                        expression.Flags |= CronExpressionFlag.DayOfWeekLast;
+                        expression._flags |= CronExpressionFlag.DayOfWeekLast;
                         pointer++;
                     }
 
@@ -625,7 +625,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool HasFlag(CronExpressionFlag flag)
         {
-            return (Flags & flag) != 0;
+            return (_flags & flag) != 0;
         }
 
         private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
