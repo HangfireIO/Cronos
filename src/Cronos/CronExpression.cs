@@ -7,7 +7,7 @@ namespace Cronos
     /// <summary>
     /// Provides a parser and scheduler for cron expressions.
     /// </summary>
-    public class CronExpression
+    public sealed class CronExpression
     {
         private long _second; // 60 bits -> 64 bits in Int64
         private long _minute; // 60 bits -> 64 bits in Int64
