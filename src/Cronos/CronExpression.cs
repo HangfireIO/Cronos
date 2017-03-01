@@ -691,6 +691,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 dateTime.Year);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetAllBits(out long bits)
         {
             bits = ~0L;
