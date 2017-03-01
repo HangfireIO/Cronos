@@ -7,15 +7,15 @@ namespace Cronos.Benchmark
     [RyuJitX64Job]
     public class CronBenchmarks
     {
-        private static readonly CronExpression SimpleExpression = CronExpression.Parse("* * * * * ?");
-        private static readonly CronExpression ComplexExpression = CronExpression.Parse("* */10 12-20 * DEC 3");
+        private static readonly CronExpression SimpleExpression = CronExpression.Parse("* * * * ?");
+        private static readonly CronExpression ComplexExpression = CronExpression.Parse("*/10 12-20 * DEC 3");
 
         private static readonly DateTime DateTimeNow = DateTime.Now;
 
         [Benchmark]
         public unsafe string ParseBaseline()
         {
-            fixed (char* pointer = "* * * * * ?")
+            fixed (char* pointer = "* * * * ?")
             {
                 var ptr = pointer;
                 while (*ptr != '\0' && *ptr != '\n' && *ptr != ' ') ptr++;
@@ -27,31 +27,31 @@ namespace Cronos.Benchmark
         [Benchmark]
         public CronExpression ParseStars()
         {
-            return CronExpression.Parse("* * * * * *");
+            return CronExpression.Parse("* * * * *");
         }
 
         [Benchmark]
         public CronExpression ParseNumber()
         {
-            return CronExpression.Parse("20 * * * * *");
+            return CronExpression.Parse("20 * * * *");
         }
 
         [Benchmark]
         public CronExpression ParseRange()
         {
-            return CronExpression.Parse("20-40 * * * * *");
+            return CronExpression.Parse("20-40 * * * *");
         }
 
         [Benchmark]
         public CronExpression ParseList()
         {
-            return CronExpression.Parse("20,30,40,50 * * * * *");
+            return CronExpression.Parse("20,30,40,50 * * * *");
         }
 
         [Benchmark]
         public CronExpression ParseComplex()
         {
-            return CronExpression.Parse("* */10 12-20 ? DEC 3");
+            return CronExpression.Parse("*/10 12-20 ? DEC 3");
         }
 
         [Benchmark]

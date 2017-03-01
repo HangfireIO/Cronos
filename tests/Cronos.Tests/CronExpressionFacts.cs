@@ -213,7 +213,7 @@ namespace Cronos.Tests
         [InlineData("* * * ? * ?")]
         public void Parse_ThrowsAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
-            Assert.Throws<FormatException>(() => CronExpression.Parse(cronExpression));
+            Assert.Throws<FormatException>(() => CronExpression.Parse(cronExpression, CronFields.Seconds));
         }
 
         [Theory]
@@ -687,7 +687,7 @@ namespace Cronos.Tests
         [InlineData("* * * ? * *", "2099-12-09 16:46", "2099-12-09 16:46")]
         public void Next_ReturnsCorrectDate(string cronExpression, string startTime, string expectedTime)
         {
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant.AddYears(100);
@@ -722,7 +722,7 @@ namespace Cronos.Tests
         [InlineData("0 30   *      *  3  SUN#2", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00")]
         public void Next_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string startTime, string expectedTime)
         {
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startInstant = GetInstant(startTime);
             var endInstant = startInstant.AddYears(100);
@@ -764,7 +764,7 @@ namespace Cronos.Tests
         [InlineData("0 0    1   * * *", "2016-11-06 01:00 -05:00", "2016-11-07 01:00 -05:00")]
         public void Next_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startInstant = GetInstant(startTimeWithOffset);
             var endInstant = startInstant.AddYears(100);
@@ -802,7 +802,7 @@ namespace Cronos.Tests
         [InlineData("0 */30 * * * *", "2016-11-06 03:50", "2016-11-06 04:00")]
         public void Next_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
         {
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, TimeZoneInfo.Utc);
             var endInstant = startInstant.AddYears(100);
@@ -1397,7 +1397,7 @@ namespace Cronos.Tests
         [InlineData("0  0  0  *  *  TUE", "2017-02-22 12:11   ", "2017-01-28 23:59   ")]
         public void Next_ReturnsNull_WhenNextExecutionIsAfterEndTime(string cronExpression, string startTime, string endTime)
         {
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = GetInstantFromLocalTime(endTime, EasternTimeZone);

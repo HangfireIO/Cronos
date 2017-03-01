@@ -26,6 +26,11 @@ namespace Cronos
         }
 
         private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
+        
+        public static CronExpression Parse(string cronExpression)
+        {
+            return Parse(cronExpression, CronFields.Default);
+        }
 
         ///<summary>
         /// Constructs a new <see cref="CronExpression"/> based on the specified
@@ -33,7 +38,7 @@ namespace Cronos
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string cronExpression)
+        public static CronExpression Parse(string cronExpression, CronFields fields)
         {
             if (string.IsNullOrEmpty(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
 
@@ -43,15 +48,13 @@ namespace Cronos
             {
                 fixed (char* value = cronExpression)
                 {
-                    var fieldsCount = CountFields(value);
-
                     var pointer = value;
 
                     SkipWhiteSpaces(ref pointer);
 
                     // Second.
 
-                    if (fieldsCount == Constants.CronWithSecondsFieldsCount)
+                    if ((fields & CronFields.Seconds) != 0)
                     {
                         if (*pointer == '*')
                         {
@@ -59,11 +62,6 @@ namespace Cronos
                         }
 
                         pointer = GetBits(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
-                    }
-                    else if(fieldsCount != Constants.CronWithoutSecondsFieldsCount)
-                    {
-                        throw new FormatException($@"'{cronExpression}'  '* * * *' is an invalid cron expression. 
-It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, hours, day of month, months and day of week.");
                     }
                     else
                     {
@@ -890,7 +888,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
             // Range. set all elements from num1 to num2, stepping
             // by num3.
-            if (num3 == 1 && num1 != num2 + 1)
+            if (num3 == 1 && num1 < num2 + 1)
             {
                 // Fast path, to set all the required bits at once.
                 bits |= (1L << (num2 + 1)) - (1L << num1);
@@ -998,34 +996,6 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
             }
 
             return code;
-        }
-
-        private static unsafe int CountFields(char* pointer)
-        {
-            int length = 0;
-            CheckWhiteSpace:
-
-            if (*pointer == '\t' ||  *pointer == ' ')
-            {
-                pointer++;
-                goto CheckWhiteSpace;
-            }
-
-            if (*pointer == '\0') return length;
-
-            CheckNotWhiteSpace:
-
-            if (*pointer != '\t' && *pointer != ' ' && *pointer != '\0')
-            {
-                pointer++;
-                goto CheckNotWhiteSpace;
-            }
-
-            length++;
-
-            if (*pointer == '\0') return length;
-
-            goto CheckWhiteSpace;
         }
     }
 }
