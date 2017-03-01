@@ -935,11 +935,13 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
             return null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool GetBit(long value, int index)
         {
             return (value & (1L << index)) != 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
