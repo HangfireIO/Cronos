@@ -58,7 +58,7 @@ namespace Cronos
                             expression._flags |= CronExpressionFlag.SecondStar;
                         }
 
-                        pointer = GetList(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
+                        pointer = GetBits(ref expression._second, Constants.FirstSecond, Constants.LastSecond, null, pointer, CronFieldType.Second);
                     }
                     else if(fieldsCount != Constants.CronWithoutSecondsFieldsCount)
                     {
@@ -77,7 +77,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         expression._flags |= CronExpressionFlag.MinuteStar;
                     }
 
-                    pointer = GetList(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute);
+                    pointer = GetBits(ref expression._minute, Constants.FirstMinute, Constants.LastMinute, null, pointer, CronFieldType.Minute);
 
                     // Hour.
 
@@ -86,7 +86,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         expression._flags |= CronExpressionFlag.HourStar;
                     }
 
-                    pointer = GetList(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour);
+                    pointer = GetBits(ref expression._hour, Constants.FirstHour, Constants.LastHour, null, pointer, CronFieldType.Hour);
 
                     // Day of month.
 
@@ -99,7 +99,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         expression._flags |= CronExpressionFlag.DayOfMonthLast;
                     }
 
-                    pointer = GetList(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth);
+                    pointer = GetBits(ref expression._dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth, null, pointer, CronFieldType.DayOfMonth);
 
                     if (*pointer == 'W')
                     {
@@ -111,7 +111,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
                     // Month.
 
-                    pointer = GetList(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month);
+                    pointer = GetBits(ref expression._month, Constants.FirstMonth, Constants.LastMonth, Constants.MonthNamesArray, pointer, CronFieldType.Month);
 
                     // Day of week.
 
@@ -120,7 +120,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         throw new FormatException($"'{CronFieldType.DayOfWeek}': '?' is not supported.");
                     }
 
-                    pointer = GetList(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek);
+                    pointer = GetBits(ref expression._dayOfWeek, Constants.FirstDayOfWeek, Constants.LastDayOfWeek, Constants.DayOfWeekNamesArray, pointer, CronFieldType.DayOfWeek);
 
                     if (*pointer == 'L')
                     {
@@ -157,6 +157,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
         /// </summary>
         public DateTimeOffset? Next(DateTimeOffset startDateTimeOffset, DateTimeOffset endDateTimeOffset, TimeZoneInfo timeZone)
         {
+            // TODO: DateTime kind
             if (timeZone.Equals(TimeZoneInfo.Utc))
             {
                 var found = Next(startDateTimeOffset.DateTime, endDateTimeOffset.DateTime);
@@ -706,17 +707,43 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
             }
         }
 
-        private static unsafe char* GetList(
-          ref long bits, /* one bit per flag, default=FALSE */
-          int low, int high, /* bounds, impl. offset for bitstr */
-          int[] names, /* NULL or *[] of names for these elements */
+        private static unsafe char* GetBits(
+          ref long bits,
+          int low, int high,
+          int[] names,
           char* pointer,
           CronFieldType cronFieldType)
+        {
+            if (*pointer == '*')
+            {
+                pointer++;
+
+                if (*pointer != '/')
+                {
+                    SetAllBits(out bits);
+                }
+                else
+                {
+                    pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType, true);
+                }
+            }
+            else
+            {
+                pointer = GetList(ref bits, low, high, names, pointer, cronFieldType);
+            }
+
+            SkipWhiteSpaces(ref pointer);
+
+            return pointer;
+        }
+
+        private static unsafe char* GetList(ref long bits, int low, int high, int[] names, char* pointer,
+            CronFieldType cronFieldType)
         {
             var singleValue = true;
             while (true)
             {
-                pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType);
+                pointer = GetRange(ref bits, low, high, names, pointer, cronFieldType, false);
 
                 if (*pointer == ',')
                 {
@@ -734,34 +761,24 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 throw new FormatException($"'{cronFieldType}': using some numbers with 'W' is not supported.");
             }
 
-            SkipWhiteSpaces(ref pointer);
-
             return pointer;
         }
 
         private static unsafe char* GetRange(
-            ref long bits, 
-            int low, 
+            ref long bits,
+            int low,
             int high,
             int[] names,
             char* pointer,
-            CronFieldType cronFieldType)
+            CronFieldType cronFieldType,
+            bool star)
         {
             int num1, num2, num3;
-            
-            if (*pointer == '*')
+
+            if (star)
             {
-                // '*' means "first-last" but can still be modified by /step.
                 num1 = low;
                 num2 = high;
-
-                pointer++;
-
-                if (*pointer != '/')
-                {
-                    SetAllBits(out bits);
-                    return pointer;
-                }
             }
             else if(*pointer == '?')
             {
@@ -822,6 +839,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 }
                 else if (*pointer == '/')
                 {
+                    // TODO: Why?
                     num2 = high;
                 }
                 else
