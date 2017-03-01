@@ -25,9 +25,27 @@ namespace Cronos.Benchmark
         }
 
         [Benchmark]
-        public CronExpression ParseSimple()
+        public CronExpression ParseStars()
         {
             return CronExpression.Parse("* * * * * *");
+        }
+
+        [Benchmark]
+        public CronExpression ParseNumber()
+        {
+            return CronExpression.Parse("20 * * * * *");
+        }
+
+        [Benchmark]
+        public CronExpression ParseRange()
+        {
+            return CronExpression.Parse("20-40 * * * * *");
+        }
+
+        [Benchmark]
+        public CronExpression ParseList()
+        {
+            return CronExpression.Parse("20,30,40,50 * * * * *");
         }
 
         [Benchmark]
