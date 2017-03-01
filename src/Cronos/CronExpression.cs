@@ -890,9 +890,17 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
 
             // Range. set all elements from num1 to num2, stepping
             // by num3.
-            for (var i = num1; i <= num2; i += num3)
+            if (num3 == 1 && num1 != num2 + 1)
             {
-                SetBit(ref bits, i);
+                // Fast path, to set all the required bits at once.
+                bits |= (1L << (num2 + 1)) - (1L << num1);
+            }
+            else
+            {
+                for (var i = num1; i <= num2; i += num3)
+                {
+                    SetBit(ref bits, i);
+                }
             }
 
             // If we have range like 55-10 or 11-1, so num2 > num1 we have to shift bits right.
