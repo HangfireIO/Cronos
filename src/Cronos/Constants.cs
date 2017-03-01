@@ -16,6 +16,10 @@
             "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
         };
 
+        public static readonly int[] FirstValues;
+        public static readonly int[] LastValues;
+        public static readonly int[][] NameArrays;
+
         public const int CronWithSecondsFieldsCount = 6;
         public const int CronWithoutSecondsFieldsCount = 5;
 
@@ -43,10 +47,32 @@
         public const int MinNthDayOfWeek = 1;
         public const int MaxNthDayOfWeek = 5;
 
+        public const int SundayBits = 0b1000_0001;
+
         static Constants()
         {
+            FirstValues = new int[6];
+            FirstValues[(int) CronField.Second] = FirstSecond;
+            FirstValues[(int) CronField.Minute] = FirstMinute;
+            FirstValues[(int) CronField.Hour] = FirstHour;
+            FirstValues[(int) CronField.DayOfMonth] = FirstDayOfMonth;
+            FirstValues[(int) CronField.Month] = FirstMonth;
+            FirstValues[(int) CronField.DayOfWeek] = FirstDayOfWeek;
+
+            LastValues = new int[6];
+            LastValues[(int) CronField.Second] = LastSecond;
+            LastValues[(int) CronField.Minute] = LastMinute;
+            LastValues[(int) CronField.Hour] = LastHour;
+            LastValues[(int) CronField.DayOfMonth] = LastDayOfMonth;
+            LastValues[(int) CronField.Month] = LastMonth;
+            LastValues[(int) CronField.DayOfWeek] = LastDayOfWeek;
+
             MonthNamesArray = new int[MonthNames.Length];
             DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
+
+            NameArrays = new int[6][];
+            NameArrays[(int) CronField.Month] = MonthNamesArray;
+            NameArrays[(int) CronField.DayOfWeek] = DayOfWeekNamesArray;
 
             for (var i = 0; i < MonthNames.Length; i++)
             {

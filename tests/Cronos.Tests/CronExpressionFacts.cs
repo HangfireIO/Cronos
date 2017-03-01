@@ -26,7 +26,7 @@ namespace Cronos.Tests
         public void HandleWhiteSpaces(string cronExpression)
         {
             var a = new DateTime(2016, 03, 13, 01, 50, 00).AddSeconds(1);
-            var expression = CronExpression.Parse(cronExpression);
+            var expression = CronExpression.Parse(cronExpression, CronFields.Seconds);
 
             var startDateTimeOffset = new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero);
             var endDateTimeOffset = new DateTimeOffset(2017, 03, 18, 12, 0, 0, TimeSpan.Zero);
@@ -41,7 +41,7 @@ namespace Cronos.Tests
         {
             var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse(null));
 
-            Assert.Equal("cronExpression", exception.ParamName);
+            Assert.Equal("expression", exception.ParamName);
         }
 
         [Fact]
@@ -49,7 +49,7 @@ namespace Cronos.Tests
         {
             var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse(""));
 
-            Assert.Equal("cronExpression", exception.ParamName);
+            Assert.Equal("expression", exception.ParamName);
         }
 
         [Theory]

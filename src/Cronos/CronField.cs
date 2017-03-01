@@ -1,6 +1,6 @@
 ﻿namespace Cronos
 {
-    internal enum CronFieldType
+    internal enum CronField
     {
         Second = 0,
         Minute = 1,
