@@ -27,7 +27,7 @@ PM> Install-Package Cronos
 var expression = CronExpression.Parse("0 30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone));
+var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
 ```
 
 ### Next execution based on 5 fields expression
@@ -36,7 +36,7 @@ var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone)
 var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone));
+var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
 ```
 
 ### Next execution in UTC time
@@ -44,7 +44,7 @@ var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, easternTimeZone)
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
 
-var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, TimeZoneInfo.Utc);
+var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
 ### Next Friday the thirteenth
@@ -52,7 +52,7 @@ var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, TimeZoneInfo.Utc
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
 
-var nextTime = expression.Next(DateTime.Now, DateTime.MaxValue, TimeZoneInfo.Utc);
+var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
 ### Daylight Saving Time
@@ -70,12 +70,12 @@ var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time
 // 2016-03-13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
 // So duration from 2:00 am to 2:59 am is invalid.
 
-var startTime = new DateTime(2016, 03, 13, 01, 50, 00);
+var startTime = new DateTimeOffset(2016, 03, 13, 01, 50, 00, easternTimeZone.BaseUtcOffset);
 
 // Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
-var nextExecution = expression.Next(startTime, DateTime.MaxValue, easternTimeZone);
+var nextTime = expression.Next(startTime, DateTimeOffset.MaxValue, easternTimeZone);
 
-Console.WriteLine("Next execution at " + nextExecution);
+Console.WriteLine("Next execution at " + nextTime);
 
 // Next execution at 2016-03-13 03:00:00 AM -04:00
 ```
@@ -91,12 +91,13 @@ var expression = CronExpression.Parse("0 30 1 * * ?");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
 var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
+var startDateTimeOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
 
-var nextTime = expression.Next(startTime, DateTime.MaxValue, easternTimeZone);
-Console.WriteLine("Next execution at " + nextExecution);
+var nextTime = expression.Next(startDateTimeOffset, DateTimeOffset.MaxValue, easternTimeZone);
+Console.WriteLine("Next execution at " + nextTime);
 
-nextTime = expression.Next(nextExecution?.AddSeconds(1));
-Console.WriteLine("Next execution at " + nextExecution);
+nextTime = expression.Next(nextTime?.AddSeconds(1));
+Console.WriteLine("Next execution at " + nextTime);
 
 // Next execution at 2016-03-13 01:30:00 AM -04:00
 // Next execution at 2016-03-13 02:30:00 AM -05:00
@@ -109,15 +110,16 @@ var expression = CronExpression.Parse("0 30 * * * ?");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
 var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
+var startDateTimeOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
 
-var nextTime = expression.Next(startTime, DateTime.MaxValue, easternTimeZone);
-Console.WriteLine("Next execution at " + nextExecution);
+var nextTime = expression.Next(startDateTimeOffset, DateTimeOffset.MaxValue, easternTimeZone);
+Console.WriteLine("Next execution at " + nextTime);
 
-nextTime = expression.Next(nextExecution?.AddSeconds(1));
-Console.WriteLine("Next execution at " + nextExecution);
+nextTime = expression.Next(nextTime?.AddSeconds(1));
+Console.WriteLine("Next execution at " + nextTime);
 
-nextTime = expression.Next(nextExecution?.AddSeconds(1));
-Console.WriteLine("Next execution at " + nextExecution);
+nextTime = expression.Next(nextTime?.AddSeconds(1));
+Console.WriteLine("Next execution at " + nextTime);
 
 // Next execution at 2016-11-06 01:30:00 AM -04:00
 // Next execution at 2016-11-06 01:30:00 AM -05:00
