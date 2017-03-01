@@ -37,7 +37,7 @@ before_install:
 # Run the build script
 script:
     travis_retry dotnet restore Cronos.sln --disable-parallel;
-    dotnet msbuild tests/Cronos.Tests/Cronos.Tests.csproj /p:DefineConstants=IANA_SUPPORTED /p:Configuration=Release /p:TargetFramework=netcoreapp1.0;
-    dotnet test tests/Cronos.Tests/Cronos.Tests.csproj --no-build -c:Release -f:netcoreapp1.0 -verbosity:d;
+    dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:netcoreapp1.0;
+  
   
 

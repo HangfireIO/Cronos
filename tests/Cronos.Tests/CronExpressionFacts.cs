@@ -1,18 +1,25 @@
 ﻿using System;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace Cronos.Tests
 {
     public class CronExpressionFacts
     {
-#if IANA_SUPPORTED
-        private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
-        private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman");
+        private static readonly bool IsUnix =
+#if NETCOREAPP1_0
+            !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 #else
-        private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-        private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
+            Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix;
 #endif
+        private static readonly TimeZoneInfo EasternTimeZone = IsUnix
+            ? TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
+            : TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+        private static readonly TimeZoneInfo JordanTimeZone = IsUnix
+            ? TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman")
+            : TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
