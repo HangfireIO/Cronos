@@ -47,7 +47,7 @@ namespace Cronos
 
                     var pointer = value;
 
-                    pointer = SkipWhiteSpaces(pointer);
+                    SkipWhiteSpaces(ref pointer);
 
                     // Second.
 
@@ -106,7 +106,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                         expression._nearestWeekday = true;
                         pointer++;
 
-                        pointer = SkipWhiteSpaces(pointer);
+                        SkipWhiteSpaces(ref pointer);
                     }
 
                     // Month.
@@ -698,15 +698,12 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe char* SkipWhiteSpaces(char* pointer)
+        private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
-            CheckWhiteSpace:
-
-            if (*pointer != '\t' && *pointer != ' ') return pointer;
-
-            pointer++;
-
-            goto CheckWhiteSpace;
+            while (*pointer == '\t' || *pointer == ' ')
+            {
+                pointer++;
+            }
         }
 
         private static unsafe char* GetList(
@@ -737,7 +734,7 @@ It must contain 5 of 6 fields in the sequence of seconds (optional), minutes, ho
                 throw new FormatException($"'{cronFieldType}': using some numbers with 'W' is not supported.");
             }
 
-            pointer = SkipWhiteSpaces(pointer);
+            SkipWhiteSpaces(ref pointer);
 
             return pointer;
         }
