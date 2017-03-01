@@ -491,6 +491,7 @@ namespace Cronos
 
         private DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime, TimeSpan dstOffset)
         {
+#if NETSTANDARD1_0
             var dstTransitionDateTime = ambiguousDateTime;
 
             while (zone.IsAmbiguousTime(dstTransitionDateTime))
@@ -517,10 +518,18 @@ namespace Cronos
                 dstTransitionDateTime.Second,
                 dstTransitionDateTime.Millisecond,
                 dstOffset);
+#else
+            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, ambiguousDateTime);
+
+            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(ambiguousDateTime.Year, adjustmentRule.DaylightTransitionEnd);
+
+            return new DateTimeOffset(dstTransitionDateTime, dstOffset);
+#endif
         }
 
         private DateTimeOffset GetDstTransitionStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
         {
+#if NETSTANDARD1_0
             var dstTransitionDateTime = invalidDateTime;
 
             while (zone.IsInvalidTime(dstTransitionDateTime))
@@ -549,6 +558,13 @@ namespace Cronos
                 dstTransitionDateTime.Second,
                 dstTransitionDateTime.Millisecond,
                 baseOffset);
+#else
+            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, invalidDateTime);
+
+            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(invalidDateTime.Year, adjustmentRule.DaylightTransitionStart);
+
+            return new DateTimeOffset(dstTransitionDateTime, baseOffset);
+#endif
         }
 
         private TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
