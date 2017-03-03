@@ -4,7 +4,7 @@
 
 **Windows** | **Linux / OS X** 
 --- | ---
-[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) | [![Build Status](https://travis-ci.com/HangfireIO/Cronos.svg?token=9QBmaXApgcMvPysqdUZd&branch=master)](https://travis-ci.com/HangfireIO/Cronos)
+[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) | [![Build Status](https://travis-ci.org/HangfireIO/Cronos.svg?branch=master)](https://travis-ci.org/HangfireIO/Cronos)
 
 ## Features
 
