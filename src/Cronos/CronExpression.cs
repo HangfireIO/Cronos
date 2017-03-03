@@ -135,7 +135,7 @@ namespace Cronos
 
                     return nextValidTime;
                 }
-                if (timeZone.IsAmbiguousTime(startLocalDateTime))
+                if (TimeZoneHelper.IsAmbiguousTime(timeZone, startLocalDateTime))
                 {
                     // Ambiguous.
 
@@ -161,7 +161,7 @@ namespace Cronos
                 }
             }
 
-            if (timeZone.IsAmbiguousTime(startLocalDateTime))
+            if (TimeZoneHelper.IsAmbiguousTime(timeZone, startLocalDateTime))
             {
                 TimeSpan lateOffset = timeZone.BaseUtcOffset;
 
@@ -523,7 +523,7 @@ namespace Cronos
 
         private TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
         {
-            var offsets = zone.GetAmbiguousTimeOffsets(ambiguousDateTime);
+            var offsets = TimeZoneHelper.GetAmbiguousOffsets(zone, ambiguousDateTime);
 
             var baseOffset = zone.BaseUtcOffset;
 
@@ -597,8 +597,10 @@ namespace Cronos
             return (flags & value) != 0;
         }
 
-        private bool IsMatch(int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
+        private bool IsMatch(int millisecond, int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
+            if (millisecond != 0) return false;
+
             var daysInMonth = Calendar.GetDaysInMonth(year, month);
 
             var dayOfMonthField = HasFlag(_flags, CronExpressionFlag.DayOfMonthLast)
@@ -651,6 +653,7 @@ namespace Cronos
         private bool IsMatch(DateTime dateTime)
         {
             return IsMatch(
+                dateTime.Millisecond,
                 dateTime.Second,
                 dateTime.Minute,
                 dateTime.Hour,

@@ -784,6 +784,19 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
+        [Fact]
+        public void Next_HandleBorderConditions_WhenDSTEnds()
+        {
+            var expression = CronExpression.Parse("59 59 01 * * *", CronFields.Seconds);
+
+            var startInstant = new DateTimeOffset(2016, 11, 06, 02, 00, 00, 00, TimeSpan.FromHours(-5)).AddTicks(-1);
+
+            var executed = expression.Next(startInstant, startInstant.AddYears(100), EasternTimeZone);
+
+            Assert.Equal(new DateTimeOffset(2016, 11, 07, 01, 59, 59, 00, TimeSpan.FromHours(-5)), executed);
+            Assert.Equal(TimeSpan.FromHours(-5), executed?.Offset);
+        }
+
         [Theory]
         [InlineData("* * * * * *", "15:30", "15:30")]
         [InlineData("0 5 * * * *", "00:00", "00:05")]
