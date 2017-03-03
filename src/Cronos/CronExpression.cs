@@ -123,7 +123,7 @@ namespace Cronos
             {
                 if (timeZone.IsInvalidTime(startLocalDateTime))
                 {
-                    var nextValidTime = GetDstTransitionStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
+                    var nextValidTime = GetDstStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
 
                     return nextValidTime;
                 }
@@ -477,43 +477,37 @@ namespace Cronos
 #endif
         }
 
-        private DateTimeOffset GetDstTransitionStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
+        private DateTimeOffset GetDstStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
         {
 #if NETSTANDARD1_0
             var dstTransitionDateTime = invalidDateTime;
 
             while (zone.IsInvalidTime(dstTransitionDateTime))
             {
-                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(-1);
+                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
             }
 
             while (!zone.IsInvalidTime(dstTransitionDateTime))
             {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(1);
+                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
             }
 
             while (zone.IsInvalidTime(dstTransitionDateTime))
             {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(-1);
+                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
             }
 
-            dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
+            var dstOffset = zone.GetUtcOffset(dstTransitionDateTime);
 
-            return new DateTimeOffset(
-                dstTransitionDateTime.Year,
-                dstTransitionDateTime.Month,
-                dstTransitionDateTime.Day,
-                dstTransitionDateTime.Hour,
-                dstTransitionDateTime.Minute,
-                dstTransitionDateTime.Second,
-                dstTransitionDateTime.Millisecond,
-                baseOffset);
+            return new DateTimeOffset(dstTransitionDateTime, dstOffset);
 #else
             var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, invalidDateTime);
 
             var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(invalidDateTime.Year, adjustmentRule.DaylightTransitionStart);
 
-            return new DateTimeOffset(dstTransitionDateTime, baseOffset);
+            var dstOffset = baseOffset.Add(adjustmentRule.DaylightDelta);
+
+            return new DateTimeOffset(dstTransitionDateTime, baseOffset).ToOffset(dstOffset);
 #endif
         }
 

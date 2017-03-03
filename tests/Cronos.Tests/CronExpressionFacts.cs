@@ -733,10 +733,12 @@ namespace Cronos.Tests
 
             var startInstant = GetInstant(startTime);
             var endInstant = startInstant.AddYears(100);
+            var expectedInstant = GetInstant(expectedTime);
 
             var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(GetInstant(expectedTime), executed);
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
         [Theory]
@@ -775,10 +777,12 @@ namespace Cronos.Tests
 
             var startInstant = GetInstant(startTimeWithOffset);
             var endInstant = startInstant.AddYears(100);
+            var expectedInstant = GetInstant(expectedTimeWithOffset);
 
             var executed = expression.Next(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
         [Theory]
@@ -813,10 +817,12 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(startTime, TimeZoneInfo.Utc);
             var endInstant = startInstant.AddYears(100);
+            var expectedInstant = GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc);
 
             var nextTime = expression.Next(startInstant, endInstant, TimeZoneInfo.Utc);
 
-            Assert.Equal(GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc), nextTime);
+            Assert.Equal(expectedInstant, nextTime);
+            Assert.Equal(expectedInstant.Offset, nextTime?.Offset);
         }
 
         [Theory]
@@ -830,6 +836,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstant(startTimeWithOffset);
             var endInstant = startInstant.AddYears(100);
+            var expectedInstant = GetInstant(expectedTimeWithOffset);
 
             var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
 
@@ -839,7 +846,8 @@ namespace Cronos.Tests
                 executed = executed.Value.AddMilliseconds(1);
             }
 
-            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
         [Theory]
@@ -853,10 +861,12 @@ namespace Cronos.Tests
 
             var startInstant = GetInstant(startTimeWithOffset);
             var endInstant = startInstant.AddYears(100);
+            var expectedInstant = GetInstant(expectedTimeWithOffset);
 
             var executed = expression.Next(startInstant, endInstant, JordanTimeZone);
 
-            Assert.Equal(GetInstant(expectedTimeWithOffset), executed);
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
         [Theory]
