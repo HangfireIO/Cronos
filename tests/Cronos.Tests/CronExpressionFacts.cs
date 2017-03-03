@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using Xunit;
@@ -13,13 +14,11 @@ namespace Cronos.Tests
 #else
             Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix;
 #endif
-        private static readonly TimeZoneInfo EasternTimeZone = IsUnix
-            ? TimeZoneInfo.FindSystemTimeZoneById("America/New_York")
-            : TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        private static readonly string EasternTimeZoneId = IsUnix ? "America/New_York" : "Eastern Standard Time";
+        private static readonly string JordanTimeZoneId = IsUnix ? "Asia/Amman" : "Jordan Standard Time";
 
-        private static readonly TimeZoneInfo JordanTimeZone = IsUnix
-            ? TimeZoneInfo.FindSystemTimeZoneById("Asia/Amman")
-            : TimeZoneInfo.FindSystemTimeZoneById("Jordan Standard Time");
+        private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById(EasternTimeZoneId);
+        private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(JordanTimeZoneId);
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
@@ -870,6 +869,24 @@ namespace Cronos.Tests
         }
 
         [Theory]
+        [MemberData(nameof(GetTimeZones))]
+        public void Next_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
+        {
+            var expression = CronExpression.Parse("* * * * *");
+
+            var startInstant = new DateTimeOffset(2017, 03, 04, 00, 00, 00, new TimeSpan(12, 30, 00));
+            var endInstant = new DateTimeOffset(2019, 03, 04, 00, 00, 00, new TimeSpan(-12, 30, 00));
+            var expectedInstant = startInstant;
+
+            var expectedOffset = zone.GetUtcOffset(expectedInstant);
+
+            var executed = expression.Next(startInstant, endInstant, zone);
+
+            Assert.Equal(startInstant, executed);
+            Assert.Equal(expectedOffset, executed?.Offset);
+        }
+
+        [Theory]
 
         [InlineData("* * 30    2    *    ", "1970-01-01")]
         [InlineData("* * 30-31 2    *    ", "1970-01-01")]
@@ -1422,6 +1439,13 @@ namespace Cronos.Tests
             var nextTime = expression.Next(startInstant, endInstant, EasternTimeZone);
 
             Assert.Equal(null, nextTime);
+        }
+
+        private static IEnumerable<object[]> GetTimeZones()
+        {
+            yield return new object[] {EasternTimeZone};
+            yield return new object[] {JordanTimeZone};
+            yield return new object[] {TimeZoneInfo.Utc};
         }
 
         private static DateTimeOffset GetInstantFromLocalTime(string localDateTimeString, TimeZoneInfo zone)

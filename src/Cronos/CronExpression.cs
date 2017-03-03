@@ -99,25 +99,33 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculate next execution starting with a <paramref name="startDateTimeOffset"/> and 
-        /// up to <paramref name="startDateTimeOffset"/> (all inclusive) in given <paramref name="timeZone"/>.
+        /// Calculate next execution starting with a <paramref name="startInclusive"/> and 
+        /// up to <paramref name="endInclusive"/> (all inclusive) in given <paramref name="zone"/>.
         /// </summary>
-        public DateTimeOffset? Next(DateTimeOffset startDateTimeOffset, DateTimeOffset endDateTimeOffset, TimeZoneInfo timeZone)
+        public DateTimeOffset? Next(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
         {
             // TODO: DateTime kind
-            if (timeZone.Equals(TimeZoneInfo.Utc))
+            if (zone.Equals(TimeZoneInfo.Utc))
             {
-                var found = Next(startDateTimeOffset.DateTime, endDateTimeOffset.DateTime);
+                var found = Next(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
 
                 return found != null
                     ? new DateTimeOffset(found.Value, TimeSpan.Zero)
-                    : (DateTimeOffset?)null;
+                    : (DateTimeOffset?) null;
             }
 
-            var startLocalDateTime = startDateTimeOffset.DateTime;
-            var endLocalDateTime = endDateTimeOffset.DateTime;
+            var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
+            var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
 
-            var currentOffset = startDateTimeOffset.Offset;
+            return NextByZonedTimes(zonedStart, zonedEnd, zone);
+        }
+
+        private DateTimeOffset? NextByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo timeZone)
+        {
+            var startLocalDateTime = zonedStartInclusive.DateTime;
+            var endLocalDateTime = zonedEndInclusive.DateTime;
+
+            var currentOffset = zonedStartInclusive.Offset;
 
             if (IsMatch(startLocalDateTime))
             {
@@ -149,7 +157,7 @@ namespace Cronos
                 else
                 {
                     // Strict
-                    return new DateTimeOffset(startLocalDateTime, timeZone.GetUtcOffset(startLocalDateTime));
+                    return zonedStartInclusive;
                 }
             }
 
@@ -165,12 +173,12 @@ namespace Cronos
 
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
-                     // Current period, try to find anything here.
+                    // Current period, try to find anything here.
                     var found = Next(startLocalDateTime, earlyIntervalLocalEnd);
 
                     if (found.HasValue)
                     {
-                        return Next(new DateTimeOffset(found.Value, currentOffset), endDateTimeOffset, timeZone);
+                        return NextByZonedTimes(new DateTimeOffset(found.Value, currentOffset), zonedEndInclusive, timeZone);
                     }
 
                     var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
@@ -180,7 +188,7 @@ namespace Cronos
 
                     if (found.HasValue)
                     {
-                        return Next(new DateTimeOffset(found.Value, lateOffset), endDateTimeOffset, timeZone);
+                        return NextByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive, timeZone);
                     }
                 }
             }
@@ -190,7 +198,9 @@ namespace Cronos
 
             if (nextFound == null) return null;
 
-            return Next(new DateTimeOffset(nextFound.Value, currentOffset), endDateTimeOffset, timeZone);
+            var zoneOffset = timeZone.GetUtcOffset(nextFound.Value);
+
+            return NextByZonedTimes(new DateTimeOffset(nextFound.Value, zoneOffset), zonedEndInclusive, timeZone);
         }
 
         private DateTime? Next(DateTime baseTime, DateTime endTime)
