@@ -25,15 +25,22 @@ namespace Cronos
         }
 
         private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
-        
+
+        ///<summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified
+        /// cron expression. It's supported expressions consisting of 5 fields:
+        /// minute, hour, day of month, month, day of week. 
+        /// If you want to parse non-standard cron expresions use <see cref="Parse(string, CronFields)"/> with specified CronFields argument.
+        /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
+        /// </summary>
         public static CronExpression Parse(string expression)
         {
-            return Parse(expression, CronFields.Default);
+            return Parse(expression, CronFields.Standard);
         }
 
         ///<summary>
         /// Constructs a new <see cref="CronExpression"/> based on the specified
-        /// cron expression. It's suppoted expressions consisting of 5 or 6 fields:
+        /// cron expression. It's supported expressions consisting of 5 or 6 fields:
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
@@ -53,7 +60,7 @@ namespace Cronos
 
                     // Second.
 
-                    if ((fields & CronFields.Seconds) != 0)
+                    if ((fields & CronFields.IncludeSeconds) != 0)
                     {
                         ParseField(CronField.Second, ref pointer, cronExpression, ref cronExpression._second);
                     }
