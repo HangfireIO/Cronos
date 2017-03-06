@@ -107,7 +107,7 @@ namespace Cronos
 
         /// <summary>
         /// Calculate next execution starting with a <paramref name="startInclusive"/> and 
-        /// up to <paramref name="endInclusive"/> (all inclusive) in given <paramref name="zone"/>.
+        /// up to <paramref name="endInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
         public DateTimeOffset? Next(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
         {
@@ -123,6 +123,41 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
             var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
+
+            return NextByZonedTimes(zonedStart, zonedEnd, zone);
+        }
+
+        /// <summary>
+        /// Calculate next execution starting with a <paramref name="utcStartInclusive"/> and 
+        /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTimeOffset? Next(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        {
+            void CheckDateTimeArgument(string argName, DateTime dateTime, DateTimeKind expectedKind)
+            {
+                if (dateTime.Kind != expectedKind)
+                {
+                    throw new ArgumentException($@"The supplied DateTime must have the Kind property set to {expectedKind}", argName);
+                }
+            }
+
+            CheckDateTimeArgument(nameof(utcStartInclusive), utcStartInclusive, DateTimeKind.Utc);
+            CheckDateTimeArgument(nameof(utcEndInclusive), utcEndInclusive, DateTimeKind.Utc);
+
+            if (zone.Equals(TimeZoneInfo.Utc))
+            {
+                var found = Next(utcStartInclusive, utcEndInclusive);
+
+                return found != null
+                    ? new DateTimeOffset(found.Value, TimeSpan.Zero)
+                    : (DateTimeOffset?)null;
+            }
+
+            var zonedStart = TimeZoneInfo.ConvertTime((DateTimeOffset)utcStartInclusive, zone);
+            var zonedEnd = TimeZoneInfo.ConvertTime((DateTimeOffset)utcEndInclusive, zone);
 
             return NextByZonedTimes(zonedStart, zonedEnd, zone);
         }

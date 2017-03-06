@@ -895,8 +895,25 @@ namespace Cronos.Tests
 
             var executed = expression.Next(startInstant, endInstant, zone);
 
-            Assert.Equal(startInstant, executed);
+            Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedOffset, executed?.Offset);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetTimeZones))]
+        public void Next_ReturnsTheSameDateTimeWithGivenTimeZoneOffset_WhenUsingDateTimeArguments(TimeZoneInfo zone)
+        {
+            var expression = CronExpression.Parse("* * * * *");
+
+            var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
+            var endInstant = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+
+            var expectedInstant = TimeZoneInfo.ConvertTime((DateTimeOffset)startInstant, zone);
+
+            var executed = expression.Next(startInstant, endInstant, zone);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
         [Theory]
