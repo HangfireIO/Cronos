@@ -173,7 +173,7 @@ namespace Cronos
             {
                 if (timeZone.IsInvalidTime(startLocalDateTime))
                 {
-                    var nextValidTime = GetDstStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
+                    var nextValidTime = TimeZoneHelper.GetDstStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
 
                     return nextValidTime;
                 }
@@ -207,11 +207,11 @@ namespace Cronos
             {
                 TimeSpan lateOffset = timeZone.BaseUtcOffset;
 
-                TimeSpan earlyOffset = GetDstOffset(startLocalDateTime, timeZone);
+                TimeSpan earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, timeZone);
 
                 if (earlyOffset == currentOffset)
                 {
-                    var dstTransitionEndDateTimeOffset = GetDstTransitionEndDateTime(timeZone, startLocalDateTime, earlyOffset);
+                    var dstTransitionEndDateTimeOffset = TimeZoneHelper.GetDstTransitionEndDateTime(timeZone, startLocalDateTime, earlyOffset);
 
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
@@ -489,92 +489,6 @@ namespace Cronos
             }
 
             return new DateTime(year, month, day, hour, minute, second);
-        }
-
-        private DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime, TimeSpan dstOffset)
-        {
-#if NETSTANDARD1_0
-            var dstTransitionDateTime = ambiguousDateTime;
-
-            while (zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
-            }
-
-            while (!zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
-            }
-
-            while (zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
-            }
-
-            return new DateTimeOffset(
-                dstTransitionDateTime.Year,
-                dstTransitionDateTime.Month,
-                dstTransitionDateTime.Day,
-                dstTransitionDateTime.Hour,
-                dstTransitionDateTime.Minute,
-                dstTransitionDateTime.Second,
-                dstTransitionDateTime.Millisecond,
-                dstOffset);
-#else
-            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, ambiguousDateTime);
-
-            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(ambiguousDateTime.Year, adjustmentRule.DaylightTransitionEnd);
-
-            return new DateTimeOffset(dstTransitionDateTime, dstOffset);
-#endif
-        }
-
-        private DateTimeOffset GetDstStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
-        {
-#if NETSTANDARD1_0
-            var dstTransitionDateTime = invalidDateTime;
-
-            while (zone.IsInvalidTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
-            }
-
-            while (!zone.IsInvalidTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
-            }
-
-            while (zone.IsInvalidTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
-            }
-
-            var dstOffset = zone.GetUtcOffset(dstTransitionDateTime);
-
-            return new DateTimeOffset(dstTransitionDateTime, dstOffset);
-#else
-            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, invalidDateTime);
-
-            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(invalidDateTime.Year, adjustmentRule.DaylightTransitionStart);
-
-            var dstOffset = baseOffset.Add(adjustmentRule.DaylightDelta);
-
-            return new DateTimeOffset(dstTransitionDateTime, baseOffset).ToOffset(dstOffset);
-#endif
-        }
-
-        private TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
-        {
-            var offsets = TimeZoneHelper.GetAmbiguousOffsets(zone, ambiguousDateTime);
-
-            var baseOffset = zone.BaseUtcOffset;
-
-            for (var i = 0; i < offsets.Length; i++)
-            {
-                if (offsets[i] != baseOffset) return offsets[i];
-            }
-
-            throw new InvalidOperationException();
         }
 
         private static bool IsNthDayOfWeek(int day, int n)
