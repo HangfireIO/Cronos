@@ -59,7 +59,7 @@ namespace Cronos
                     }
                     else
                     {
-                        SetAllBits(out cronExpression._second);
+                        SetBit(ref cronExpression._second, 0);
                     }
 
                     // Minute.
