@@ -57,13 +57,13 @@ namespace Cronos.Benchmark
         [Benchmark]
         public DateTimeOffset? NextSimple()
         {
-            return SimpleExpression.Next(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
+            return SimpleExpression.GetOccurrence(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
         }
 
         [Benchmark]
         public DateTimeOffset? NextComplex()
         {
-            return ComplexExpression.Next(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
+            return ComplexExpression.GetOccurrence(DateTimeNow, DateTimeNow.AddYears(100), TimeZoneInfo.Utc);
         }
     }
 }

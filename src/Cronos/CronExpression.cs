@@ -103,15 +103,15 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculate next execution starting with a <paramref name="startInclusive"/> and 
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
         /// up to <paramref name="endInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
-        public DateTimeOffset? Next(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
+        public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
         {
             // TODO: DateTime kind
             if (zone.Equals(TimeZoneInfo.Utc))
             {
-                var found = Next(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
+                var found = GetOccurrence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
 
                 return found != null
                     ? new DateTimeOffset(found.Value, TimeSpan.Zero)
@@ -121,17 +121,17 @@ namespace Cronos
             var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
             var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
 
-            return NextByZonedTimes(zonedStart, zonedEnd, zone);
+            return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
         }
 
         /// <summary>
-        /// Calculate next execution starting with a <paramref name="utcStartInclusive"/> and 
+        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> and 
         /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTimeOffset? Next(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        public DateTimeOffset? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
             void CheckDateTimeArgument(string argName, DateTime dateTime, DateTimeKind expectedKind)
             {
@@ -146,7 +146,7 @@ namespace Cronos
 
             if (zone.Equals(TimeZoneInfo.Utc))
             {
-                var found = Next(utcStartInclusive, utcEndInclusive);
+                var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
 
                 return found != null
                     ? new DateTimeOffset(found.Value, TimeSpan.Zero)
@@ -156,10 +156,10 @@ namespace Cronos
             var zonedStart = TimeZoneInfo.ConvertTime((DateTimeOffset)utcStartInclusive, zone);
             var zonedEnd = TimeZoneInfo.ConvertTime((DateTimeOffset)utcEndInclusive, zone);
 
-            return NextByZonedTimes(zonedStart, zonedEnd, zone);
+            return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
         }
 
-        private DateTimeOffset? NextByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo timeZone)
+        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo timeZone)
         {
             var startLocalDateTime = zonedStartInclusive.DateTime;
             var endLocalDateTime = zonedEndInclusive.DateTime;
@@ -213,36 +213,36 @@ namespace Cronos
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
                     // Current period, try to find anything here.
-                    var found = Next(startLocalDateTime, earlyIntervalLocalEnd);
+                    var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd);
 
                     if (found.HasValue)
                     {
-                        return NextByZonedTimes(new DateTimeOffset(found.Value, currentOffset), zonedEndInclusive, timeZone);
+                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, currentOffset), zonedEndInclusive, timeZone);
                     }
 
                     var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
 
                     //Try to find anything starting from late offset.
-                    found = Next(lateIntervalLocalStart, endLocalDateTime);
+                    found = GetOccurrence(lateIntervalLocalStart, endLocalDateTime);
 
                     if (found.HasValue)
                     {
-                        return NextByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive, timeZone);
+                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive, timeZone);
                     }
                 }
             }
 
             // Does not match, find next.
-            var nextFound = Next(startLocalDateTime.AddSeconds(1), endLocalDateTime);
+            var nextFound = GetOccurrence(startLocalDateTime.AddSeconds(1), endLocalDateTime);
 
             if (nextFound == null) return null;
 
             var zoneOffset = timeZone.GetUtcOffset(nextFound.Value);
 
-            return NextByZonedTimes(new DateTimeOffset(nextFound.Value, zoneOffset), zonedEndInclusive, timeZone);
+            return GetOccurenceByZonedTimes(new DateTimeOffset(nextFound.Value, zoneOffset), zonedEndInclusive, timeZone);
         }
 
-        private DateTime? Next(DateTime baseTime, DateTime endTime)
+        private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
         {
             var baseYear = baseTime.Year;
             var baseMonth = baseTime.Month;
