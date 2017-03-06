@@ -21,19 +21,19 @@ PM> Install-Package Cronos
 
 ## Usage
 
-### Next execution based on 6 fields expression
+### Next execution based on 5 fields expression
 
 ```csharp
-var expression = CronExpression.Parse("0 30 * * * *");
+var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
 var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
 ```
 
-### Next execution based on 5 fields expression
+### Next execution based on 6 fields expression
 
 ```csharp
-var expression = CronExpression.Parse("30 * * * *");
+var expression = CronExpression.Parse("0 30 * * * *", CronFields.IncludeSeconds);
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
 var nextTime = expression.Next(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
