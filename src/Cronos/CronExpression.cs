@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace Cronos
@@ -23,8 +22,6 @@ namespace Cronos
         private CronExpression()
         {
         }
-
-        private static Calendar Calendar => CultureInfo.InvariantCulture.Calendar;
 
         ///<summary>
         /// Constructs a new <see cref="CronExpression"/> based on the specified
@@ -82,7 +79,7 @@ namespace Cronos
                     ParseField(CronField.Month, ref pointer, cronExpression, ref cronExpression._month);
 
                     // Day of week.
-                    if (*pointer == '?' && HasFlag(cronExpression._flags, CronExpressionFlag.DayOfMonthQuestion))
+                    if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
                         ThrowFormatException("'{0}': '?' is not supported.", CronField.DayOfWeek);
                     }
@@ -183,7 +180,7 @@ namespace Cronos
 
                     // Interval jobs should be fired in both offsets.
                     // TODO: Will "15/10" fire in both offsets?
-                    if (HasFlag(_flags, CronExpressionFlag.Interval))
+                    if (HasFlag(CronExpressionFlag.Interval))
                     {
                         return new DateTimeOffset(startLocalDateTime, currentOffset);
                     }
@@ -387,14 +384,14 @@ namespace Cronos
                 goto RetryDayMonth;
             }
 
-            var dayOfWeek = Calendar.GetDayOfWeek(new DateTime(year, month, day));
-            var lastDayOfMonth = Calendar.GetDaysInMonth(year, month);
+            var dayOfWeek = CalendarHelper.GetDayOfWeek(new DateTime(year, month, day));
+            var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
 
             // W character.
 
-            if (HasFlag(_flags, CronExpressionFlag.NearestWeekday))
+            if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
-                var nearestWeekDay = GetNearestWeekDay(day, dayOfWeek, lastDayOfMonth);
+                var nearestWeekDay = CalendarHelper.GetNearestWeekDay(day, dayOfWeek, lastDayOfMonth);
 
                 if (nearestWeekDay > day)
                 {
@@ -430,12 +427,12 @@ namespace Cronos
 
                 if (((_dayOfWeek >> (int)dayOfWeek) & 1) == 0) day = -1;
 
-                if (HasFlag(_flags, CronExpressionFlag.DayOfWeekLast) && !IsLastDayOfWeek(nearestWeekDay, lastDayOfMonth))
+                if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(nearestWeekDay, lastDayOfMonth))
                 {
                     day = -1;
                 }
 
-                if (_nthdayOfWeek != 0 && !IsNthDayOfWeek(nearestWeekDay, _nthdayOfWeek))
+                if (_nthdayOfWeek != 0 && !CalendarHelper.IsNthDayOfWeek(nearestWeekDay, _nthdayOfWeek))
                 {
                     day = -1;
                 }
@@ -466,7 +463,7 @@ namespace Cronos
 
             // L character in day of week.
 
-            if (HasFlag(_flags, CronExpressionFlag.DayOfWeekLast) && !IsLastDayOfWeek(day, lastDayOfMonth))
+            if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth))
             {
                 second = minSecond;
                 minute = minMinute;
@@ -478,7 +475,7 @@ namespace Cronos
 
             // # character.
 
-            if (_nthdayOfWeek != 0 && !IsNthDayOfWeek(day, _nthdayOfWeek))
+            if (_nthdayOfWeek != 0 && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
             {
                 second = minSecond;
                 minute = minMinute;
@@ -491,41 +488,9 @@ namespace Cronos
             return new DateTime(year, month, day, hour, minute, second);
         }
 
-        private static bool IsNthDayOfWeek(int day, int n)
-        {
-            return day - Constants.DaysPerWeekCount * n < Constants.FirstDayOfMonth &&
-                   day - Constants.DaysPerWeekCount * (n - 1) >= Constants.FirstDayOfMonth;
-        }
-
-        private static bool IsLastDayOfWeek(int day, int lastDayOfMonth)
-        {
-            return day + Constants.DaysPerWeekCount > lastDayOfMonth;
-        }
-
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
             return DeBruijin.FindFirstSet(value, startBit, endBit);
-        }
-
-        private int GetNearestWeekDay(int day, DayOfWeek dayOfWeek, int lastDayOfMonth)
-        {
-            if (dayOfWeek == DayOfWeek.Sunday)
-            {
-                if (day == lastDayOfMonth)
-                {
-                    return day - 2;
-                }
-                return day + 1;
-            }
-            if (dayOfWeek == DayOfWeek.Saturday)
-            {
-                if (day == Constants.FirstDayOfMonth)
-                {
-                    return day + 2;
-                }
-                return day - 1;
-            }
-            return day;
         }
 
         private int GetNextDayOfMonth(int year, int month, int startDay)
@@ -534,9 +499,9 @@ namespace Cronos
 
             if (startDay == -1) return -1;
 
-            var daysInMonth = Calendar.GetDaysInMonth(year, month);
+            var daysInMonth = CalendarHelper.GetDaysInMonth(year, month);
 
-            var dayOfMonthField = HasFlag(_flags, CronExpressionFlag.DayOfMonthLast)
+            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
                    ? _dayOfMonth >> (Constants.LastDayOfMonth - daysInMonth)
                    : _dayOfMonth;
 
@@ -548,34 +513,34 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool HasFlag(CronExpressionFlag flags, CronExpressionFlag value)
+        private bool HasFlag(CronExpressionFlag value)
         {
-            return (flags & value) != 0;
+            return (_flags & value) != 0;
         }
 
         private bool IsMatch(int millisecond, int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
         {
             if (millisecond != 0) return false;
 
-            var daysInMonth = Calendar.GetDaysInMonth(year, month);
+            var daysInMonth = CalendarHelper.GetDaysInMonth(year, month);
 
-            var dayOfMonthField = HasFlag(_flags, CronExpressionFlag.DayOfMonthLast)
+            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
                     ? _dayOfMonth >> (Constants.LastDayOfMonth - daysInMonth)
                     : _dayOfMonth;
 
-            if (HasFlag(_flags, CronExpressionFlag.DayOfMonthLast) && !HasFlag(_flags, CronExpressionFlag.NearestWeekday))
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !HasFlag(CronExpressionFlag.NearestWeekday))
             {
                 if (!GetBit(dayOfMonthField, dayOfMonth)) return false;
             }
-            else if (HasFlag(_flags, CronExpressionFlag.DayOfWeekLast))
+            else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
             {
-                if (!IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
+                if (!CalendarHelper.IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
             }
             else if (_nthdayOfWeek != 0)
             {
-                if(!IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
+                if(!CalendarHelper.IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
             }
-            else if (HasFlag(_flags, CronExpressionFlag.NearestWeekday))
+            else if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
                 var isDayMatched = GetBit(dayOfMonthField, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
                                    GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
@@ -603,7 +568,7 @@ namespace Cronos
                    GetBit(_hour, hour) &&
                    GetBit(_month, month) &&
                    GetBit(_dayOfWeek, dayOfWeek) &&
-                   (HasFlag(_flags, CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
+                   (HasFlag(CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
         }
 
         private bool IsMatch(DateTime dateTime)
