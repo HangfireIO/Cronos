@@ -34,6 +34,7 @@
 
         public const int FirstDayOfMonth = 1;
         public const int LastDayOfMonth = 31;
+        public const int MinDaysInMonth = 28;
 
         public const int FirstMonth = 1;
         public const int LastMonth = 12;
