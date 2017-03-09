@@ -20,6 +20,8 @@
         public static readonly int[] LastValues;
         public static readonly int[][] NameArrays;
 
+        public static readonly long[] AllBits;
+
         public const int CronWithSecondsFieldsCount = 6;
         public const int CronWithoutSecondsFieldsCount = 5;
 
@@ -67,6 +69,14 @@
             LastValues[(int) CronField.DayOfMonth] = LastDayOfMonth;
             LastValues[(int) CronField.Month] = LastMonth;
             LastValues[(int) CronField.DayOfWeek] = LastDayOfWeek;
+
+            AllBits = new long[6];
+            AllBits[(int) CronField.Second] = (1L << 60) - 1;
+            AllBits[(int)CronField.Minute] = (1L << 60) - 1;
+            AllBits[(int)CronField.Hour] = (1L << 24) - 1;
+            AllBits[(int)CronField.DayOfMonth] = (1L << 32) - 2;
+            AllBits[(int)CronField.Month] = (1L << 13) - 2;
+            AllBits[(int)CronField.DayOfWeek] = (1L << 8) - 1;
 
             MonthNamesArray = new int[MonthNames.Length];
             DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
