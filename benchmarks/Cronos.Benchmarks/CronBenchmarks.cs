@@ -16,12 +16,12 @@ namespace Cronos.Benchmark
         private static readonly CrontabSchedule NCrontabSimpleExpression = NCrontab.CrontabSchedule.Parse("* * * * *", new CrontabSchedule.ParseOptions { IncludingSeconds = false });
         private static readonly CronExpression ComplexExpression = CronExpression.Parse("*/10 12-20 * DEC 3");
 
-        private static readonly DateTimeOffset DateTimeNow = DateTimeOffset.UtcNow.Date;
-        private static readonly DateTime DateTimeNow1 = DateTime.UtcNow.Date;
+        private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow.Date;
+        private static readonly DateTime DateTimeNow = DateTime.UtcNow.Date;
         private static readonly DateTimeOffset DateTimeNow2 = DateTimeOffset.UtcNow.AddMinutes(3);
         private static readonly DateTimeOffset DateTimeNow3 = DateTimeOffset.UtcNow.AddMinutes(7);
-        private static readonly DateTimeOffset EndDateTime = DateTimeNow.AddYears(100);
-        private static readonly DateTime EndDateTime1 = DateTimeNow1.AddYears(100);
+        private static readonly DateTimeOffset EndDateTimeOffset = DateTimeOffsetNow.AddYears(100);
+        private static readonly DateTime EndDateTime = DateTimeNow.AddYears(100);
 
         [Benchmark]
         public unsafe string ParseBaseline()
@@ -66,13 +66,13 @@ namespace Cronos.Benchmark
         }
 
         [Benchmark]
-        public DateTimeOffset? GetOccurrenceSimpleDateTime()
+        public DateTime? GetOccurrenceSimpleDateTime()
         {
-            return MinutlyExpression.GetOccurrence(DateTimeNow1, EndDateTime1, TimeZoneInfo.Utc);
+            return MinutlyExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
         }
 
         [Benchmark]
-        public DateTimeOffset? GetOccurrenceComplexDateTime()
+        public DateTime? GetOccurrenceComplexDateTime()
         {
             return ComplexExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
         }
@@ -80,25 +80,25 @@ namespace Cronos.Benchmark
         [Benchmark]
         public DateTimeOffset? GetOccurrenceSimpleDateTimeOffset()
         {
-            return MinutlyExpression.GetOccurrence(DateTimeNow1, EndDateTime1, TimeZoneInfo.Utc);
+            return MinutlyExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
         }
 
         [Benchmark]
         public DateTimeOffset? GetOccurrenceComplexDateTimeOffset()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
+            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
         }
 
         //[Benchmark]
         public DateTimeOffset? NCrontabSimple()
         {
-            return NCrontabSimpleExpression.GetNextOccurrence(DateTimeNow1);
+            return NCrontabSimpleExpression.GetNextOccurrence(DateTimeNow);
         }
 
         [Benchmark]
         public DateTimeOffset? GetOccurenceMinutelyOffset()
         {
-            return HourlyExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
+            return HourlyExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
         }
 
         //[Benchmark]

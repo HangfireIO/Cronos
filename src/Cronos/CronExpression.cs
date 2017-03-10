@@ -106,6 +106,35 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> and 
+        /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTime? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        {
+            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
+            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive));
+
+            if (zone == UtcTimeZone)
+            {
+                if (IsMatch(utcStartInclusive)) return utcStartInclusive;
+
+                var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
+                if (found == null) return null;
+
+                return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
+            }
+
+            var zonedStart = TimeZoneInfo.ConvertTime((DateTimeOffset)utcStartInclusive, zone);
+            var zonedEnd = TimeZoneInfo.ConvertTime((DateTimeOffset)utcEndInclusive, zone);
+
+            var occurrence = GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
+            return occurrence?.UtcDateTime;
+        }
+
+        /// <summary>
         /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
         /// up to <paramref name="endInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
@@ -124,35 +153,6 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
             var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
-
-            return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> and 
-        /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
-        /// is not <see cref="DateTimeKind.Utc"/>.
-        /// </exception>
-        public DateTimeOffset? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
-        {
-            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
-            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive));
-
-            if (zone == UtcTimeZone)
-            {
-                if (IsMatch(utcStartInclusive)) return utcStartInclusive;
-
-                var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
-
-                return found != null
-                    ? new DateTimeOffset(found.Value, TimeSpan.Zero)
-                    : (DateTimeOffset?)null;
-            }
-
-            var zonedStart = TimeZoneInfo.ConvertTime((DateTimeOffset)utcStartInclusive, zone);
-            var zonedEnd = TimeZoneInfo.ConvertTime((DateTimeOffset)utcEndInclusive, zone);
 
             return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
         }
