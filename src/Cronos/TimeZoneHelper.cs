@@ -38,45 +38,7 @@ namespace Cronos
             throw new InvalidOperationException();
         }
 
-        public static DateTimeOffset GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime, TimeSpan dstOffset)
-        {
-#if NETSTANDARD1_0
-            var dstTransitionDateTime = ambiguousDateTime;
-
-            while (zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
-            }
-
-            while (!zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
-            }
-
-            while (zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
-            }
-
-            return new DateTimeOffset(
-                dstTransitionDateTime.Year,
-                dstTransitionDateTime.Month,
-                dstTransitionDateTime.Day,
-                dstTransitionDateTime.Hour,
-                dstTransitionDateTime.Minute,
-                dstTransitionDateTime.Second,
-                dstTransitionDateTime.Millisecond,
-                dstOffset);
-#else
-            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, ambiguousDateTime);
-
-            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(ambiguousDateTime.Year, adjustmentRule.DaylightTransitionEnd);
-
-            return new DateTimeOffset(dstTransitionDateTime, dstOffset);
-#endif
-        }
-
-        public static DateTimeOffset GetDstStartDateTime(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
+        public static DateTimeOffset GetDstStart(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
         {
 #if NETSTANDARD1_0
             var dstTransitionDateTime = invalidDateTime;
@@ -108,6 +70,27 @@ namespace Cronos
 
             return new DateTimeOffset(dstTransitionDateTime, baseOffset).ToOffset(dstOffset);
 #endif
+        }
+
+        public static DateTimeOffset GetStandartTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan dstOffset)
+        {
+            var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
+
+            return new DateTimeOffset(dstTransitionEnd, dstOffset).ToOffset(zone.BaseUtcOffset);
+        }
+
+        public static DateTimeOffset GetAmbiguousTimeEnd(TimeZoneInfo zone, DateTime ambiguousTime)
+        {
+            var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
+
+            return new DateTimeOffset(dstTransitionEnd, zone.BaseUtcOffset);
+        }
+
+        public static DateTimeOffset GetDstEnd(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan dstOffset)
+        {
+            var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
+
+            return new DateTimeOffset(dstTransitionEnd.AddTicks(-1), dstOffset);
         }
 
 #if !NETSTANDARD1_0
@@ -186,5 +169,34 @@ namespace Cronos
             return value;
         }
 #endif
+        private static DateTime GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime)
+        {
+#if NETSTANDARD1_0
+            var dstTransitionDateTime = ambiguousDateTime;
+
+            while (zone.IsAmbiguousTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
+            }
+
+            while (!zone.IsAmbiguousTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
+            }
+
+            while (zone.IsAmbiguousTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
+            }
+
+            return dstTransitionDateTime;
+#else
+            var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, ambiguousDateTime);
+
+            var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(ambiguousDateTime.Year, adjustmentRule.DaylightTransitionEnd);
+
+            return dstTransitionDateTime;
+#endif
+        }
     }
 }

@@ -160,90 +160,52 @@ namespace Cronos
 
             var currentOffset = zonedStartInclusive.Offset;
 
-            var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
-
-            if (occurrence == startLocalDateTime)
-            {
-                if (zone.IsInvalidTime(startLocalDateTime))
-                {
-                    var nextValidTime = TimeZoneHelper.GetDstStartDateTime(zone, startLocalDateTime, zone.BaseUtcOffset);
-
-                    return nextValidTime;
-                }
-                if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
-                {
-                    // Ambiguous.
-
-                    // Interval jobs should be fired in both offsets.
-                    // TODO: Will "15/10" fire in both offsets?
-                    if (HasFlag(CronExpressionFlag.Interval))
-                    {
-                        return new DateTimeOffset(startLocalDateTime, currentOffset);
-                    }
-
-                    TimeSpan lateOffset = zone.BaseUtcOffset;
-
-                    // Strict jobs should be fired in lowest offset only.
-                    if (currentOffset != lateOffset)
-                    {
-                        return new DateTimeOffset(startLocalDateTime, currentOffset);
-                    }
-                }
-                else
-                {
-                    // Strict
-                    return zonedStartInclusive;
-                }
-            }
-
             if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
             {
-                TimeSpan lateOffset = zone.BaseUtcOffset;
+                var lateOffset = zone.BaseUtcOffset;
+                var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
 
-                TimeSpan earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
-
+                // TODO: currentOffset != lateOffset for performance
                 if (earlyOffset == currentOffset)
                 {
-                    var dstTransitionEndDateTimeOffset =
-                        TimeZoneHelper.GetDstTransitionEndDateTime(zone, startLocalDateTime, earlyOffset);
-
-                    var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
+                    var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
 
                     // Current period, try to find anything here.
-                    var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd);
+                    var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
+                    if (found.HasValue) return new DateTimeOffset(found.Value, currentOffset);
 
-                    if (found.HasValue)
-                    {
-                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, currentOffset),
-                            zonedEndInclusive, zone);
-                    }
-
-                    var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
-
-                    //Try to find anything starting from late offset.
-                    found = GetOccurrence(lateIntervalLocalStart, endLocalDateTime);
-
-                    if (found.HasValue)
-                    {
-                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive,
-                            zone);
-                    }
+                    currentOffset = lateOffset;
+                    startLocalDateTime = TimeZoneHelper.GetStandartTimeStart(zone, startLocalDateTime, earlyOffset).DateTime;
                 }
             }
 
-            occurrence = GetOccurrence(startLocalDateTime.AddSeconds(1), endLocalDateTime);
-
+            var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
             if (occurrence == null) return null;
 
-            var zoneOffset = zone.GetUtcOffset(occurrence.Value);
-
-            if (!TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value) &&
-                !zone.IsInvalidTime(occurrence.Value))
+            if (zone.IsInvalidTime(occurrence.Value))
             {
-                return new DateTimeOffset(occurrence.Value, zoneOffset);
+                var nextValidTime = TimeZoneHelper.GetDstStart(zone, occurrence.Value, zone.BaseUtcOffset);
+                return nextValidTime;
             }
 
-            return GetOccurenceByZonedTimes(new DateTimeOffset(occurrence.Value, zoneOffset), zonedEndInclusive, zone);
+            if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value))
+            {
+                var lateOffset = zone.BaseUtcOffset;
+                // Interval jobs should be fired in both offsets.
+                // TODO: Will "15/10" fire in both offsets?
+                if (HasFlag(CronExpressionFlag.Interval) || currentOffset != lateOffset)
+                {
+                    return new DateTimeOffset(occurrence.Value, currentOffset);
+                }
+
+                // Skip late ambiguous interval.
+                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, occurrence.Value);
+
+                occurrence = GetOccurrence(ambiguousTimeEnd.DateTime, endLocalDateTime);
+                if (occurrence == null) return null;
+            }
+
+            return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
         }
 
         private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
@@ -362,8 +324,6 @@ namespace Cronos
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
-                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
-
                 var lastDayMonthWithOffset = lastDayOfMonth - _lastMonthOffset;
 
                 if (lastDayMonthWithOffset > day)
@@ -373,17 +333,21 @@ namespace Cronos
                 }
                 else if(lastDayMonthWithOffset < day)
                 {
+                    if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
+
                     Rollover(CronField.DayOfMonth);
-                    goto RetryDayOfMonth;
+
+                    goto RetryMonth;
                 }
 
                 if (!IsDayOfWeekMatch(year, month, day))
                 {
+                    if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
+
                     Rollover(CronField.Hour);
+
                     goto RetryDayOfMonth;
                 }
-
-                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
             }
 
             // W character.
@@ -425,6 +389,8 @@ namespace Cronos
                         }
                     }
                 }
+
+                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
 
                 if (!IsDayOfWeekMatch(dayOfWeek) ||
                     HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
