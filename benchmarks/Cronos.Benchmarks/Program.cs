@@ -9,7 +9,6 @@ namespace Cronos.Benchmarks
         static void Main(string[] args)
         {
 #if DEBUG
-            CronExpression.Parse("* * * * *").GetOccurrence()
             var now = DateTime.UtcNow;
             var end = now.AddYears(100);
             var endTest = now.AddSeconds(20);

@@ -119,8 +119,6 @@ namespace Cronos
 
             if (zone == UtcTimeZone)
             {
-                if (IsMatch(utcStartInclusive)) return utcStartInclusive;
-
                 var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
                 if (found == null) return null;
 
@@ -142,13 +140,11 @@ namespace Cronos
         {
             if (zone == UtcTimeZone)
             {
-                if (IsMatch(startInclusive.UtcDateTime)) return startInclusive.ToOffset(TimeSpan.Zero);
-
                 var found = GetOccurrence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
 
-                return found != null
-                    ? new DateTimeOffset(found.Value, TimeSpan.Zero)
-                    : (DateTimeOffset?) null;
+                if (found == null) return null;
+
+                return new DateTimeOffset(found.Value, TimeSpan.Zero);
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
@@ -157,22 +153,24 @@ namespace Cronos
             return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
         }
 
-        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo timeZone)
+        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo zone)
         {
             var startLocalDateTime = zonedStartInclusive.DateTime;
             var endLocalDateTime = zonedEndInclusive.DateTime;
 
             var currentOffset = zonedStartInclusive.Offset;
 
-            if (IsMatch(startLocalDateTime))
+            var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
+
+            if (occurrence == startLocalDateTime)
             {
-                if (timeZone.IsInvalidTime(startLocalDateTime))
+                if (zone.IsInvalidTime(startLocalDateTime))
                 {
-                    var nextValidTime = TimeZoneHelper.GetDstStartDateTime(timeZone, startLocalDateTime, timeZone.BaseUtcOffset);
+                    var nextValidTime = TimeZoneHelper.GetDstStartDateTime(zone, startLocalDateTime, zone.BaseUtcOffset);
 
                     return nextValidTime;
                 }
-                if (TimeZoneHelper.IsAmbiguousTime(timeZone, startLocalDateTime))
+                if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
                 {
                     // Ambiguous.
 
@@ -183,7 +181,7 @@ namespace Cronos
                         return new DateTimeOffset(startLocalDateTime, currentOffset);
                     }
 
-                    TimeSpan lateOffset = timeZone.BaseUtcOffset;
+                    TimeSpan lateOffset = zone.BaseUtcOffset;
 
                     // Strict jobs should be fired in lowest offset only.
                     if (currentOffset != lateOffset)
@@ -198,15 +196,16 @@ namespace Cronos
                 }
             }
 
-            if (TimeZoneHelper.IsAmbiguousTime(timeZone, startLocalDateTime))
+            if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
             {
-                TimeSpan lateOffset = timeZone.BaseUtcOffset;
+                TimeSpan lateOffset = zone.BaseUtcOffset;
 
-                TimeSpan earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, timeZone);
+                TimeSpan earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
 
                 if (earlyOffset == currentOffset)
                 {
-                    var dstTransitionEndDateTimeOffset = TimeZoneHelper.GetDstTransitionEndDateTime(timeZone, startLocalDateTime, earlyOffset);
+                    var dstTransitionEndDateTimeOffset =
+                        TimeZoneHelper.GetDstTransitionEndDateTime(zone, startLocalDateTime, earlyOffset);
 
                     var earlyIntervalLocalEnd = dstTransitionEndDateTimeOffset.AddSeconds(-1).DateTime;
 
@@ -215,7 +214,8 @@ namespace Cronos
 
                     if (found.HasValue)
                     {
-                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, currentOffset), zonedEndInclusive, timeZone);
+                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, currentOffset),
+                            zonedEndInclusive, zone);
                     }
 
                     var lateIntervalLocalStart = dstTransitionEndDateTimeOffset.ToOffset(lateOffset).DateTime;
@@ -225,19 +225,25 @@ namespace Cronos
 
                     if (found.HasValue)
                     {
-                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive, timeZone);
+                        return GetOccurenceByZonedTimes(new DateTimeOffset(found.Value, lateOffset), zonedEndInclusive,
+                            zone);
                     }
                 }
             }
 
-            // Does not match, find next.
-            var nextFound = GetOccurrence(startLocalDateTime.AddSeconds(1), endLocalDateTime);
+            occurrence = GetOccurrence(startLocalDateTime.AddSeconds(1), endLocalDateTime);
 
-            if (nextFound == null) return null;
+            if (occurrence == null) return null;
 
-            var zoneOffset = timeZone.GetUtcOffset(nextFound.Value);
+            var zoneOffset = zone.GetUtcOffset(occurrence.Value);
 
-            return GetOccurenceByZonedTimes(new DateTimeOffset(nextFound.Value, zoneOffset), zonedEndInclusive, timeZone);
+            if (!TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value) &&
+                !zone.IsInvalidTime(occurrence.Value))
+            {
+                return new DateTimeOffset(occurrence.Value, zoneOffset);
+            }
+
+            return GetOccurenceByZonedTimes(new DateTimeOffset(occurrence.Value, zoneOffset), zonedEndInclusive, zone);
         }
 
         private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
@@ -341,10 +347,10 @@ namespace Cronos
                 goto RetryDayOfMonth;
             }
 
-            if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
-
             if (!HasFlag(CronExpressionFlag.LongPath))
             {
+                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
+
                 if (IsDayOfWeekMatch(year, month, day))
                 {
                     return new DateTime(year, month, day, hour, minute, second);
@@ -356,6 +362,8 @@ namespace Cronos
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
+                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
+
                 var lastDayMonthWithOffset = lastDayOfMonth - _lastMonthOffset;
 
                 if (lastDayMonthWithOffset > day)
@@ -385,6 +393,8 @@ namespace Cronos
                 var dayOfWeek = CalendarHelper.GetDayOfWeek(new DateTime(year, month, day));
 
                 var shift = CalendarHelper.MoveToNearestWeekDay(ref day, ref dayOfWeek, lastDayOfMonth);
+
+                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
 
                 if (shift > 0)
                 {
@@ -424,9 +434,9 @@ namespace Cronos
 
                     goto RetryMonth;
                 }
-
-                if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
             }
+
+            if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
 
             // L and # characters in day of week.
 
@@ -469,133 +479,6 @@ namespace Cronos
         private bool HasFlag(CronExpressionFlag value)
         {
             return (_flags & value) != 0;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IsMatch(int millisecond, int second, int minute, int hour, int dayOfMonth, int month, int dayOfWeek, int year)
-        {
-            if (millisecond != 0) return false;
-
-            var daysInMonth = CalendarHelper.GetDaysInMonth(year, month);
-
-            if (!HasFlag(CronExpressionFlag.LongPath))
-            {
-                return GetBit(_second, second) &&
-                       GetBit(_minute, minute) &&
-                       GetBit(_hour, hour) &&
-                       GetBit(_month, month) &&
-                       GetBit(_dayOfWeek, dayOfWeek) &&
-                       GetBit(_dayOfMonth, dayOfMonth);
-            }
-
-            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
-                    ? 1L << (daysInMonth - _lastMonthOffset)
-                    : _dayOfMonth;
-
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                if (!GetBit(dayOfMonthField, dayOfMonth)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
-            {
-                if (!CalendarHelper.IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.NthDayOfWeek))
-            {
-                if(!CalendarHelper.IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                var isDayMatched = GetBit(dayOfMonthField, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
-                                   GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
-                                   GetBit(dayOfMonthField, dayOfMonth + 1) && dayOfWeek == 5 ||
-                                   GetBit(dayOfMonthField, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
-                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
-
-                if (!isDayMatched) return false;
-            }
-
-            // Make 0-based values out of these so we can use them as indicies
-            // minute -= Constants.FirstMinute;
-            //  hour -= Constants.FirstHour;
-            // dayOfMonth -= Constants.FirstDayOfMonth;
-            //  month -= Constants.FirstMonth;
-            // dayOfWeek -= Constants.FirstDayOfWeek;
-            return GetBit(_second, second) &&
-                   GetBit(_minute, minute) &&
-                   GetBit(_hour, hour) &&
-                   GetBit(_month, month) &&
-                   GetBit(_dayOfWeek, dayOfWeek) &&
-                   (HasFlag(CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
-        }
-
-        private bool IsMatch(DateTime dateTime)
-        {
-            var millisecond = dateTime.Millisecond;
-
-            if (millisecond != 0) return false;
-
-            DateTimeHelper.FillDateTimeParts(dateTime, out int second, out int minute, out int hour, out int dayOfMonth, out int month, out int year);
-
-            var dayOfWeek = (int)dateTime.DayOfWeek;
-
-            if (!HasFlag(CronExpressionFlag.LongPath))
-            {
-                return GetBit(_second, second) &&
-                       GetBit(_minute, minute) &&
-                       GetBit(_hour, hour) &&
-                       GetBit(_month, month) &&
-                       GetBit(_dayOfWeek, dayOfWeek) &&
-                       GetBit(_dayOfMonth, dayOfMonth);
-            }
-
-            var daysInMonth = CalendarHelper.GetDaysInMonth(year, month);
-
-            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
-                ? 1L << (daysInMonth - _lastMonthOffset)
-                : _dayOfMonth;
-
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                if (!GetBit(dayOfMonthField, dayOfMonth)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
-            {
-                if (!CalendarHelper.IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.NthDayOfWeek))
-            {
-                if (!CalendarHelper.IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
-            }
-            else if (HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                var isDayMatched = GetBit(dayOfMonthField, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
-                                   GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
-                                   GetBit(dayOfMonthField, dayOfMonth + 1) && dayOfWeek == 5 ||
-                                   GetBit(dayOfMonthField, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
-                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
-
-                if (!isDayMatched) return false;
-            }
-
-            // Make 0-based values out of these so we can use them as indicies
-            // minute -= Constants.FirstMinute;
-            //  hour -= Constants.FirstHour;
-            // dayOfMonth -= Constants.FirstDayOfMonth;
-            //  month -= Constants.FirstMonth;
-            // dayOfWeek -= Constants.FirstDayOfWeek;
-
-            // The dom/dow situation is:  
-            //     "* * 1,15 * Sun" will run on the first and fifteenth *only* on Sundays; 
-            //     "* * * * Sun" will run *only* on Sundays; 
-            //     "* * 1,15 * *" will run *only* the 1st and 15th.
-            // this is why we keep DayOfMonthStar and DayOfWeekStar.
-            return GetBit(_second, second) &&
-                   GetBit(_minute, minute) &&
-                   GetBit(_hour, hour) &&
-                   GetBit(_month, month) &&
-                   GetBit(_dayOfWeek, dayOfWeek) &&
-                   (HasFlag(CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
