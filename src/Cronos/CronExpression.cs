@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Collections.Generic;
 
 namespace Cronos
 {
@@ -9,7 +8,8 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
-        private const long all = ~0L;
+        private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
+
         private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _hour;       // 24 bits -> from 0 bit to 23 bit in Int64
@@ -111,8 +111,10 @@ namespace Cronos
         /// </summary>
         public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
         {
-            if (zone.Equals(TimeZoneInfo.Utc))
+            if (zone == UtcTimeZone)
             {
+                if (IsMatch(startInclusive.UtcDateTime)) return startInclusive.ToOffset(TimeSpan.Zero);
+
                 var found = GetOccurrence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
 
                 return found != null
@@ -135,19 +137,13 @@ namespace Cronos
         /// </exception>
         public DateTimeOffset? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
-            void CheckDateTimeArgument(string argName, DateTime dateTime, DateTimeKind expectedKind)
-            {
-                if (dateTime.Kind != expectedKind)
-                {
-                    throw new ArgumentException($@"The supplied DateTime must have the Kind property set to {expectedKind}", argName);
-                }
-            }
-
             CheckDateTimeArgument(nameof(utcStartInclusive), utcStartInclusive, DateTimeKind.Utc);
             CheckDateTimeArgument(nameof(utcEndInclusive), utcEndInclusive, DateTimeKind.Utc);
 
-            if (zone.Equals(TimeZoneInfo.Utc))
+            if (zone == UtcTimeZone)
             {
+                if (IsMatch(utcStartInclusive)) return utcStartInclusive;
+
                 var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
 
                 return found != null
@@ -246,13 +242,14 @@ namespace Cronos
 
         private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
         {
-            var baseYear = baseTime.Year;
-            var baseMonth = baseTime.Month;
-            var baseDay = baseTime.Day;
-
-            var baseHour = baseTime.Hour;
-            var baseMinute = baseTime.Minute;
-            var baseSecond = baseTime.Second;
+            DateTimeHelper.FillDateTimeParts(
+                baseTime, 
+                out int baseSecond, 
+                out int baseMinute, 
+                out int baseHour, 
+                out int baseDay, 
+                out int baseMonth, 
+                out int baseYear);
 
             var year = baseYear;
             var month = baseMonth;
@@ -308,8 +305,6 @@ namespace Cronos
 
             void MoveToNextValue(CronField field, long fieldBits, ref int value)
             {
-                //if(GetBit(fieldBits, value)) return;
-
                 var nextValue = FindFirstSet(field, fieldBits, value, Constants.LastValues[(int) field]);
 
                 if (nextValue == value) return;
@@ -328,9 +323,11 @@ namespace Cronos
             MoveToNextValue(CronField.Minute, _minute, ref minute);
             MoveToNextValue(CronField.Hour, _hour, ref hour);
 
-            RetryMonth:
+            RetryDayOfMonth:
 
             MoveToNextValue(CronField.DayOfMonth, _dayOfMonth, ref day);
+
+            RetryMonth:
 
             MoveToNextValue(CronField.Month, _month, ref month);
 
@@ -341,7 +338,7 @@ namespace Cronos
                 if (new DateTime(year, month, lastDayOfMonth, hour, minute, second) > endTime) return null;
 
                 Rollover(CronField.DayOfMonth);
-                goto RetryMonth;
+                goto RetryDayOfMonth;
             }
 
             if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
@@ -354,7 +351,7 @@ namespace Cronos
                 }
 
                 Rollover(CronField.Hour);
-                goto RetryMonth;
+                goto RetryDayOfMonth;
             }
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
@@ -369,13 +366,13 @@ namespace Cronos
                 else if(lastDayMonthWithOffset < day)
                 {
                     Rollover(CronField.DayOfMonth);
-                    goto RetryMonth;
+                    goto RetryDayOfMonth;
                 }
 
                 if (!IsDayOfWeekMatch(year, month, day))
                 {
                     Rollover(CronField.Hour);
-                    goto RetryMonth;
+                    goto RetryDayOfMonth;
                 }
 
                 if (new DateTime(year, month, day, hour, minute, second) > endTime) return null;
@@ -424,6 +421,7 @@ namespace Cronos
                     HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
                 {
                     Rollover(CronField.DayOfMonth);
+
                     goto RetryMonth;
                 }
 
@@ -438,7 +436,7 @@ namespace Cronos
             {
                 Rollover(CronField.Hour);
 
-                goto RetryMonth;
+                goto RetryDayOfMonth;
             }
 
             return new DateTime(year, month, day, hour, minute, second);
@@ -523,6 +521,69 @@ namespace Cronos
             // dayOfMonth -= Constants.FirstDayOfMonth;
             //  month -= Constants.FirstMonth;
             // dayOfWeek -= Constants.FirstDayOfWeek;
+            return GetBit(_second, second) &&
+                   GetBit(_minute, minute) &&
+                   GetBit(_hour, hour) &&
+                   GetBit(_month, month) &&
+                   GetBit(_dayOfWeek, dayOfWeek) &&
+                   (HasFlag(CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
+        }
+
+        private bool IsMatch(DateTime dateTime)
+        {
+            var millisecond = dateTime.Millisecond;
+
+            if (millisecond != 0) return false;
+
+            DateTimeHelper.FillDateTimeParts(dateTime, out int second, out int minute, out int hour, out int dayOfMonth, out int month, out int year);
+
+            var dayOfWeek = (int)dateTime.DayOfWeek;
+
+            if (!HasFlag(CronExpressionFlag.LongPath))
+            {
+                return GetBit(_second, second) &&
+                       GetBit(_minute, minute) &&
+                       GetBit(_hour, hour) &&
+                       GetBit(_month, month) &&
+                       GetBit(_dayOfWeek, dayOfWeek) &&
+                       GetBit(_dayOfMonth, dayOfMonth);
+            }
+
+            var daysInMonth = CalendarHelper.GetDaysInMonth(year, month);
+
+            var dayOfMonthField = HasFlag(CronExpressionFlag.DayOfMonthLast)
+                ? 1L << (daysInMonth - _lastMonthOffset)
+                : _dayOfMonth;
+
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !HasFlag(CronExpressionFlag.NearestWeekday))
+            {
+                if (!GetBit(dayOfMonthField, dayOfMonth)) return false;
+            }
+            else if (HasFlag(CronExpressionFlag.DayOfWeekLast))
+            {
+                if (!CalendarHelper.IsLastDayOfWeek(dayOfMonth, daysInMonth)) return false;
+            }
+            else if (HasFlag(CronExpressionFlag.NthDayOfWeek))
+            {
+                if (!CalendarHelper.IsNthDayOfWeek(dayOfMonth, _nthdayOfWeek)) return false;
+            }
+            else if (HasFlag(CronExpressionFlag.NearestWeekday))
+            {
+                var isDayMatched = GetBit(dayOfMonthField, dayOfMonth) && dayOfWeek > 0 && dayOfWeek < 6 ||
+                                   GetBit(dayOfMonthField, dayOfMonth - 1) && dayOfWeek == 1 ||
+                                   GetBit(dayOfMonthField, dayOfMonth + 1) && dayOfWeek == 5 ||
+                                   GetBit(dayOfMonthField, 1) && dayOfWeek == 1 && (dayOfMonth == 2 || dayOfMonth == 3) ||
+                                   GetBit(dayOfMonthField, dayOfMonth + 2) && dayOfMonth == daysInMonth - 2 && dayOfWeek == 5;
+
+                if (!isDayMatched) return false;
+            }
+
+            // Make 0-based values out of these so we can use them as indicies
+            // minute -= Constants.FirstMinute;
+            //  hour -= Constants.FirstHour;
+            // dayOfMonth -= Constants.FirstDayOfMonth;
+            //  month -= Constants.FirstMonth;
+            // dayOfWeek -= Constants.FirstDayOfWeek;
 
             // The dom/dow situation is:  
             //     "* * 1,15 * Sun" will run on the first and fifteenth *only* on Sundays; 
@@ -535,20 +596,6 @@ namespace Cronos
                    GetBit(_month, month) &&
                    GetBit(_dayOfWeek, dayOfWeek) &&
                    (HasFlag(CronExpressionFlag.NearestWeekday) || GetBit(dayOfMonthField, dayOfMonth));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IsMatch(DateTime dateTime)
-        {
-            return IsMatch(
-                dateTime.Millisecond,
-                dateTime.Second,
-                dateTime.Minute,
-                dateTime.Hour,
-                dateTime.Day,
-                dateTime.Month,
-                (int)dateTime.DayOfWeek,
-                dateTime.Year);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -573,14 +620,14 @@ namespace Cronos
 
                 if (*pointer != '/')
                 {
-                    bits = Constants.AllBits[(int)field];
+                    SetAllBits(field, out bits);
+
                     SkipWhiteSpaces(ref pointer);
+
                     return;
                 }
-                else
-                {
-                    ParseRange(field, ref pointer, expression, ref bits, true);
-                }
+
+                ParseRange(field, ref pointer, expression, ref bits, true);
             }
             else
             {
@@ -673,7 +720,9 @@ namespace Cronos
                 {
                     ThrowFormatException("'{0}': '/' is not allowed after '?'.", field);
                 }
-                bits = all;
+
+                SetAllBits(field, out bits);
+
                 return;
             }
             else if(*pointer == 'L')
@@ -802,9 +851,24 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void CheckDateTimeArgument(string paramName, DateTime dateTime, DateTimeKind expectedKind)
+        {
+            if (dateTime.Kind != expectedKind)
+            {
+                ThrowArgumentException(paramName, "The supplied DateTime must have the Kind property set to {0}", expectedKind);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(string format, params object[] args)
         {
             throw new FormatException(String.Format(format, args));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentException(string paramName, string format, params object[] args)
+        {
+            throw new ArgumentException(String.Format(format, args), paramName);
         }
 
         private static unsafe char* GetNumber(
@@ -865,6 +929,12 @@ namespace Cronos
         private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SetAllBits(CronField field, out long bits)
+        {
+            bits = Constants.AllBits[(int)field];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
