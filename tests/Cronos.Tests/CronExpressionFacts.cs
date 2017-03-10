@@ -920,19 +920,17 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset_WhenUsingDateTimeArguments(TimeZoneInfo zone)
+        public void GetOccurrence_ReturnsDateTimeWithUtcKind_WhenUsingDateTimeArguments(TimeZoneInfo zone)
         {
             var expression = CronExpression.Parse("* * * * *");
 
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
             var endInstant = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
 
-            var expectedInstant = TimeZoneInfo.ConvertTime((DateTimeOffset)startInstant, zone);
-
             var executed = expression.GetOccurrence(startInstant, endInstant, zone);
 
-            Assert.Equal(expectedInstant, executed);
-            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+            Assert.Equal(startInstant, executed);
+            Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
         }
 
         [Theory]
