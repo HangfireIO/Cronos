@@ -1,9 +1,8 @@
 ﻿using System;
 using BenchmarkDotNet.Running;
-using Cronos;
 using Cronos.Benchmark;
 
-namespace Cronos.Benchmark
+namespace Cronos.Benchmarks
 {
     class Program
     {

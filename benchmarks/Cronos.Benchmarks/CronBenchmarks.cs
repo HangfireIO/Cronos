@@ -13,14 +13,14 @@ namespace Cronos.Benchmark
         private static readonly CronExpression DaylyExpression = CronExpression.Parse("0 3 * * *");
         private static readonly CronExpression MonthlyExpression = CronExpression.Parse("0 6 1 * *");
 
-        private static readonly CrontabSchedule NCrontabSimpleExpression = NCrontab.CrontabSchedule.Parse("* * * * *", new CrontabSchedule.ParseOptions{IncludingSeconds = false});
+        private static readonly CrontabSchedule NCrontabSimpleExpression = NCrontab.CrontabSchedule.Parse("* * * * *", new CrontabSchedule.ParseOptions { IncludingSeconds = false });
         private static readonly CronExpression ComplexExpression = CronExpression.Parse("*/10 12-20 * DEC 3");
 
         private static readonly DateTimeOffset DateTimeNow = DateTimeOffset.UtcNow.Date;
         private static readonly DateTime DateTimeNow1 = DateTime.UtcNow.Date;
         private static readonly DateTimeOffset DateTimeNow2 = DateTimeOffset.UtcNow.AddMinutes(3);
         private static readonly DateTimeOffset DateTimeNow3 = DateTimeOffset.UtcNow.AddMinutes(7);
-        private static readonly DateTimeOffset EndDateTime  = DateTimeNow.AddYears(100);
+        private static readonly DateTimeOffset EndDateTime = DateTimeNow.AddYears(100);
         private static readonly DateTime EndDateTime1 = DateTimeNow1.AddYears(100);
 
         [Benchmark]
@@ -94,7 +94,7 @@ namespace Cronos.Benchmark
         {
             return NCrontabSimpleExpression.GetNextOccurrence(DateTimeNow1);
         }
-        
+
         [Benchmark]
         public DateTimeOffset? GetOccurenceMinutelyOffset()
         {
