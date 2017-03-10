@@ -158,25 +158,31 @@ namespace Cronos
             var startLocalDateTime = zonedStartInclusive.DateTime;
             var endLocalDateTime = zonedEndInclusive.DateTime;
 
-            var currentOffset = zonedStartInclusive.Offset;
-
             if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
             {
+                var currentOffset = zonedStartInclusive.Offset;
                 var lateOffset = zone.BaseUtcOffset;
-                var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
-
-                // TODO: currentOffset != lateOffset for performance
-                if (earlyOffset == currentOffset)
+               
+                if (lateOffset != currentOffset)
                 {
+                    var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
                     var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
 
-                    // Current period, try to find anything here.
+                    // Early period, try to find anything here.
                     var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
-                    if (found.HasValue) return new DateTimeOffset(found.Value, currentOffset);
+                    if (found.HasValue) return new DateTimeOffset(found.Value, earlyOffset);
 
-                    currentOffset = lateOffset;
                     startLocalDateTime = TimeZoneHelper.GetStandartTimeStart(zone, startLocalDateTime, earlyOffset).DateTime;
                 }
+
+                // Skip late ambiguous interval.
+                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, startLocalDateTime);
+                var foundInLateInterval = GetOccurrence(startLocalDateTime, ambiguousTimeEnd.DateTime.AddTicks(-1));
+
+                if (foundInLateInterval.HasValue && HasFlag(CronExpressionFlag.Interval))
+                    return new DateTimeOffset(foundInLateInterval.Value, lateOffset);
+
+                startLocalDateTime = ambiguousTimeEnd.DateTime;
             }
 
             var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
@@ -190,19 +196,8 @@ namespace Cronos
 
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value))
             {
-                var lateOffset = zone.BaseUtcOffset;
-                // Interval jobs should be fired in both offsets.
-                // TODO: Will "15/10" fire in both offsets?
-                if (HasFlag(CronExpressionFlag.Interval) || currentOffset != lateOffset)
-                {
-                    return new DateTimeOffset(occurrence.Value, currentOffset);
-                }
-
-                // Skip late ambiguous interval.
-                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, occurrence.Value);
-
-                occurrence = GetOccurrence(ambiguousTimeEnd.DateTime, endLocalDateTime);
-                if (occurrence == null) return null;
+                var earlyOffset = TimeZoneHelper.GetDstOffset(occurrence.Value, zone);
+                return new DateTimeOffset(occurrence.Value, earlyOffset);
             }
 
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));

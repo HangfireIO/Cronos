@@ -789,6 +789,10 @@ namespace Cronos.Tests
 
         [InlineData("0 0    1   * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:00 -04:00")]
         [InlineData("0 0    1   * * *", "2016-11-06 01:00 -05:00", "2016-11-07 01:00 -05:00")]
+
+        [InlineData("0 0    1   6 11 *", "2015-11-07 01:00 -05:00", "2016-11-06 01:00 -04:00")]
+
+        [InlineData("0 0    1   * 11 SUN#1", "2015-11-01 01:00 -05:00", "2016-11-06 01:00 -04:00")]
         public void GetOccurrence_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression, CronFields.IncludeSeconds);
