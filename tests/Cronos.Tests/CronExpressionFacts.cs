@@ -222,6 +222,25 @@ namespace Cronos.Tests
             Assert.Throws<FormatException>(() => CronExpression.Parse(cronExpression, CronFields.IncludeSeconds));
         }
 
+        [Fact]
+        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumentsHasAWrongKind()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+
+            var startException = Assert.Throws<ArgumentException>(() => expression.GetOccurrence(
+                DateTime.Now,
+                DateTime.UtcNow,
+                TimeZoneInfo.Local));
+
+            var endException = Assert.Throws<ArgumentException>(() => expression.GetOccurrence(
+                DateTime.UtcNow,
+                DateTime.Now,
+                TimeZoneInfo.Local));
+
+            Assert.Equal("utcStartInclusive", startException.ParamName);
+            Assert.Equal("utcEndInclusive", endException.ParamName);
+        }
+
         [Theory]
 
         // Basic facts.

@@ -137,8 +137,8 @@ namespace Cronos
         /// </exception>
         public DateTimeOffset? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
-            CheckDateTimeArgument(nameof(utcStartInclusive), utcStartInclusive, DateTimeKind.Utc);
-            CheckDateTimeArgument(nameof(utcEndInclusive), utcEndInclusive, DateTimeKind.Utc);
+            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
+            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive));
 
             if (zone == UtcTimeZone)
             {
@@ -850,27 +850,6 @@ namespace Cronos
                 : bits >> shift | bits << (high - low - shift + 1);
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void CheckDateTimeArgument(string paramName, DateTime dateTime, DateTimeKind expectedKind)
-        {
-            if (dateTime.Kind != expectedKind)
-            {
-                ThrowArgumentException(paramName, "The supplied DateTime must have the Kind property set to {0}", expectedKind);
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowFormatException(string format, params object[] args)
-        {
-            throw new FormatException(String.Format(format, args));
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowArgumentException(string paramName, string format, params object[] args)
-        {
-            throw new ArgumentException(String.Format(format, args), paramName);
-        }
-
         private static unsafe char* GetNumber(
             out int num, /* where does the result go? */
             int low, /* offset applied to result if symbolic enum used */
@@ -917,6 +896,18 @@ namespace Cronos
             }
 
             return null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowFormatException(string format, params object[] args)
+        {
+            throw new FormatException(String.Format(format, args));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowWrongDateTimeKindException(string paramName)
+        {
+            throw new ArgumentException("The supplied DateTime must have the Kind property set to DateTimeKind.Utc", paramName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
