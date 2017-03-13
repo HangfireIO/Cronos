@@ -230,11 +230,11 @@ namespace Cronos
             var minute = baseMinute;
             var second = baseSecond;
 
-            var minSecond = FindFirstSet(CronField.Second, _second, Constants.FirstSecond, Constants.LastSecond);
-            var minMinute = FindFirstSet(CronField.Minute,_minute, Constants.FirstMinute, Constants.LastMinute);
-            var minHour = FindFirstSet(CronField.Hour, _hour, Constants.FirstHour, Constants.LastHour);
-            var minDay = FindFirstSet(CronField.DayOfMonth, _dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
-            var minMonth = FindFirstSet(CronField.Month, _month, Constants.FirstMonth, Constants.LastMonth);
+            var minSecond = FindFirstSet(_second, Constants.FirstSecond, Constants.LastSecond);
+            var minMinute = FindFirstSet(_minute, Constants.FirstMinute, Constants.LastMinute);
+            var minHour = FindFirstSet(_hour, Constants.FirstHour, Constants.LastHour);
+            var minDay = FindFirstSet(_dayOfMonth, Constants.FirstDayOfMonth, Constants.LastDayOfMonth);
+            var minMonth = FindFirstSet(_month, Constants.FirstMonth, Constants.LastMonth);
 
             void Rollover(CronField field, bool increment = true)
             {
@@ -280,7 +280,7 @@ namespace Cronos
 
             void MoveToNextValue(CronField field, long fieldBits, ref int value)
             {
-                var nextValue = FindFirstSet(field, fieldBits, value, Constants.LastValues[(int) field]);
+                var nextValue = FindFirstSet(fieldBits, value, Constants.LastValues[(int) field]);
                 if (nextValue == value) return;
 
                 if (nextValue == -1)
@@ -450,7 +450,7 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int FindFirstSet(CronField field, long value, int startBit, int endBit)
+        private static int FindFirstSet(long value, int startBit, int endBit)
         {
             if (GetBit(value, startBit)) return startBit;
 
