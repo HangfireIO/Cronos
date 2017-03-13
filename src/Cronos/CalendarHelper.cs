@@ -37,7 +37,7 @@ namespace Cronos
             }
             if (dayOfWeek == DayOfWeek.Saturday)
             {
-                if (day == Constants.FirstDayOfMonth)
+                if (day == Constants.DaysOfMonth.First)
                 {
                     day = day + 2;
                     dayOfWeek = DayOfWeek.Monday;
@@ -53,8 +53,8 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNthDayOfWeek(int day, int n)
         {
-            return day - Constants.DaysPerWeekCount * n < Constants.FirstDayOfMonth &&
-                   day - Constants.DaysPerWeekCount * (n - 1) >= Constants.FirstDayOfMonth;
+            return day - Constants.DaysPerWeekCount * n < Constants.DaysOfMonth.First &&
+                   day - Constants.DaysPerWeekCount * (n - 1) >= Constants.DaysOfMonth.First;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

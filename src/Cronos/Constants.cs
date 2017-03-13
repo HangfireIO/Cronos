@@ -2,48 +2,65 @@
 {
     internal class Constants
     {
-        public static readonly int[] MonthNamesArray;
-        public static readonly int[] DayOfWeekNamesArray;
-
-        public static readonly string[] MonthNames =
+        private static readonly string[] MonthNames =
         {
             "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
             "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
         };
 
-        public static readonly string[] DayOfWeekNames =
+        private static readonly string[] DayOfWeekNames =
         {
             "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
         };
 
-        public static readonly int[] FirstValues;
-        public static readonly int[] LastValues;
-        public static readonly int[][] NameArrays;
+        private static readonly int[] MonthNamesArray = new int[MonthNames.Length];
+        private static readonly int[] DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
 
-        public static readonly long[] AllBits;
+        public static readonly CronFieldDescriptor Seconds = new CronFieldDescriptor
+        {
+            Field = CronField.Second,
+            First = 0,
+            Last = 59
+        };
 
-        public const int CronWithSecondsFieldsCount = 6;
-        public const int CronWithoutSecondsFieldsCount = 5;
+        public static readonly CronFieldDescriptor Minutes = new CronFieldDescriptor
+        {
+            Field = CronField.Minute,
+            First = 0,
+            Last = 59
+        };
 
-        public const int FirstSecond = 0;
-        public const int LastSecond = 59;
+        public static readonly CronFieldDescriptor Hours = new CronFieldDescriptor
+        {
+            Field = CronField.Hour,
+            First = 0,
+            Last = 23
+        };
 
-        public const int FirstMinute = 0;
-        public const int LastMinute = 59;
+        public static readonly CronFieldDescriptor DaysOfMonth = new CronFieldDescriptor
+        {
+            Field = CronField.DayOfMonth,
+            First = 1,
+            Last = 31
+        };
 
-        public const int FirstHour = 0;
-        public const int LastHour = 23;
+        public static readonly CronFieldDescriptor Months = new CronFieldDescriptor
+        {
+            Field = CronField.Month,
+            First = 1,
+            Last = 12,
+            Names = MonthNamesArray
+        };
 
-        public const int FirstDayOfMonth = 1;
-        public const int LastDayOfMonth = 31;
+        public static readonly CronFieldDescriptor DaysOfWeek = new CronFieldDescriptor
+        {
+            Field = CronField.DayOfWeek,
+            First = 0,
+            Last = 7, // 0 and 7 are both Sunday, for compatibility reasons.
+            Names = DayOfWeekNamesArray
+        };
+        
         public const int MinDaysInMonth = 28;
-
-        public const int FirstMonth = 1;
-        public const int LastMonth = 12;
-
-        // Note on DOW: 0 and 7 are both Sunday, for compatibility reasons. 
-        public const int FirstDayOfWeek = 0;
-        public const int LastDayOfWeek = 7;
 
         public const int DaysPerWeekCount = 7;
 
@@ -54,37 +71,6 @@
 
         static Constants()
         {
-            FirstValues = new int[6];
-            FirstValues[(int) CronField.Second] = FirstSecond;
-            FirstValues[(int) CronField.Minute] = FirstMinute;
-            FirstValues[(int) CronField.Hour] = FirstHour;
-            FirstValues[(int) CronField.DayOfMonth] = FirstDayOfMonth;
-            FirstValues[(int) CronField.Month] = FirstMonth;
-            FirstValues[(int) CronField.DayOfWeek] = FirstDayOfWeek;
-
-            LastValues = new int[6];
-            LastValues[(int) CronField.Second] = LastSecond;
-            LastValues[(int) CronField.Minute] = LastMinute;
-            LastValues[(int) CronField.Hour] = LastHour;
-            LastValues[(int) CronField.DayOfMonth] = LastDayOfMonth;
-            LastValues[(int) CronField.Month] = LastMonth;
-            LastValues[(int) CronField.DayOfWeek] = LastDayOfWeek;
-
-            AllBits = new long[6];
-            AllBits[(int) CronField.Second] = (1L << 60) - 1;
-            AllBits[(int)CronField.Minute] = (1L << 60) - 1;
-            AllBits[(int)CronField.Hour] = (1L << 24) - 1;
-            AllBits[(int)CronField.DayOfMonth] = (1L << 32) - 2;
-            AllBits[(int)CronField.Month] = (1L << 13) - 2;
-            AllBits[(int)CronField.DayOfWeek] = (1L << 8) - 1;
-
-            MonthNamesArray = new int[MonthNames.Length];
-            DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
-
-            NameArrays = new int[6][];
-            NameArrays[(int) CronField.Month] = MonthNamesArray;
-            NameArrays[(int) CronField.DayOfWeek] = DayOfWeekNamesArray;
-
             for (var i = 0; i < MonthNames.Length; i++)
             {
                 var name = MonthNames[i].ToUpperInvariant();
