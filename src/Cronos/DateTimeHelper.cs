@@ -37,8 +37,9 @@ namespace Cronos
         {
             var ticks = dateTime.Ticks;
 
+            var millisecond = (int) (ticks / TicksPerMillisecond % 1000);
             second = (int) (ticks / TicksPerSecond % 60);
-            if (dateTime.Millisecond != 0) second++;
+            if (millisecond != 0) second++;
             minute = (int) (ticks / TicksPerMinute % 60);
             hour = (int) (ticks / TicksPerHour % 24);
 
