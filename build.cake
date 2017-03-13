@@ -2,6 +2,7 @@
 #tool "nuget:?package=xunit.runner.console"
 
 var version = "0.1.1";
+var configuration = "Release";
 
 Task("Restore-NuGet-Packages")
     .Does(()=> 
@@ -9,13 +10,21 @@ Task("Restore-NuGet-Packages")
     DotNetCoreRestore();
 });
 
+Task("Clean")
+    .Does(()=> 
+{
+    CleanDirectory("./build");
+    StartProcess("dotnet", "clean -c:" + configuration);
+});
+
 Task("Build")
+    .IsDependentOn("Clean")
     .IsDependentOn("Restore-NuGet-Packages")
     .Does(()=> 
 {
     DotNetCoreBuild("src/Cronos/Cronos.csproj",  new DotNetCoreBuildSettings
     {
-        Configuration = "Release",
+        Configuration = configuration,
         ArgumentCustomization = args => args.Append("/p:Version=" + version)
     });
 });
@@ -49,34 +58,24 @@ Task("AppVeyor")
     }
 
     AppVeyor.UpdateBuildVersion(version);
-
-    CreateDirectory("build");
-    
-    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
-    Zip("./src/Cronos/bin/Release/netstandard1.0", "build/Cronos-" + version +".zip");
 });
 
 Task("Local")
-    .IsDependentOn("Test")
     .Does(()=> 
 {
-    CreateDirectory("build");
-    
-    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
-    Zip("./src/Cronos/bin/Release/netstandard1.0", "build/Cronos-" + version +".zip");
+    RunTarget("Test");
 });
 
 Task("Pack")
     .Does(()=> 
 {
-    if (AppVeyor.IsRunningOnAppVeyor)
-    {
-        RunTarget("AppVeyor");
-    }
-    else
-    {
-        RunTarget("Local");
-    }
+    var target = AppVeyor.IsRunningOnAppVeyor ? "AppVeyor" : "Local";
+    RunTarget(target);
+
+    CreateDirectory("build");
+    
+    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
+    Zip("./src/Cronos/bin/" + configuration + "/netstandard1.0", "build/Cronos-" + version +".zip");
 });
     
 RunTarget("Pack");
