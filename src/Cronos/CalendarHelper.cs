@@ -9,6 +9,8 @@ namespace Cronos
 {
     internal static class CalendarHelper
     {
+        private const int DaysPerWeekCount = 7;
+
         private const long TicksPerMillisecond = 10000;
         private const long TicksPerSecond = TicksPerMillisecond * 1000;
         private const long TicksPerMinute = TicksPerSecond * 60;
@@ -137,7 +139,7 @@ namespace Cronos
             }
             if (dayOfWeek == DayOfWeek.Saturday)
             {
-                if (day == Constants.DaysOfMonth.First)
+                if (day == CronField.DaysOfMonth.First)
                 {
                     day = day + 2;
                     dayOfWeek = DayOfWeek.Monday;
@@ -153,14 +155,14 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsNthDayOfWeek(int day, int n)
         {
-            return day - Constants.DaysPerWeekCount * n < Constants.DaysOfMonth.First &&
-                   day - Constants.DaysPerWeekCount * (n - 1) >= Constants.DaysOfMonth.First;
+            return day - DaysPerWeekCount * n < CronField.DaysOfMonth.First &&
+                   day - DaysPerWeekCount * (n - 1) >= CronField.DaysOfMonth.First;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsLastDayOfWeek(int day, int lastDayOfMonth)
         {
-            return day + Constants.DaysPerWeekCount > lastDayOfMonth;
+            return day + DaysPerWeekCount > lastDayOfMonth;
         }
     }
 }

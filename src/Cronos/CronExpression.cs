@@ -9,6 +9,10 @@ namespace Cronos
     public sealed class CronExpression
     {
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
+        private const int MinDaysInMonth = 28;
+        private const int MinNthDayOfWeek = 1;
+        private const int MaxNthDayOfWeek = 5;
+        private const int SundayBits = 0b1000_0001;
 
         private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
@@ -62,7 +66,7 @@ namespace Cronos
 
                     if ((fields & CronFields.IncludeSeconds) != 0)
                     {
-                        ParseField(Constants.Seconds, ref pointer, cronExpression, ref cronExpression._second);
+                        ParseField(CronField.Seconds, ref pointer, cronExpression, ref cronExpression._second);
                     }
                     else
                     {
@@ -70,24 +74,24 @@ namespace Cronos
                     }
 
                     // Minute.
-                    ParseField(Constants.Minutes, ref pointer, cronExpression, ref cronExpression._minute);
+                    ParseField(CronField.Minutes, ref pointer, cronExpression, ref cronExpression._minute);
 
                     // Hour.
-                    ParseField(Constants.Hours, ref pointer, cronExpression, ref cronExpression._hour);
+                    ParseField(CronField.Hours, ref pointer, cronExpression, ref cronExpression._hour);
 
                     // Day of month.
-                    ParseField(Constants.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
+                    ParseField(CronField.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
 
                     // Month.
-                    ParseField(Constants.Months, ref pointer, cronExpression, ref cronExpression._month);
+                    ParseField(CronField.Months, ref pointer, cronExpression, ref cronExpression._month);
 
                     // Day of week.
                     if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
-                        ThrowFormatException("'{0}': '?' is not supported.", CronField.DayOfWeek);
+                        ThrowFormatException("'{0}': '?' is not supported.", CronField.DaysOfWeek.ToString());
                     }
 
-                    ParseField(Constants.DaysOfWeek, ref pointer, cronExpression, ref cronExpression._dayOfWeek);
+                    ParseField(CronField.DaysOfWeek, ref pointer, cronExpression, ref cronExpression._dayOfWeek);
 
                     if (*pointer != '\0')
                     {
@@ -95,9 +99,9 @@ namespace Cronos
                     }
                     
                     // Make sundays equivalent.
-                    if ((cronExpression._dayOfWeek & Constants.SundayBits) != 0)
+                    if ((cronExpression._dayOfWeek & SundayBits) != 0)
                     {
-                        cronExpression._dayOfWeek |= Constants.SundayBits;
+                        cronExpression._dayOfWeek |= SundayBits;
                     }
 
                     return cronExpression;
@@ -247,66 +251,63 @@ namespace Cronos
             var minute = baseMinute;
             var second = baseSecond;
 
-            var minSecond = FindFirstSet(_second, Constants.Seconds.First, Constants.Seconds.Last);
-            var minMinute = FindFirstSet(_minute, Constants.Minutes.First, Constants.Minutes.Last);
-            var minHour = FindFirstSet(_hour, Constants.Hours.First, Constants.Hours.Last);
-            var minDay = FindFirstSet(_dayOfMonth, Constants.DaysOfMonth.First, Constants.DaysOfMonth.Last);
-            var minMonth = FindFirstSet(_month, Constants.Months.First, Constants.Months.Last);
+            var minSecond = FindFirstSet(_second, CronField.Seconds.First, CronField.Seconds.Last);
+            var minMinute = FindFirstSet(_minute, CronField.Minutes.First, CronField.Minutes.Last);
+            var minHour = FindFirstSet(_hour, CronField.Hours.First, CronField.Hours.Last);
+            var minDay = FindFirstSet(_dayOfMonth, CronField.DaysOfMonth.First, CronField.DaysOfMonth.Last);
+            var minMonth = FindFirstSet(_month, CronField.Months.First, CronField.Months.Last);
 
             void Rollover(CronField field, bool increment = true)
             {
-                switch (field)
+                if (field == CronField.Seconds)
                 {
-                    case CronField.Second:
-                        second = minSecond;
-
-                        if (increment) minute++;
-                        break;
-                    case CronField.Minute:
-                        second = minSecond;
-                        minute = minMinute;
-
-                        if (increment) hour++;
-                        break;
-                    case CronField.Hour:
-                        second = minSecond;
-                        minute = minMinute;
-                        hour = minHour;
-
-                        if (increment) day++;
-                        break;
-                    case CronField.DayOfMonth:
-                        second = minSecond;
-                        minute = minMinute;
-                        hour = minHour;
-                        day = minDay;
-
-                        if (increment) month++;
-                        break;
-                    case CronField.Month:
-                        second = minSecond;
-                        minute = minMinute;
-                        hour = minHour;
-                        day = minDay;
-                        month = minMonth;
-
-                        if (increment) year++;
-                        break;
+                    second = minSecond;
+                    if (increment) minute++;
+                }
+                else if (field == CronField.Minutes)
+                {
+                    second = minSecond;
+                    minute = minMinute;
+                    if (increment) hour++;
+                }
+                else if (field == CronField.Hours)
+                {
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
+                    if (increment) day++;
+                }
+                else if (field == CronField.DaysOfMonth)
+                {
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
+                    day = minDay;
+                    if (increment) month++;
+                }
+                else if (field == CronField.Months)
+                {
+                    second = minSecond;
+                    minute = minMinute;
+                    hour = minHour;
+                    day = minDay;
+                    month = minMonth;
+                    if (increment) year++;
                 }
             }
 
-            void MoveToNextValue(CronFieldDescriptor descriptor, long fieldBits, ref int value)
+            void MoveToNextValue(CronField field, long fieldBits, ref int value)
             {
-                var nextValue = FindFirstSet(fieldBits, value, descriptor.Last);
+                var nextValue = FindFirstSet(fieldBits, value, field.Last);
                 if (nextValue == value) return;
 
                 if (nextValue == -1)
                 {
-                    Rollover(descriptor.Field);
+                    Rollover(field);
                     return;
                 }
 
-                Rollover(descriptor.Field - 1, false);
+                Rollover(field.Previous, false);
                 value = nextValue;
             }
 
@@ -317,17 +318,17 @@ namespace Cronos
                     year, month, day, hour, minute, second);
             }
 
-            MoveToNextValue(Constants.Seconds, _second, ref second);
-            MoveToNextValue(Constants.Minutes, _minute, ref minute);
-            MoveToNextValue(Constants.Hours, _hour, ref hour);
+            MoveToNextValue(CronField.Seconds, _second, ref second);
+            MoveToNextValue(CronField.Minutes, _minute, ref minute);
+            MoveToNextValue(CronField.Hours, _hour, ref hour);
 
             RetryDayOfMonth:
 
-            MoveToNextValue(Constants.DaysOfMonth, _dayOfMonth, ref day);
+            MoveToNextValue(CronField.DaysOfMonth, _dayOfMonth, ref day);
 
             RetryMonth:
 
-            MoveToNextValue(Constants.Months, _month, ref month);
+            MoveToNextValue(CronField.Months, _month, ref month);
 
             var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
 
@@ -337,7 +338,7 @@ namespace Cronos
 
                 if (IsBeyondEndDate()) return null;
 
-                Rollover(CronField.DayOfMonth);
+                Rollover(CronField.DaysOfMonth);
                 goto RetryDayOfMonth;
             }
 
@@ -350,7 +351,7 @@ namespace Cronos
                     return new DateTime(year, month, day, hour, minute, second);
                 }
 
-                Rollover(CronField.Hour);
+                Rollover(CronField.Hours);
                 goto RetryDayOfMonth;
             }
 
@@ -360,14 +361,14 @@ namespace Cronos
 
                 if (lastDayMonthWithOffset > day)
                 {
-                    Rollover(CronField.Hour, false);
+                    Rollover(CronField.Hours, false);
                     day = lastDayMonthWithOffset;
                 }
                 else if(lastDayMonthWithOffset < day)
                 {
                     if (IsBeyondEndDate()) return null;
 
-                    Rollover(CronField.DayOfMonth);
+                    Rollover(CronField.DaysOfMonth);
                     goto RetryMonth;
                 }
 
@@ -375,7 +376,7 @@ namespace Cronos
                 {
                     if (IsBeyondEndDate()) return null;
 
-                    Rollover(CronField.Hour);
+                    Rollover(CronField.Hours);
                     goto RetryDayOfMonth;
                 }
             }
@@ -391,13 +392,13 @@ namespace Cronos
 
                 if (shift > 0)
                 {
-                    Rollover(CronField.Hour, false);
+                    Rollover(CronField.Hours, false);
                 }
                 else if (shift < 0)
                 {
                     if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, baseYear, baseMonth, baseDay, 0, 0, 0))
                     {
-                        Rollover(CronField.DayOfMonth);
+                        Rollover(CronField.DaysOfMonth);
                         goto RetryMonth;
                     }
 
@@ -407,13 +408,13 @@ namespace Cronos
                         minute = baseMinute;
                         second = baseSecond;
 
-                        MoveToNextValue(Constants.Seconds, _second, ref second);
-                        MoveToNextValue(Constants.Minutes, _minute, ref minute);
-                        MoveToNextValue(Constants.Hours, _hour, ref hour);
+                        MoveToNextValue(CronField.Seconds, _second, ref second);
+                        MoveToNextValue(CronField.Minutes, _minute, ref minute);
+                        MoveToNextValue(CronField.Hours, _hour, ref hour);
 
                         if (day == -1 || day != baseDay)
                         {
-                            Rollover(CronField.DayOfMonth);
+                            Rollover(CronField.DaysOfMonth);
                             goto RetryMonth;
                         }
                     }
@@ -426,7 +427,7 @@ namespace Cronos
                     
                     HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
                 {
-                    Rollover(CronField.DayOfMonth);
+                    Rollover(CronField.DaysOfMonth);
                     goto RetryMonth;
                 }
             }
@@ -439,7 +440,7 @@ namespace Cronos
                 HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
                 HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
             {
-                Rollover(CronField.Hour);
+                Rollover(CronField.Hours);
                 goto RetryDayOfMonth;
             }
 
@@ -485,7 +486,7 @@ namespace Cronos
         }
 
         private static unsafe void ParseField(
-            CronFieldDescriptor descriptor,
+            CronField field,
             ref char* pointer, 
             CronExpression expression, 
             ref long bits)
@@ -494,7 +495,7 @@ namespace Cronos
             {
                 pointer++;
 
-                if (descriptor.Field == CronField.Second || descriptor.Field == CronField.Minute || descriptor.Field == CronField.Hour)
+                if (field == CronField.Seconds || field == CronField.Minutes || field == CronField.Hours)
                 {
                     expression._flags |= CronExpressionFlag.Interval;
                 }
@@ -508,14 +509,14 @@ namespace Cronos
                     return;
                 }
 
-                ParseRange(descriptor, ref pointer, expression, ref bits, true);
+                ParseRange(field, ref pointer, expression, ref bits, true);
             }
             else
             {
-                ParseList(descriptor, ref pointer, expression, ref bits);
+                ParseList(field, ref pointer, expression, ref bits);
             }
 
-            if (descriptor.Field == CronField.DayOfMonth)
+            if (field == CronField.DaysOfMonth)
             {
                 if (*pointer == 'W')
                 {
@@ -523,7 +524,7 @@ namespace Cronos
                     expression._flags |= CronExpressionFlag.NearestWeekday;
                 }
             }
-            else if (descriptor.Field == CronField.DayOfWeek)
+            else if (field == CronField.DaysOfWeek)
             {
                 if (*pointer == 'L')
                 {
@@ -535,11 +536,11 @@ namespace Cronos
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NthDayOfWeek;
-                    pointer = GetNumber(out expression._nthdayOfWeek, Constants.MinNthDayOfWeek, null, pointer);
+                    pointer = GetNumber(out expression._nthdayOfWeek, MinNthDayOfWeek, null, pointer);
 
-                    if (pointer == null || expression._nthdayOfWeek < Constants.MinNthDayOfWeek || expression._nthdayOfWeek > Constants.MaxNthDayOfWeek)
+                    if (pointer == null || expression._nthdayOfWeek < MinNthDayOfWeek || expression._nthdayOfWeek > MaxNthDayOfWeek)
                     {
-                        ThrowFormatException("'#' must be followed by a number between {0} and {1}.", Constants.MinNthDayOfWeek, Constants.MaxNthDayOfWeek);
+                        ThrowFormatException("'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
                     }
                 }
             }
@@ -548,7 +549,7 @@ namespace Cronos
         }
 
         private static unsafe void ParseList(
-            CronFieldDescriptor descriptor, 
+            CronField field, 
             ref char* pointer, 
             CronExpression expression, 
             ref long bits)
@@ -556,7 +557,7 @@ namespace Cronos
             var singleValue = true;
             while (true)
             {
-                ParseRange(descriptor, ref pointer, expression, ref bits, false);
+                ParseRange(field, ref pointer, expression, ref bits, false);
 
                 if (*pointer == ',')
                 {
@@ -571,12 +572,12 @@ namespace Cronos
 
             if (*pointer == 'W' && !singleValue)
             {
-                ThrowFormatException("'{0}': using some numbers with 'W' is not supported.", descriptor.Field);
+                ThrowFormatException("'{0}': using some numbers with 'W' is not supported.", field.ToString());
             }
         }
 
         private static unsafe void ParseRange(
-            CronFieldDescriptor descriptor, 
+            CronField field, 
             ref char* pointer, 
             CronExpression expression, 
             ref long bits,
@@ -584,9 +585,8 @@ namespace Cronos
         {
             int num1, num2, num3;
 
-            var low = descriptor.First;
-            var high = descriptor.Last;
-            var field = descriptor.Field;
+            var low = field.First;
+            var high = field.Last;
 
             if (star)
             {
@@ -595,14 +595,14 @@ namespace Cronos
             }
             else if(*pointer == '?')
             {
-                if (field != CronField.DayOfMonth && field != CronField.DayOfWeek)
+                if (field != CronField.DaysOfMonth && field != CronField.DaysOfWeek)
                 {
                     ThrowFormatException("'?' is not supported for the '{0}' field.", field);
                 }
 
                 pointer++;
 
-                if (field == CronField.DayOfMonth)
+                if (field == CronField.DaysOfMonth)
                 {
                     expression._flags |= CronExpressionFlag.DayOfMonthQuestion;
                 }
@@ -618,14 +618,14 @@ namespace Cronos
             }
             else if(*pointer == 'L')
             {
-                if (field != CronField.DayOfMonth)
+                if (field != CronField.DaysOfMonth)
                 {
                     ThrowFormatException("'L' is not supported for the '{0}' field.", field);
                 }
 
                 pointer++;
 
-                bits = 0b1111 << Constants.MinDaysInMonth;
+                bits = 0b1111 << MinDaysInMonth; // TODO: Replace with a constant
 
                 expression._flags |= CronExpressionFlag.DayOfMonthLast;
 
@@ -647,7 +647,7 @@ namespace Cronos
             }
             else
             {
-                var names = descriptor.Names;
+                var names = field.Names;
 
                 if ((pointer = GetNumber(out num1, low, names, pointer)) == null || num1 < low || num1 > high)
                 {
@@ -713,7 +713,7 @@ namespace Cronos
             if (num2 < num1)
             {
                 // Skip one of sundays.
-                if (field == CronField.DayOfWeek) high--;
+                if (field == CronField.DaysOfWeek) high--;
 
                 shift = high - num1 + 1;
                 num2 = num2 + shift;
