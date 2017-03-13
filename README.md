@@ -21,22 +21,29 @@ PM> Install-Package Cronos
 
 ## Usage
 
-### Get occurrence based on 5 fields expression
+### Using 5 fields expression
+
+```csharp
+var expression = CronExpression.Parse("30 * * * *");
+
+var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
+```
+
+### Using 6 fields expression
+
+```csharp
+var expression = CronExpression.Parse("0 30 * * * *", CronFields.IncludeSeconds);
+
+var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
+```
+
+### Get occurrence in custom time zone
 
 ```csharp
 var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
-```
-
-### Get occurrence based on 6 fields expression
-
-```csharp
-var expression = CronExpression.Parse("0 30 * * * *", CronFields.IncludeSeconds);
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
+var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
 ```
 
 ### Get occurrence in UTC zone
@@ -44,10 +51,18 @@ var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
 
-var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
+var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
-### Next Friday the thirteenth
+### Passing UTC DateTime
+
+```csharp
+var expression = CronExpression.Parse("* * * * *");
+
+var occurrence = expression.GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(1), TimeZoneInfo.Local);
+```
+
+### Friday the thirteenth
 
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
