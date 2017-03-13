@@ -58,23 +58,24 @@ If you don't want to deal with `DateTimeOffset` you can pass **startTime** and *
 var expression = CronExpression.Parse("30 1 * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-// Start time is 2017-03-20 01:30 in UTC and 2017-03-20 21:30 in Eastern Standard Time.
+// Start time is 2017-03-20 01:30 in UTC and 2017-03-19 21:30 in Eastern time zone.
 var startTime = new DateTime(2017, 03, 13, 01, 30, 00, DateTimeKind.Utc); //
 
-var occurrence = expression.GetOccurrence(DateTime.UtcNow, startTime.AddYears(1), TimeZoneInfo.Local);
+var occurrence = expression.GetOccurrence(DateTime.UtcNow, startTime.AddYears(1), easternTimeZone);
+var occurrenceInEasternTimeZone = TimeZoneInfo.ConvertTimeFromUtc(nextOccurence, easternTimeZone);
 
-Console.WriteLine("Next occurrence at " + nextOccurence);
-Console.WriteLine("Next occurrence at " + TimeZoneInfo.ConvertTimeFromUtc(nextOccurence, est) + " in Eastern Standard Time");
+Console.WriteLine("Occurrence at " + occurrence);
+Console.WriteLine("Occurrence at " + occurrenceInEasternTimeZone + " in Eastern time zone)");
 
-// Next occurrence at 2016-03-20 05:30:00 AM
-// Next occurrence at 2016-03-20 01:30:00 AM -04:00 in Eastern Standard Time
+// Occurrence at 2016-03-20 05:30:00 AM
+// Occurrence at 2016-03-20 01:30:00 AM -04:00 in Eastern time zone
 ```
 
 ### Friday the thirteenth
 
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
-var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
+var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
 ### Daylight Saving Time
