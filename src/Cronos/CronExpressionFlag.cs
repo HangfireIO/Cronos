@@ -11,8 +11,6 @@ namespace Cronos
         DayOfWeekLast = 0b100,
         Interval = 0b1000,
         NearestWeekday = 0b10000,
-        NthDayOfWeek = 0b100000,
-
-        LongPath = DayOfMonthLast | DayOfWeekLast | NearestWeekday | NthDayOfWeek
+        NthDayOfWeek = 0b100000
     }
 }

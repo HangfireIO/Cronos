@@ -354,19 +354,6 @@ namespace Cronos
                 goto RetryDayOfMonth;
             }
 
-            if (!HasFlag(CronExpressionFlag.LongPath))
-            {
-                if (IsBeyondEndDate()) return null;
-
-                if (IsDayOfWeekMatch(year, month, day))
-                {
-                    return new DateTime(year, month, day, hour, minute, second);
-                }
-
-                Rollover(CronField.Hours);
-                goto RetryDayOfMonth;
-            }
-
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
                 var lastDayMonthWithOffset = lastDayOfMonth - _lastMonthOffset;
@@ -436,7 +423,6 @@ namespace Cronos
 
                 if (!IsDayOfWeekMatch(dayOfWeek) ||
                     HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
-                    
                     HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
                 {
                     Rollover(CronField.DaysOfMonth);
