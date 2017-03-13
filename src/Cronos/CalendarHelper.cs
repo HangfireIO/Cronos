@@ -37,6 +37,18 @@ namespace Cronos
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static long DateTimeToTicks(int year, int month, int day, int hour, int minute, int second)
+        {
+            int[] days = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? DaysToMonth366 : DaysToMonth365;
+            int y = year - 1;
+            int n = y * 365 + y / 4 - y / 100 + y / 400 + days[month - 1] + day - 1;
+            var dateTicks = n * TicksPerDay;
+
+            long totalSeconds = (long)hour * 3600 + (long)minute * 60 + (long)second;
+            return dateTicks + totalSeconds * TicksPerSecond;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsLessThan(
             int year1, int month1, int day1, int hour1, int minute1, int second1,
             int year2, int month2, int day2, int hour2, int minute2, int second2)

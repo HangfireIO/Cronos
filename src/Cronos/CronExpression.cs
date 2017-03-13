@@ -442,7 +442,7 @@ namespace Cronos
                 goto RetryDayOfMonth;
             }
 
-            return new DateTime(year, month, day, hour, minute, second);
+            return new DateTime(CalendarHelper.DateTimeToTicks(year, month, day, hour, minute, second));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
