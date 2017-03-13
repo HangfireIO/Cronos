@@ -27,7 +27,6 @@ namespace Cronos
         public static TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
         {
             var offsets = TimeZoneHelper.GetAmbiguousOffsets(zone, ambiguousDateTime);
-
             var baseOffset = zone.BaseUtcOffset;
 
             for (var i = 0; i < offsets.Length; i++)
@@ -41,21 +40,12 @@ namespace Cronos
         public static DateTimeOffset GetDstStart(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
         {
 #if NETSTANDARD1_0
-            var dstTransitionDateTime = invalidDateTime;
+            var dstTransitionDateTime = new DateTime(invalidDateTime.Year, invalidDateTime.Month, invalidDateTime.Day,
+                invalidDateTime.Hour, invalidDateTime.Minute, 0, 0, invalidDateTime.Kind);
 
             while (zone.IsInvalidTime(dstTransitionDateTime))
             {
                 dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
-            }
-
-            while (!zone.IsInvalidTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
-            }
-
-            while (zone.IsInvalidTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
             }
 
             var dstOffset = zone.GetUtcOffset(dstTransitionDateTime);
@@ -63,9 +53,7 @@ namespace Cronos
             return new DateTimeOffset(dstTransitionDateTime, dstOffset);
 #else
             var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, invalidDateTime);
-
             var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(invalidDateTime.Year, adjustmentRule.DaylightTransitionStart);
-
             var dstOffset = baseOffset.Add(adjustmentRule.DaylightDelta);
 
             return new DateTimeOffset(dstTransitionDateTime, baseOffset).ToOffset(dstOffset);
@@ -172,27 +160,17 @@ namespace Cronos
         private static DateTime GetDstTransitionEndDateTime(TimeZoneInfo zone, DateTime ambiguousDateTime)
         {
 #if NETSTANDARD1_0
-            var dstTransitionDateTime = ambiguousDateTime;
+            var dstTransitionDateTime = new DateTime(ambiguousDateTime.Year, ambiguousDateTime.Month, ambiguousDateTime.Day,
+                ambiguousDateTime.Hour, ambiguousDateTime.Minute, 0, 0, ambiguousDateTime.Kind);
 
             while (zone.IsAmbiguousTime(dstTransitionDateTime))
             {
                 dstTransitionDateTime = dstTransitionDateTime.AddMinutes(1);
             }
 
-            while (!zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddSeconds(-1);
-            }
-
-            while (zone.IsAmbiguousTime(dstTransitionDateTime))
-            {
-                dstTransitionDateTime = dstTransitionDateTime.AddMilliseconds(1);
-            }
-
             return dstTransitionDateTime;
 #else
             var adjustmentRule = TimeZoneHelper.GetAdjustmentRuleForTime(zone, ambiguousDateTime);
-
             var dstTransitionDateTime = TimeZoneHelper.TransitionTimeToDateTime(ambiguousDateTime.Year, adjustmentRule.DaylightTransitionEnd);
 
             return dstTransitionDateTime;
