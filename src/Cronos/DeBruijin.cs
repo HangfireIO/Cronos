@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Cronos
+﻿namespace Cronos
 {
     // Implementation of de bruijin algorithm to find first set.
     internal static class DeBruijin
