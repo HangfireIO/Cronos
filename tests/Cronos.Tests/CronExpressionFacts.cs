@@ -860,6 +860,32 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.Offset, nextTime?.Offset);
         }
 
+        [Fact]
+        public void GetOccurrence_ReturnsNull_WhenArgsAreDateTime_And_NextOccurrenceIsBeyondEndTime()
+        {
+            var expression = CronExpression.Parse("* * * 4 *");
+
+            var startInstant = new DateTime(2017, 03, 13, 0, 0, 0, DateTimeKind.Utc);
+            var endInstant = new DateTime(2017, 03, 30, 0, 0, 0, DateTimeKind.Utc);
+
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+
+            Assert.Equal(null, occurrence);
+        }
+
+        [Fact]
+        public void GetOccurrence_ReturnsNull_WhenArgsAreDateTimeOffset_And_NextOccurrenceIsBeyondEndTime()
+        {
+            var expression = CronExpression.Parse("* * * 4 *");
+
+            var startInstant = new DateTimeOffset(2017, 03, 13, 0, 0, 0, TimeSpan.Zero);
+            var endInstant = new DateTimeOffset(2017, 03, 30, 0, 0, 0, TimeSpan.Zero);
+
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+
+            Assert.Equal(null, occurrence);
+        }
+
         [Theory]
         [InlineData("30 0 L  * *", "2017-03-30 23:59 +02:00", "2017-03-31 01:00 +03:00")]
         [InlineData("30 0 L  * *", "2017-03-31 01:00 +03:00", "2017-04-30 00:30 +03:00")]
@@ -1476,18 +1502,23 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("55 *  *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
-        [InlineData("0  50 *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
-        [InlineData("0  10 *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
-        [InlineData("0  0  22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
-        [InlineData("0  0  11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
-        [InlineData("0  0  0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
-        [InlineData("0  0  0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
-        [InlineData("0  0  0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
-        [InlineData("0  0  0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
-        [InlineData("0  0  0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
-        [InlineData("0  0  0  *  *  SUN", "2017-02-21 12:11   ", "2017-01-25 23:59   ")]
-        [InlineData("0  0  0  *  *  TUE", "2017-02-22 12:11   ", "2017-01-28 23:59   ")]
+        [InlineData("55 *   *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
+        [InlineData("0  50  *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
+        [InlineData("0  10  *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
+        [InlineData("0  0   22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
+        [InlineData("0  0   11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
+        [InlineData("0  0   0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
+        [InlineData("0  0   0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
+        [InlineData("0  0   0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
+        [InlineData("0  0   0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
+        [InlineData("0  0   0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
+        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-01-25 23:59   ")]
+        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-01-28 23:59   ")]
+        [InlineData("0  0   0  5W *  *  ", "2017-02-03 12:11   ", "2017-02-05 23:59   ")]
+
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
         public void GetOccurrence_ReturnsNull_WhenNextExecutionIsAfterEndTime(string cronExpression, string startTime, string endTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFields.IncludeSeconds);
