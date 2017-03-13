@@ -222,7 +222,7 @@ namespace Cronos
 
         private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
         {
-            DateTimeHelper.FillDateTimeParts(
+            CalendarHelper.FillDateTimeParts(
                 baseTime, 
                 out int baseSecond, 
                 out int baseMinute, 
@@ -231,7 +231,7 @@ namespace Cronos
                 out int baseMonth, 
                 out int baseYear);
 
-            DateTimeHelper.FillDateTimeParts(
+            CalendarHelper.FillDateTimeParts(
                 endTime,
                 out int endSecond,
                 out int endMinute,
