@@ -139,7 +139,7 @@ Write-Host -Message $SkipToolPackageRestore.IsPresent
 Write-Host $TOOLS_DIR
 
 Write-Verbose -Message "Restoring Cake from NuGet..."
-$NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install .nuget\packages.config -ExcludeVersion -o `"$TOOLS_DIR`" -ConfigFile .nuget\NuGet.config"
+$NuGetOutput = Invoke-Expression "&`"$NUGET_EXE`" install .nuget\packages.config -ExcludeVersion -o `"$TOOLS_DIR`" "
 
 Write-Verbose -Message ($NuGetOutput | out-string)
 
