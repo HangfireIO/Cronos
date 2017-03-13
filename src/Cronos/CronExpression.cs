@@ -74,8 +74,6 @@ namespace Cronos
 
                     SkipWhiteSpaces(ref pointer);
 
-                    // Second.
-
                     if ((fields & CronFields.IncludeSeconds) != 0)
                     {
                         ParseField(CronField.Seconds, ref pointer, cronExpression, ref cronExpression._second);
@@ -85,19 +83,14 @@ namespace Cronos
                         SetBit(ref cronExpression._second, 0);
                     }
 
-                    // Minute.
                     ParseField(CronField.Minutes, ref pointer, cronExpression, ref cronExpression._minute);
 
-                    // Hour.
                     ParseField(CronField.Hours, ref pointer, cronExpression, ref cronExpression._hour);
 
-                    // Day of month.
                     ParseField(CronField.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
 
-                    // Month.
                     ParseField(CronField.Months, ref pointer, cronExpression, ref cronExpression._month);
 
-                    // Day of week.
                     if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
                         ThrowFormatException("'{0}': '?' is not supported.", CronField.DaysOfWeek.ToString());
@@ -711,7 +704,7 @@ namespace Cronos
             }
             else
             {
-                // No step.  Default==1.
+                // No step. Default == 1.
                 num3 = 1;
             }
 
