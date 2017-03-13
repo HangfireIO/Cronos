@@ -25,7 +25,6 @@ PM> Install-Package Cronos
 
 ```csharp
 var expression = CronExpression.Parse("30 * * * *");
-
 var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
 ```
 
@@ -33,7 +32,6 @@ var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.Max
 
 ```csharp
 var expression = CronExpression.Parse("0 30 * * * *", CronFields.IncludeSeconds);
-
 var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
 ```
 
@@ -50,7 +48,6 @@ var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.Max
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
-
 var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
@@ -58,7 +55,6 @@ var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.Max
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
-
 var occurrence = expression.GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(1), TimeZoneInfo.Local);
 ```
 
@@ -66,7 +62,6 @@ var occurrence = expression.GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYe
 
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
-
 var nextOccurence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
 ```
 
