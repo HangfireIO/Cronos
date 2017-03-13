@@ -217,6 +217,11 @@ namespace Cronos.Tests
         [InlineData("* * ? * * *")]
         [InlineData("* * * * ? *")]
         [InlineData("* * * ? * ?")]
+
+        // Fields count is invalid.
+
+        [InlineData("* * * *")]
+        [InlineData("* * * * * * *")]
         public void Parse_ThrowsAnException_WhenCronExpressionIsInvalid(string cronExpression)
         {
             Assert.Throws<FormatException>(() => CronExpression.Parse(cronExpression, CronFields.IncludeSeconds));
