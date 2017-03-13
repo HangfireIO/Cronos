@@ -141,8 +141,8 @@ namespace Cronos
                 return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
             }
 
-            var zonedStart = TimeZoneInfo.ConvertTime((DateTimeOffset)utcStartInclusive, zone);
-            var zonedEnd = TimeZoneInfo.ConvertTime((DateTimeOffset)utcEndInclusive, zone);
+            var zonedStart = TimeZoneInfo.ConvertTime(utcStartInclusive, zone);
+            var zonedEnd = TimeZoneInfo.ConvertTime(utcEndInclusive, zone);
 
             var occurrence = GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
             return occurrence?.UtcDateTime;
