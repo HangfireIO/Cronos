@@ -717,9 +717,9 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant.AddYears(100);
 
-            var nextExecuting = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextExecuting);
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
         }
 
         [Theory]
@@ -881,10 +881,10 @@ namespace Cronos.Tests
             var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc);
 
-            var nextTime = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
 
-            Assert.Equal(expectedInstant, nextTime);
-            Assert.Equal(expectedInstant.Offset, nextTime?.Offset);
+            Assert.Equal(expectedInstant, occurrence);
+            Assert.Equal(expectedInstant.Offset, occurrence?.Offset);
         }
 
         [Fact]
@@ -1083,9 +1083,9 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant.AddYears(200);
 
-            var nextTime = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Null(nextTime);
+            Assert.Null(occurrence);
         }
 
         [Theory]
@@ -1523,9 +1523,9 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = startInstant.AddYears(100);
 
-            var nextTime = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextTime);
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
         }
 
         [Theory]
@@ -1546,16 +1546,16 @@ namespace Cronos.Tests
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
-        public void GetOccurrence_ReturnsNull_WhenNextExecutionIsAfterEndTime(string cronExpression, string startTime, string endTime)
+        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime(string cronExpression, string startTime, string endTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFields.IncludeSeconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
             var endInstant = GetInstantFromLocalTime(endTime, EasternTimeZone);
 
-            var nextTime = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
 
-            Assert.Equal(null, nextTime);
+            Assert.Equal(null, occurrence);
         }
 
         private static IEnumerable<object[]> GetTimeZones()
