@@ -168,6 +168,8 @@ namespace Cronos
                     var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
                     var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
 
+                    if (earlyIntervalLocalEnd > zonedEndInclusive) earlyIntervalLocalEnd = zonedEndInclusive;
+
                     // Early period, try to find anything here.
                     var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
                     if (found.HasValue) return new DateTimeOffset(found.Value, earlyOffset);
@@ -177,12 +179,25 @@ namespace Cronos
 
                 // Skip late ambiguous interval.
                 var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, startLocalDateTime);
-                var foundInLateInterval = GetOccurrence(startLocalDateTime, ambiguousTimeEnd.DateTime.AddTicks(-1));
+
+                var abmiguousTimeLastInstant = ambiguousTimeEnd <= zonedEndInclusive
+                    ? ambiguousTimeEnd.DateTime.AddTicks(-1)
+                    : zonedEndInclusive.DateTime;
+
+                var foundInLateInterval = GetOccurrence(startLocalDateTime, abmiguousTimeLastInstant);
 
                 if (foundInLateInterval.HasValue && HasFlag(CronExpressionFlag.Interval))
                     return new DateTimeOffset(foundInLateInterval.Value, lateOffset);
 
                 startLocalDateTime = ambiguousTimeEnd.DateTime;
+            }
+
+            if (endLocalDateTime != DateTime.MaxValue && TimeZoneHelper.IsAmbiguousTime(zone, endLocalDateTime))
+            {
+                // When endLocalDateTime falls on ambiguous period we set endLocalDateTime to end of ambiguous period.
+                // If occurrence fall on that ambiguous period we'll check if it less than zonedEndInclusive.
+                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, endLocalDateTime);
+                endLocalDateTime = ambiguousTimeEnd.DateTime.AddTicks(-1);
             }
 
             var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
@@ -197,7 +212,9 @@ namespace Cronos
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value))
             {
                 var earlyOffset = TimeZoneHelper.GetDstOffset(occurrence.Value, zone);
-                return new DateTimeOffset(occurrence.Value, earlyOffset);
+                var result = new DateTimeOffset(occurrence.Value, earlyOffset);
+
+                return result <= zonedEndInclusive ? result : (DateTimeOffset?)null;
             }
 
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));

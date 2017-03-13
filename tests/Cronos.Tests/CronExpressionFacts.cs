@@ -807,6 +807,33 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
         }
 
+        [Theory]
+        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:20 -04:00", null)]
+        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00")]
+        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:20 -05:00", "2016-11-06 01:30 -04:00")]
+
+        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:20 -04:00", null)]
+        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00")]
+        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:20 -05:00", "2016-11-06 01:30 -04:00")]
+
+        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:20 -05:00", null)]
+        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:30 -05:00", "2016-11-06 01:30 -05:00")]
+        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:40 -05:00", "2016-11-06 01:30 -05:00")]
+        [InlineData("30 * * * *", "2016-11-06 01:20 -05:00", "2016-11-06 01:40 -05:00", "2016-11-06 01:30 -05:00")]
+        public void GetOccurrence_ReturnsCorrectDate_WhenEndTimeIsOnDstTransition(string cronExpression, string startTime, string endTime, string expectedTime)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var startInstant = GetInstant(startTime);
+            var endInstant = GetInstant(endTime);
+
+            var expextedInstant = expectedTime != null ? GetInstant(expectedTime) : (DateTimeOffset?)null;
+
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(expextedInstant, occurrence);
+        }
+
         [Fact]
         public void GetOccurrence_HandleBorderConditions_WhenDSTEnds()
         {
