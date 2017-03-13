@@ -16,50 +16,15 @@
         private static readonly int[] MonthNamesArray = new int[MonthNames.Length];
         private static readonly int[] DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
 
-        public static readonly CronFieldDescriptor Seconds = new CronFieldDescriptor
-        {
-            Field = CronField.Second,
-            First = 0,
-            Last = 59
-        };
+        public static readonly CronFieldDescriptor Seconds = new CronFieldDescriptor(CronField.Second, 0, 59, null);
+        public static readonly CronFieldDescriptor Minutes = new CronFieldDescriptor(CronField.Minute, 0, 59, null);
+        public static readonly CronFieldDescriptor Hours = new CronFieldDescriptor(CronField.Hour, 0, 23, null);
+        public static readonly CronFieldDescriptor DaysOfMonth = new CronFieldDescriptor(CronField.DayOfMonth, 1, 31, null);
+        public static readonly CronFieldDescriptor Months = new CronFieldDescriptor(CronField.Month, 1, 12, MonthNamesArray);
 
-        public static readonly CronFieldDescriptor Minutes = new CronFieldDescriptor
-        {
-            Field = CronField.Minute,
-            First = 0,
-            Last = 59
-        };
+        // 0 and 7 are both Sunday, for compatibility reasons.
+        public static readonly CronFieldDescriptor DaysOfWeek = new CronFieldDescriptor(CronField.DayOfWeek, 0, 7, DayOfWeekNamesArray);
 
-        public static readonly CronFieldDescriptor Hours = new CronFieldDescriptor
-        {
-            Field = CronField.Hour,
-            First = 0,
-            Last = 23
-        };
-
-        public static readonly CronFieldDescriptor DaysOfMonth = new CronFieldDescriptor
-        {
-            Field = CronField.DayOfMonth,
-            First = 1,
-            Last = 31
-        };
-
-        public static readonly CronFieldDescriptor Months = new CronFieldDescriptor
-        {
-            Field = CronField.Month,
-            First = 1,
-            Last = 12,
-            Names = MonthNamesArray
-        };
-
-        public static readonly CronFieldDescriptor DaysOfWeek = new CronFieldDescriptor
-        {
-            Field = CronField.DayOfWeek,
-            First = 0,
-            Last = 7, // 0 and 7 are both Sunday, for compatibility reasons.
-            Names = DayOfWeekNamesArray
-        };
-        
         public const int MinDaysInMonth = 28;
 
         public const int DaysPerWeekCount = 7;

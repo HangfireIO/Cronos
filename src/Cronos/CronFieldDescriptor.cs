@@ -2,9 +2,17 @@
 {
     internal sealed class CronFieldDescriptor
     {
-        public CronField Field;
-        public int First;
-        public int Last;
-        public int[] Names;
+        public readonly CronField Field;
+        public readonly int First;
+        public readonly int Last;
+        public readonly int[] Names;
+
+        public CronFieldDescriptor(CronField field, int first, int last, int[] names)
+        {
+            Field = field;
+            First = first;
+            Last = last;
+            Names = names;
+        }
     }
 }
