@@ -295,14 +295,9 @@ namespace Cronos
 
             bool IsBeyondEndDate()
             {
-                if (year != endYear) return year > endYear;
-                if (month != endMonth) return month > endMonth;
-                if (day != endDay) return day > endDay;
-                if (hour != endHour) return hour > endHour;
-                if (minute != endMinute) return minute > endMinute;
-                if (second != endSecond) return second > endSecond;
-
-                return false;
+                return CalendarHelper.IsLessThan(
+                    endYear, endMonth, endDay, endHour, endMinute, endSecond, 
+                    year, month, day, hour, minute, second);
             }
 
             MoveToNextValue(Constants.Seconds, _second, ref second);
@@ -372,7 +367,7 @@ namespace Cronos
 
             if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
-                var dayOfWeek = CalendarHelper.GetDayOfWeek(new DateTime(year, month, day));
+                var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
                 var shift = CalendarHelper.MoveToNearestWeekDay(ref day, ref dayOfWeek, lastDayOfMonth);
 
                 if (IsBeyondEndDate()) return null;
@@ -383,7 +378,7 @@ namespace Cronos
                 }
                 else if (shift < 0)
                 {
-                    if (new DateTime(year, month, day) < new DateTime(baseYear, baseMonth, baseDay))
+                    if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, baseYear, baseMonth, baseDay, 0, 0, 0))
                     {
                         Rollover(CronField.DayOfMonth);
                         goto RetryMonth;
@@ -439,7 +434,7 @@ namespace Cronos
         {
             if (_dayOfWeek == -1L) return true;
 
-            var dayOfWeek = CalendarHelper.GetDayOfWeek(new DateTime(year, month, day));
+            var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
             return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
         }
 
