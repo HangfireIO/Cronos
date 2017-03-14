@@ -1,14 +1,11 @@
 # Cronos
+[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master)[![Build Status](https://travis-ci.org/HangfireIO/Cronos.svg?branch=master)](https://travis-ci.org/HangfireIO/Cronos)
 
-## Build status
-
-**Windows** | **Linux / OS X** 
---- | ---
-[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) | [![Build Status](https://travis-ci.org/HangfireIO/Cronos.svg?branch=master)](https://travis-ci.org/HangfireIO/Cronos)
+Cronos is .NET library to calculate occurrences based on [Cron](https://en.wikipedia.org/wiki/Cron) expressions. You can use UTC or custom time zone. Cronos deals with [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) interval jobs won't be missed, non-interval jobs won't be repeated.
 
 ## Features
 
-* Calculate occurrence in the **local time** within given time zone. Handle the transition from standard time to **daylight saving time** and vice versa.
+* Calculate occurrences in UTC and custom time zone. Handle the transition from standard time to **daylight saving time** and vice versa.
 * Parse cron expressions comprising five or six fields. See [Cron format](#cron-format).
 * Support extended format with non-standard characters: `?`, `L`, `W`, `#`.
 
