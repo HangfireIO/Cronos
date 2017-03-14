@@ -46,12 +46,12 @@ namespace Cronos
         /// Constructs a new <see cref="CronExpression"/> based on the specified
         /// cron expression. It's supported expressions consisting of 5 fields:
         /// minute, hour, day of month, month, day of week. 
-        /// If you want to parse non-standard cron expresions use <see cref="Parse(string, CronFields)"/> with specified CronFields argument.
+        /// If you want to parse non-standard cron expresions use <see cref="Parse(string, CronFormat)"/> with specified CronFields argument.
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
         public static CronExpression Parse(string expression)
         {
-            return Parse(expression, CronFields.Standard);
+            return Parse(expression, CronFormat.Standard);
         }
 
         ///<summary>
@@ -60,7 +60,7 @@ namespace Cronos
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, CronFields fields)
+        public static CronExpression Parse(string expression, CronFormat format)
         {
             if (string.IsNullOrEmpty(expression)) throw new ArgumentNullException(nameof(expression));
 
@@ -74,7 +74,7 @@ namespace Cronos
 
                     SkipWhiteSpaces(ref pointer);
 
-                    if ((fields & CronFields.IncludeSeconds) != 0)
+                    if ((format & CronFormat.IncludeSeconds) != 0)
                     {
                         ParseField(CronField.Seconds, ref pointer, cronExpression, ref cronExpression._second);
                     }
