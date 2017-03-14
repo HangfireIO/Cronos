@@ -1,7 +1,7 @@
 #addin nuget:?package=Cake.VersionReader
 #tool "nuget:?package=xunit.runner.console"
 
-var version = "0.1.1";
+var version = "0.2.0";
 var configuration = "Release";
 
 Task("Restore-NuGet-Packages")
