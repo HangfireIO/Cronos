@@ -15,7 +15,7 @@
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>https://github.com/HangfireIO/Cronos/releases</PackageReleaseNotes>
-    <Copyright>Copyright © 2016-2017 Andrey Dorokhov.</Copyright>
+    <Copyright>Copyright © 2016-2017 Sergey Odinokov.</Copyright>
     <PackageTags>Cronos Cron Scheduler Recurring Jobs Tasks</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
