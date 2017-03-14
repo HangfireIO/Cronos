@@ -8,6 +8,7 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
+        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
         private const int MinDaysInMonth = 28;
         private const int MinNthDayOfWeek = 1;
@@ -115,6 +116,29 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in UTC.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
+        /// is not <see cref="DateTimeKind.Utc"/> .
+        /// </exception>
+        public DateTime? GetOccurrence(DateTime startInclusive)
+        {
+            return GetOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
+        }
+
+        /// <summary>
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
+        /// up to <paramref name="endInclusive"/> in UTC.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/> or <paramref name="endInclusive"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTime? GetOccurrence(DateTime startInclusive, DateTime endInclusive)
+        {
+            return GetOccurrence(startInclusive, endInclusive, UtcTimeZone);
+        }
+
+        /// <summary>
         /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> and 
         /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
@@ -128,7 +152,7 @@ namespace Cronos
 
             if (zone == UtcTimeZone)
             {
-                var found = GetOccurrence(utcStartInclusive, utcEndInclusive);
+                var found = FindOccurence(utcStartInclusive, utcEndInclusive);
                 if (found == null) return null;
 
                 return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
@@ -149,7 +173,7 @@ namespace Cronos
         {
             if (zone == UtcTimeZone)
             {
-                var found = GetOccurrence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
+                var found = FindOccurence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
 
                 if (found == null) return null;
 
@@ -180,7 +204,7 @@ namespace Cronos
                     if (earlyIntervalLocalEnd > zonedEndInclusive) earlyIntervalLocalEnd = zonedEndInclusive;
 
                     // Early period, try to find anything here.
-                    var found = GetOccurrence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
+                    var found = FindOccurence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
                     if (found.HasValue) return new DateTimeOffset(found.Value, earlyOffset);
 
                     startLocalDateTime = TimeZoneHelper.GetStandartTimeStart(zone, startLocalDateTime, earlyOffset).DateTime;
@@ -193,7 +217,7 @@ namespace Cronos
                     ? ambiguousTimeEnd.DateTime.AddTicks(-1)
                     : zonedEndInclusive.DateTime;
 
-                var foundInLateInterval = GetOccurrence(startLocalDateTime, abmiguousTimeLastInstant);
+                var foundInLateInterval = FindOccurence(startLocalDateTime, abmiguousTimeLastInstant);
 
                 if (foundInLateInterval.HasValue && HasFlag(CronExpressionFlag.Interval))
                     return new DateTimeOffset(foundInLateInterval.Value, lateOffset);
@@ -209,7 +233,7 @@ namespace Cronos
                 endLocalDateTime = ambiguousTimeEnd.DateTime.AddTicks(-1);
             }
 
-            var occurrence = GetOccurrence(startLocalDateTime, endLocalDateTime);
+            var occurrence = FindOccurence(startLocalDateTime, endLocalDateTime);
             if (occurrence == null) return null;
 
             if (zone.IsInvalidTime(occurrence.Value))
@@ -229,7 +253,7 @@ namespace Cronos
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
         }
 
-        private DateTime? GetOccurrence(DateTime baseTime, DateTime endTime)
+        private DateTime? FindOccurence(DateTime baseTime, DateTime endTime)
         {
             CalendarHelper.FillDateTimeParts(
                 baseTime, 
