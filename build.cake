@@ -74,8 +74,7 @@ Task("Pack")
 
     CreateDirectory("build");
     
-    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
-    Zip("./src/Cronos/bin/" + configuration + "/netstandard1.0", "build/Cronos-" + version +".zip");
+    Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
 });
     
 RunTarget("Pack");
