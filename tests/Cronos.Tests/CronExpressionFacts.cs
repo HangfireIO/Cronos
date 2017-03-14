@@ -715,6 +715,9 @@ namespace Cronos.Tests
         [InlineData("* * * ? * *", "2016-12-09 02:46", "2016-12-09 02:46")]
         [InlineData("* * * * * ?", "2016-12-09 16:09", "2016-12-09 16:09")]
         [InlineData("* * * ? * *", "2099-12-09 16:46", "2099-12-09 16:46")]
+
+        // Last day of 400-year.
+        [InlineData("* * * * * *", "2000-12-31 16:46", "2000-12-31 16:46")]
         public void GetOccurrence_ReturnsCorrectDate(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
