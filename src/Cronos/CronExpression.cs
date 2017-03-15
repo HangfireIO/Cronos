@@ -147,6 +147,7 @@ namespace Cronos
         public DateTime? GetOccurrence(DateTime startInclusive, DateTime endInclusive)
         {
             if (startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
+            if (startInclusive > endInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(startInclusive), nameof(endInclusive));
 
             if (startInclusive.Kind == DateTimeKind.Local)
             {
@@ -184,6 +185,8 @@ namespace Cronos
         /// </exception>
         public DateTime? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
+            if (utcStartInclusive > utcEndInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(utcStartInclusive), nameof(utcEndInclusive));
+
             if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive), DateTimeKind.Utc);
             if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive), DateTimeKind.Utc);
 
@@ -208,6 +211,8 @@ namespace Cronos
         /// </summary>
         public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
         {
+            if(startInclusive > endInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(startInclusive), nameof(endInclusive));
+
             if (zone == UtcTimeZone)
             {
                 var found = FindOccurence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
@@ -872,6 +877,11 @@ namespace Cronos
         private static void ThrowInvalidLocalTimeExpception(string paramName)
         {
             throw new ArgumentException("The supplied DateTime is invalid in Local time zone", paramName);
+        }
+
+        private void ThrowEndTimeCantBeLessThanStartTime(string startTimeParamName, string endTimeParamName)
+        {
+            throw new ArgumentException(endTimeParamName + "can't be less than " + startTimeParamName, endTimeParamName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

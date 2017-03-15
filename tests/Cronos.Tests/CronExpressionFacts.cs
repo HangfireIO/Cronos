@@ -233,16 +233,48 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetOccurrence_ThrowsAnException_WhenEndTimeLessThanStartTime()
+        {
+            var localNow = DateTime.Now;
+            var utcNow = DateTime.UtcNow;
+
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(localNow, localNow.AddTicks(-1)));
+            Assert.Equal("endInclusive", exception.ParamName);
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1)));
+            Assert.Equal("endInclusive", exception.ParamName);
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1), TimeZoneInfo.Utc));
+            Assert.Equal("utcEndInclusive", exception.ParamName);
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1), EasternTimeZone));
+            Assert.Equal("utcEndInclusive", exception.ParamName);
+
+            var localOffsetNow = DateTimeOffset.Now;
+            var utcOffsetNow = DateTimeOffset.UtcNow;
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcOffsetNow, utcOffsetNow.AddTicks(-1), EasternTimeZone));
+            Assert.Equal("endInclusive", exception.ParamName);
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcOffsetNow, utcOffsetNow.AddTicks(-1), TimeZoneInfo.Utc));
+            Assert.Equal("endInclusive", exception.ParamName);
+
+            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(localOffsetNow, localOffsetNow.AddTicks(-1), EasternTimeZone));
+            Assert.Equal("endInclusive", exception.ParamName);
+        }
+
+
+        [Fact]
         public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumentsHaveAWrongKind()
         {
             var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
                 DateTime.Now,
-                DateTime.UtcNow,
+                MaxUtcDateTime,
                 TimeZoneInfo.Local));
 
             var endException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
                 DateTime.UtcNow,
-                DateTime.Now,
+                MaxLocalDateTime,
                 TimeZoneInfo.Local));
 
             Assert.Equal("utcStartInclusive", startException.ParamName);
@@ -1602,8 +1634,8 @@ namespace Cronos.Tests
         [InlineData("0  0   0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
         [InlineData("0  0   0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
         [InlineData("0  0   0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
-        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-01-25 23:59   ")]
-        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-01-28 23:59   ")]
+        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-02-25 23:59   ")]
+        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-02-27 23:59   ")]
         [InlineData("0  0   0  5W *  *  ", "2017-02-03 12:11   ", "2017-02-05 23:59   ")]
 
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
