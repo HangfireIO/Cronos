@@ -11,7 +11,7 @@ namespace Cronos
         private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
         private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
-        private static readonly TimeZoneInfo LocalTimeZone = TimeZoneInfo.Local;
+
         private const int MinDaysInMonth = 28;
         private const int MinNthDayOfWeek = 1;
         private const int MaxNthDayOfWeek = 5;
@@ -129,12 +129,12 @@ namespace Cronos
 
             if (startInclusive.Kind == DateTimeKind.Local)
             {
-                if (LocalTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
-
-                return GetOccurenceByZonedTimes(startInclusive, MaxLocalDateTime, LocalTimeZone)?.LocalDateTime;
+                var localTimeZone = TimeZoneInfo.Local;
+                if (localTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
+                return GetOccurenceByZonedTimes(startInclusive, MaxLocalDateTime, localTimeZone)?.LocalDateTime;
             }
 
-            return GetUtcOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
+            return GetOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
         }
 
         /// <summary>
@@ -152,15 +152,27 @@ namespace Cronos
             {
                 if(endInclusive.Kind != DateTimeKind.Local) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Local);
 
-                if (LocalTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
-                if (LocalTimeZone.IsInvalidTime(endInclusive)) ThrowInvalidLocalTimeExpception(nameof(endInclusive));
+                var localTimeZone = TimeZoneInfo.Local;
+                if (localTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
+                if (localTimeZone.IsInvalidTime(endInclusive)) ThrowInvalidLocalTimeExpception(nameof(endInclusive));
 
-                return GetOccurenceByZonedTimes(startInclusive, endInclusive, LocalTimeZone)?.LocalDateTime;
+                return GetOccurenceByZonedTimes(startInclusive, endInclusive, localTimeZone)?.LocalDateTime;
             }
 
             if (endInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Utc);
 
-            return GetUtcOccurrence(startInclusive, endInclusive, UtcTimeZone);
+            return GetOccurrence(startInclusive, endInclusive, UtcTimeZone);
+        }
+
+        /// <summary>
+        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> in given <paramref name="zone"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTime? GetOccurrence(DateTime utcStartInclusive, TimeZoneInfo zone)
+        {
+            return GetOccurrence(utcStartInclusive, MaxUtcDateTime, zone);
         }
 
         /// <summary>
@@ -170,7 +182,7 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetUtcOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        public DateTime? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
             if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive), DateTimeKind.Utc);
             if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive), DateTimeKind.Utc);

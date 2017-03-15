@@ -235,14 +235,14 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetUtcOccurrence_ThrowsAnException_WhenDateTimeArgumentsHaveAWrongKind()
+        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumentsHaveAWrongKind()
         {
-            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetUtcOccurrence(
+            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
                 DateTime.Now,
                 DateTime.UtcNow,
                 TimeZoneInfo.Local));
 
-            var endException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetUtcOccurrence(
+            var endException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
                 DateTime.UtcNow,
                 DateTime.Now,
                 TimeZoneInfo.Local));
@@ -965,7 +965,7 @@ namespace Cronos.Tests
             var startInstant = new DateTime(2017, 03, 13, 0, 0, 0, DateTimeKind.Utc);
             var endInstant = new DateTime(2017, 03, 30, 0, 0, 0, DateTimeKind.Utc);
 
-            var occurrence = expression.GetUtcOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
 
             Assert.Equal(null, occurrence);
         }
@@ -1047,13 +1047,13 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetUtcOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
+        public void GetOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
         {
             var expression = CronExpression.Parse("* * * * *");
 
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
 
-            var executed = expression.GetUtcOccurrence(startInstant, startInstant.AddYears(100), zone);
+            var executed = expression.GetOccurrence(startInstant, startInstant.AddYears(100), zone);
 
             Assert.Equal(startInstant, executed);
             Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
