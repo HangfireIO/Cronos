@@ -8,8 +8,10 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
-        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
+        private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
+        private static readonly TimeZoneInfo LocalTimeZone = TimeZoneInfo.Local;
         private const int MinDaysInMonth = 28;
         private const int MinNthDayOfWeek = 1;
         private const int MaxNthDayOfWeek = 5;
@@ -123,7 +125,16 @@ namespace Cronos
         /// </exception>
         public DateTime? GetOccurrence(DateTime startInclusive)
         {
-            return GetOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
+            if(startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
+
+            if (startInclusive.Kind == DateTimeKind.Local)
+            {
+                if (LocalTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
+
+                return GetOccurenceByZonedTimes(startInclusive, MaxLocalDateTime, LocalTimeZone)?.LocalDateTime;
+            }
+
+            return GetUtcOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
         }
 
         /// <summary>
@@ -135,7 +146,21 @@ namespace Cronos
         /// </exception>
         public DateTime? GetOccurrence(DateTime startInclusive, DateTime endInclusive)
         {
-            return GetOccurrence(startInclusive, endInclusive, UtcTimeZone);
+            if (startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
+
+            if (startInclusive.Kind == DateTimeKind.Local)
+            {
+                if(endInclusive.Kind != DateTimeKind.Local) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Local);
+
+                if (LocalTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
+                if (LocalTimeZone.IsInvalidTime(endInclusive)) ThrowInvalidLocalTimeExpception(nameof(endInclusive));
+
+                return GetOccurenceByZonedTimes(startInclusive, endInclusive, LocalTimeZone)?.LocalDateTime;
+            }
+
+            if (endInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Utc);
+
+            return GetUtcOccurrence(startInclusive, endInclusive, UtcTimeZone);
         }
 
         /// <summary>
@@ -145,10 +170,10 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        public DateTime? GetUtcOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
         {
-            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
-            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive));
+            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive), DateTimeKind.Utc);
+            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive), DateTimeKind.Utc);
 
             if (zone == UtcTimeZone)
             {
@@ -821,9 +846,20 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowWrongDateTimeKindException(string paramName)
+        private static void ThrowWrongDateTimeKindException(string paramName, DateTimeKind exceptedKind)
         {
-            throw new ArgumentException("The supplied DateTime must have the Kind property set to DateTimeKind.Utc", paramName);
+            throw new ArgumentException("The supplied DateTime must have the Kind property set to " + exceptedKind, paramName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowDateTimeKindIsUnspecifiedException(string paramName)
+        {
+            throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc or Local", paramName);
+        }
+
+        private static void ThrowInvalidLocalTimeExpception(string paramName)
+        {
+            throw new ArgumentException("The supplied DateTime is invalid in Local time zone", paramName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

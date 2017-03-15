@@ -22,6 +22,13 @@ namespace Cronos.Tests
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
+        private static readonly CronExpression SecondlyExpression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+        private static readonly CronExpression MinutelyExpression = CronExpression.Parse("* * * * *");
+
+        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
+        private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
+        private static readonly DateTime MaxUnspecifiedDateTime = DateTime.MaxValue.AddDays(-1);
+
         [Theory]
 
         // Handle tabs.
@@ -228,22 +235,77 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumentsHasAWrongKind()
+        public void GetUtcOccurrence_ThrowsAnException_WhenDateTimeArgumentsHaveAWrongKind()
         {
-            var expression = CronExpression.Parse("* * * * *");
-
-            var startException = Assert.Throws<ArgumentException>(() => expression.GetOccurrence(
+            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetUtcOccurrence(
                 DateTime.Now,
                 DateTime.UtcNow,
                 TimeZoneInfo.Local));
 
-            var endException = Assert.Throws<ArgumentException>(() => expression.GetOccurrence(
+            var endException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetUtcOccurrence(
                 DateTime.UtcNow,
                 DateTime.Now,
                 TimeZoneInfo.Local));
 
             Assert.Equal("utcStartInclusive", startException.ParamName);
             Assert.Equal("utcEndInclusive", endException.ParamName);
+        }
+
+        [Fact]
+        public void GetOccurrence_ThrowsAnException_WhenStartInclusiveIsUnspecified()
+        {
+            var startTime = new DateTime(2017, 03, 15);
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(startTime));
+
+            Assert.Equal("startInclusive", exception.ParamName);
+        }
+
+        [Fact]
+        public void GetOccurrence_ReturnUtcDateTime_WhenStartInclusiveHasUtcKind()
+        {
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow);
+
+            Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
+        }
+
+        [Fact]
+        public void GetOccurrence_ReturnLocalDateTime_WhenStartInclusiveHasLocalKind()
+        {
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now);
+
+            Assert.Equal(DateTimeKind.Local, occurrence?.Kind);
+        }
+
+        [Fact]
+        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumetnsHaveAWrongKind()
+        {
+            var unspecifiedTime = new DateTime(2017, 03, 15);
+
+            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(unspecifiedTime, MaxUtcDateTime));
+
+            var endExceptionUtc = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.UtcNow, MaxLocalDateTime));
+
+            var endExceptionLocal = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.Now, MaxUtcDateTime));
+
+            Assert.Equal("startInclusive", startException.ParamName);
+            Assert.Equal("endInclusive", endExceptionUtc.ParamName);
+            Assert.Equal("endInclusive", endExceptionLocal.ParamName);
+        }
+
+        [Fact]
+        public void GetOccurrence_ReturnsLocalDateTime_WhenStartInclusiveAndEndInclusiveHaveLocalKind()
+        { 
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now, DateTime.Now.AddYears(100));
+
+            Assert.Equal(DateTimeKind.Local, occurrence?.Kind);
+        }
+
+        [Fact]
+        public void GetOccurrence_ReturnsUtcDateTime_WhenStartInclusiveAndEndInclusiveHaveUtcKind()
+        {
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100));
+
+            Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
         }
 
         [Theory]
@@ -903,7 +965,7 @@ namespace Cronos.Tests
             var startInstant = new DateTime(2017, 03, 13, 0, 0, 0, DateTimeKind.Utc);
             var endInstant = new DateTime(2017, 03, 30, 0, 0, 0, DateTimeKind.Utc);
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+            var occurrence = expression.GetUtcOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
 
             Assert.Equal(null, occurrence);
         }
@@ -985,14 +1047,13 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetOccurrence_ReturnsDateTimeWithUtcKind_WhenUsingDateTimeArguments(TimeZoneInfo zone)
+        public void GetUtcOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
         {
             var expression = CronExpression.Parse("* * * * *");
 
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
-            var endInstant = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, zone);
+            var executed = expression.GetUtcOccurrence(startInstant, startInstant.AddYears(100), zone);
 
             Assert.Equal(startInstant, executed);
             Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
