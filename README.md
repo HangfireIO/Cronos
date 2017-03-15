@@ -110,7 +110,7 @@ Read [cron format desribing](#cron-format) to learn more about using non-standar
 
 **Cronos** handles the transition from standard time (ST) to Daylight saving time (DST). 
 
-**Setting the clocks forward**
+#### Setting the clocks forward
 
 If next occurrence falls on invalid time when the clocks jump forward then next occurrence will shift to next valid time. See example:
 
@@ -131,7 +131,7 @@ Console.WriteLine("Next occurrence at " + nextOccurence);
 // Next occurrence at 2016-03-13 03:00:00 AM -04:00
 ```
 
-**Setting the clocks backward**
+#### Setting the clocks backward
 
 When DST ends you set the clocks backward so you have duration which repeats twice. If you are in USA the duration was e.g. 2016/11/06 from 1:00 am to 1:59 am. If next occurrence falls on this duration behavior depends on cron expression:
 
