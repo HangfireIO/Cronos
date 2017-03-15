@@ -137,7 +137,7 @@ When DST ends you set the clocks backward so you have duration which repeats twi
 
 * Cron expression describes certain time of a day, e.g. `"0 30 1 * * ?"` - 1:30 am every day, or `"0 0,45 1,2 * * ?"` - 1:00 am, 1:45 am, 2:00 am, 2:45 am every day. In this case each cron job will be scheduled only before clock shifts. Reason is when you describe certain time of day you mean that it should be scheduled once a day regardless whether there is clock shifts in that day.
 
-    ```csharp
+```csharp
 var expression = CronExpression.Parse("0 30 1 * * ?");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
@@ -152,11 +152,11 @@ Console.WriteLine("Next occurrence at " + nextOccurence);
 
 // Next occurrence at 2016-03-13 01:30:00 AM -04:00
 // Next occurrence at 2016-03-13 02:30:00 AM -05:00
-    ```
+```
 
 * Cron expression describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
 
-    ```csharp
+```csharp
 var expression = CronExpression.Parse("0 30 * * * ?");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
@@ -175,7 +175,7 @@ Console.WriteLine("Next occurrence at " + nextOccurence);
 // Next occurrence at 2016-11-06 01:30:00 AM -04:00
 // Next occurrence at 2016-11-06 01:30:00 AM -05:00
 // Next occurrence at 2016-11-06 02:30:00 AM -05:00
-    ```
+```
 
 ## Cron format
 
