@@ -33,7 +33,6 @@ build_script:
 #---------------------------------#
 
 artifacts:
-  - path: 'build\*.nupkg'
   - path: 'build\*.zip'
 
 #---------------------------------#
