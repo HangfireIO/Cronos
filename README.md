@@ -1,5 +1,5 @@
 # Cronos
-[![Build status](https://ci.appveyor.com/api/projects/status/v6cq97gdg87j7utl/branch/master?svg=true)](https://ci.appveyor.com/project/odinserj/cronos/branch/master)[![Build Status](https://travis-ci.org/HangfireIO/Cronos.svg?branch=master)](https://travis-ci.org/HangfireIO/Cronos)
+[![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos)
 
 Cronos is .NET library to calculate occurrences based on [Cron](https://en.wikipedia.org/wiki/Cron) expressions. You can use UTC or custom time zone. Cronos deals with [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) interval jobs won't be missed, non-interval jobs won't be repeated.
 
@@ -17,63 +17,94 @@ PM> Install-Package Cronos
 
 ## Usage
 
-### Standard (5 fields) cron expression
+### Just get next occurrence
 
-```csharp
-var expression = CronExpression.Parse("30 * * * *");
-var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
-```
-
-### Non-standard cron format
-
-```csharp
-var expression = CronExpression.Parse("0 30 * * * *", CronFields.IncludeSeconds);
-var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Local));
-```
-
-### Deal with custom time zone
-
-```csharp
-var expression = CronExpression.Parse("30 * * * *");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, easternTimeZone));
-```
-
-### Deal with UTC zone
+Get next occurrence of **every minute** job:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
-var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
+var nextUtcOccurrence = expression.GetOccurrence(DateTime.UtcNow);
 ```
 
-### Passing UTC dateTimes
+### Specify upper bound
 
-If you don't want to deal with `DateTimeOffset` you can pass **startTime** and **endTime** in UTC. The result will also be in UTC.
+Pass the upper bound for tasks which shouldn't be performed after certain date:
 
 ```csharp
-var expression = CronExpression.Parse("30 1 * * *");
+var expression = CronExpression.Parse("0 0 * * *");
+
+var startTime = DateTime.UtcNow;
+var lastExecutionTime = DateTime.UtcNow.AddYears(1);
+var nextUtcOccurrence = expression.GetOccurrence(startTime, lastExecutionTime);
+```
+
+### Using local time zone
+
+Calculate next occurrences for tasks scheduled in **Local** time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Local`:
+
+```csharp
+var expression = CronExpression.Parse("* * * * *");
+var localOccurrence = expression.GetOccurrence(DateTime.Now);
+```
+
+### Secondly tasks
+
+Use cron expressions containing seconds for secondly tasks:
+
+```csharp
+var expression = CronExpression.Parse("* * * * * *", CronFields.IncludeSeconds);
+var nextOccurrence = expression.GetOccurrence(DateTime.UtcNow));
+```
+
+### Specify custom time zone
+
+Calculate next occurrences of tasks scheduled in custom time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Utc`:
+
+```csharp
+var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+var startUtcTime = DateTime.UtcNow;
 
-// Start time is 2017-03-20 01:30 in UTC and 2017-03-19 21:30 in Eastern time zone.
-var startTime = new DateTime(2017, 03, 13, 01, 30, 00, DateTimeKind.Utc); //
+var nextUtcOccurrence = expression.GetOccurrence(startUtcTime, easternTimeZone));
 
-var occurrence = expression.GetOccurrence(DateTime.UtcNow, startTime.AddYears(1), easternTimeZone);
-var occurrenceInEasternTimeZone = TimeZoneInfo.ConvertTimeFromUtc(nextOccurence, easternTimeZone);
+// Also you can set the upper bound:
+var endUtcTime = startUtcTime.AddYears(1);
+nextUtcOccurrence = expression.GetOccurrence(startUtcTime, endUtcTime, easternTimeZone);
+```
 
-Console.WriteLine("Occurrence at " + occurrence);
-Console.WriteLine("Occurrence at " + occurrenceInEasternTimeZone + " in Eastern time zone)");
+### Using DateTimeOffset
 
-// Occurrence at 2016-03-20 05:30:00 AM
-// Occurrence at 2016-03-20 01:30:00 AM -04:00 in Eastern time zone
+```csharp
+var expression = CronExpression.Parse("30 * * * *");
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+var startDateTimeOffset = DateTimeOffset.Now;
+
+var nextDateTimeOffset = expression.GetOccurrence(startDateTimeOffset, easternTimeZone));
+
+// Also you can set the upper bound:
+var endDateTimeOffset = startDateTimeOffset.AddYears(1);
+nextDateTimeOffset = expression.GetOccurrence(startDateTimeOffset, endDateTimeOffset, easternTimeZone);
 ```
 
 ### Friday the thirteenth
 
+Find next friday the thirteenth:
+
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
-var occurrence = expression.GetOccurrence(DateTimeOffset.Now, DateTimeOffset.MaxValue, TimeZoneInfo.Utc);
+var nextFriday13th = expression.GetOccurrence(DateTime.Now);
 ```
+
+### First weekday of each month
+
+Cronos support special characters `L`, `W`, `#` and `?`. So you can specify "first weekday of each month":
+
+```csharp
+var expression = CronExpression.Parse("0 0 1W * *");
+var nextFriday13th = expression.GetOccurrence(DateTime.Now);
+```
+
+Read [cron format desribing](#cron-format) to learn more about using non-standard characters. 
 
 ### Daylight Saving Time
 
