@@ -22,12 +22,10 @@ namespace Cronos.Tests
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
-        private static readonly CronExpression SecondlyExpression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
         private static readonly CronExpression MinutelyExpression = CronExpression.Parse("* * * * *");
 
         private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
         private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
-        private static readonly DateTime MaxUnspecifiedDateTime = DateTime.MaxValue.AddDays(-1);
 
         [Theory]
 
@@ -1031,15 +1029,13 @@ namespace Cronos.Tests
         [MemberData(nameof(GetTimeZones))]
         public void GetOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
         {
-            var expression = CronExpression.Parse("* * * * *");
-
             var startInstant = new DateTimeOffset(2017, 03, 04, 00, 00, 00, new TimeSpan(12, 30, 00));
             var endInstant = new DateTimeOffset(2019, 03, 04, 00, 00, 00, new TimeSpan(-12, 30, 00));
             var expectedInstant = startInstant;
 
             var expectedOffset = zone.GetUtcOffset(expectedInstant);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, zone);
+            var executed = MinutelyExpression.GetOccurrence(startInstant, endInstant, zone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedOffset, executed?.Offset);
@@ -1049,11 +1045,9 @@ namespace Cronos.Tests
         [MemberData(nameof(GetTimeZones))]
         public void GetOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
         {
-            var expression = CronExpression.Parse("* * * * *");
-
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
 
-            var executed = expression.GetOccurrence(startInstant, startInstant.AddYears(100), zone);
+            var executed = MinutelyExpression.GetOccurrence(startInstant, startInstant.AddYears(100), zone);
 
             Assert.Equal(startInstant, executed);
             Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
