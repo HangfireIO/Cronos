@@ -8,6 +8,7 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
+        // We subtract 1 day to avoid ArgumentOutOfRangeException when MaxValue convert to value in another time zone.
         private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
         private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
         private static readonly DateTimeOffset MaxDateTimeOffset = DateTimeOffset.MaxValue.AddDays(-1);
@@ -139,6 +140,20 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates next occurrence after <paramref name="after"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="after"/>
+        /// is <see cref="DateTimeKind.Unspecified"/> .
+        /// </exception>
+        public DateTime? GetNextOccurrence(DateTime after)
+        {
+            // TODO: Check if after equals DateTime.MaxValue
+            var startInclusive = CalendarHelper.AddMillisecond(after);
+
+            return GetOccurrence(startInclusive);
+        }
+
+        /// <summary>
         /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
         /// up to <paramref name="endInclusive"/>.
         /// </summary>
@@ -167,6 +182,21 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates next occurrence after <paramref name="after"/> and 
+        /// up to <paramref name="to"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="after"/> or <paramref name="to"/> 
+        /// is <see cref="DateTimeKind.Unspecified"/>.
+        /// </exception>
+        public DateTime? GetNextOccurrence(DateTime after, DateTime to)
+        {
+            // TODO: Check if after equals DateTime.MaxValue
+            var startInclusive = CalendarHelper.AddMillisecond(after);
+
+            return GetOccurrence(startInclusive, to);
+        }
+
+        /// <summary>
         /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> 
@@ -175,6 +205,20 @@ namespace Cronos
         public DateTime? GetOccurrence(DateTime utcStartInclusive, TimeZoneInfo zone)
         {
             return GetOccurrence(utcStartInclusive, MaxUtcDateTime, zone);
+        }
+
+        /// <summary>
+        /// Calculates next occurrence after <paramref name="utcAfter"/> in given <paramref name="zone"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcAfter"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTime? GetNextOccurrence(DateTime utcAfter, TimeZoneInfo zone)
+        {
+            // TODO: Check if utcAfter equals DateTime.MaxValue
+            var utcStartInclusive = CalendarHelper.AddMillisecond(utcAfter);
+
+            return GetOccurrence(utcStartInclusive, zone);
         }
 
         /// <summary>
@@ -207,10 +251,36 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates next occurrence after <paramref name="utcAfter"/> and 
+        /// up to <paramref name="utcTo"/> in given <paramref name="zone"/>.
+        /// </summary>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcAfter"/> or <paramref name="utcTo"/> 
+        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// </exception>
+        public DateTime? GetNextOccurrence(DateTime utcAfter, DateTime utcTo, TimeZoneInfo zone)
+        {
+            // TODO: Check if utcAfter equals DateTime.MaxValue
+            var utcStartInclusive = CalendarHelper.AddMillisecond(utcAfter);
+
+            return GetOccurrence(utcStartInclusive, utcTo, zone);
+        }
+
+        /// <summary>
         /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
         public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, TimeZoneInfo zone)
         {
+            return GetOccurrence(startInclusive, MaxDateTimeOffset, zone);
+        }
+
+        /// <summary>
+        /// Calculates next occurrence after <paramref name="after"/> in given <paramref name="zone"/>.
+        /// </summary>
+        public DateTimeOffset? GetNextOccurrence(DateTimeOffset after, TimeZoneInfo zone)
+        {
+            // TODO: Check if after equals DateTime.MaxValue
+            var startInclusive = CalendarHelper.AddMillisecond(after);
+
             return GetOccurrence(startInclusive, MaxDateTimeOffset, zone);
         }
 
@@ -235,6 +305,18 @@ namespace Cronos
             var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
 
             return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
+        }
+
+        /// <summary>
+        /// Calculates next occurrence after <paramref name="after"/> and 
+        /// up to <paramref name="to"/> in given <paramref name="zone"/>.
+        /// </summary>
+        public DateTimeOffset? GetNextOccurrence(DateTimeOffset after, DateTimeOffset to, TimeZoneInfo zone)
+        {
+            // TODO: Check if after equals DateTime.MaxValue
+            var startInclusive = CalendarHelper.AddMillisecond(after);
+
+            return GetOccurrence(startInclusive, to, zone);
         }
 
         private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo zone)

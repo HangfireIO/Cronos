@@ -1682,6 +1682,52 @@ namespace Cronos.Tests
             Assert.Equal(null, occurrence);
         }
 
+        [Theory]
+        [InlineData("* * * * *", "2017-03-16 16:00", "2017-03-16 16:01")]
+        [InlineData("5 * * * *", "2017-03-16 16:05", "2017-03-16 17:05")]
+        [InlineData("* 5 * * *", "2017-03-16 05:00", "2017-03-16 05:01")]
+        [InlineData("* * 5 * *", "2017-03-05 16:00", "2017-03-05 16:01")]
+        [InlineData("* * * 5 *", "2017-05-16 16:00", "2017-05-16 16:01")]
+        [InlineData("* * * * 5", "2017-03-17 16:00", "2017-03-17 16:01")]
+        [InlineData("5 5 * * *", "2017-03-16 05:05", "2017-03-17 05:05")]
+        [InlineData("5 5 5 * *", "2017-03-05 05:05", "2017-04-05 05:05")]
+        [InlineData("5 5 5 5 *", "2017-05-05 05:05", "2018-05-05 05:05")]
+        [InlineData("5 5 5 5 5", "2017-05-05 05:05", "2023-05-05 05:05")]
+        public void GetNextOccurrence_ReturnCorrectDate(string expression, string afterTime, string expectedTime)
+        {
+            var cronExpression = CronExpression.Parse(expression);
+
+            var startInstant = GetInstantFromLocalTime(afterTime, EasternTimeZone);
+
+            var nextOccurrence = cronExpression.GetNextOccurrence(startInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextOccurrence);
+        }
+
+        [Theory]
+        [InlineData("* * * * * *", "2017-03-16 16:00:00", "2017-03-16 16:00:01")]
+        [InlineData("5 * * * * *", "2017-03-16 16:00:05", "2017-03-16 16:01:05")]
+        [InlineData("* 5 * * * *", "2017-03-16 16:05:00", "2017-03-16 16:05:01")]
+        [InlineData("* * 5 * * *", "2017-03-16 05:00:00", "2017-03-16 05:00:01")]
+        [InlineData("* * * 5 * *", "2017-03-05 16:00:00", "2017-03-05 16:00:01")]
+        [InlineData("* * * * 5 *", "2017-05-16 16:00:00", "2017-05-16 16:00:01")]
+        [InlineData("* * * * * 5", "2017-03-17 16:00:00", "2017-03-17 16:00:01")]
+        [InlineData("5 5 * * * *", "2017-03-16 16:05:05", "2017-03-16 17:05:05")]
+        [InlineData("5 5 5 * * *", "2017-03-16 05:05:05", "2017-03-17 05:05:05")]
+        [InlineData("5 5 5 5 * *", "2017-03-05 05:05:05", "2017-04-05 05:05:05")]
+        [InlineData("5 5 5 5 5 *", "2017-05-05 05:05:05", "2018-05-05 05:05:05")]
+        [InlineData("5 5 5 5 5 5", "2017-05-05 05:05:05", "2023-05-05 05:05:05")]
+        public void GetNextOccurrence_ReturnCorrectDate_When6fiedsExpressionIsUsed(string expression, string afterTime, string expectedTime)
+        {
+            var cronExpression = CronExpression.Parse(expression, CronFormat.IncludeSeconds);
+
+            var startInstant = GetInstantFromLocalTime(afterTime, EasternTimeZone);
+
+            var nextOccurrence = cronExpression.GetNextOccurrence(startInstant, EasternTimeZone);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextOccurrence);
+        }
+
         private static IEnumerable<object[]> GetTimeZones()
         {
             yield return new object[] {EasternTimeZone};
