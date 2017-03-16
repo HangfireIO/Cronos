@@ -53,7 +53,7 @@ Use cron expressions containing seconds for secondly tasks:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * * *", CronFields.IncludeSeconds);
-var nextOccurrence = expression.GetOccurrence(DateTime.UtcNow));
+var nextUtcOccurrence = expression.GetOccurrence(DateTime.UtcNow));
 ```
 
 ### Specify custom time zone
@@ -104,7 +104,7 @@ var expression = CronExpression.Parse("0 0 1W * *");
 var nextFriday13th = expression.GetOccurrence(DateTime.Now);
 ```
 
-Read [cron format desribing](#cron-format) to learn more about using non-standard characters. 
+Read [cron format describing](#cron-format) to learn more about using non-standard characters. 
 
 ### Daylight Saving Time
 
