@@ -1,33 +1,24 @@
 # AppVeyor CI build file, https://ci.appveyor.com/project/odinserj/cronos
 
-# Notes:
-#   - Minimal appveyor.yml file is an empty file. All sections are optional.
-#   - Indent each level of configuration with 2 spaces. Do not use tabs!
-#   - All section names are case-sensitive.
-#   - Section names should be unique on each level.
 os: Visual Studio 2017 RC
 
 # Don't edit manually! Use `.\build.ps1 -ScriptArgs '--newVersion="*.*.*"'` command instead!
 version: 0.2.0-build-0{build}
 
-cache:
-  - packages
-
-  # branches to build
 branches:
-  # whitelist
   only:
     - master
     - dev
 
 pull_requests:
   do_not_increment_build_number: true
-  
+
+shallow_clone: true
+
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
-# to run your custom scripts instead of automatic MSBuild
 build_script:
   - powershell .\build.ps1
   
