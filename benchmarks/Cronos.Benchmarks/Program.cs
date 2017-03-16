@@ -8,19 +8,15 @@ namespace Cronos.Benchmarks
     {
         static void Main(string[] args)
         {
-#if DEBUG
-            var now = DateTime.UtcNow;
-            var end = now.AddYears(100);
-            var endTest = now.AddSeconds(20);
-            var exp = CronExpression.Parse("* * * * *");
-            while (endTest > DateTime.UtcNow)
+            /*var benchmarks = new CronBenchmarks();
+
+            for (var i = 0; i < 100000000; i++)
             {
-                exp.GetOccurrence(DateTime.UtcNow.Date, end, TimeZoneInfo.Utc);
-            }
-#else
+                benchmarks.IsUnreachable();
+            }*/
+
             BenchmarkRunner.Run<CronBenchmarks>();
             Console.ReadLine();
-#endif
         }
     }
 }

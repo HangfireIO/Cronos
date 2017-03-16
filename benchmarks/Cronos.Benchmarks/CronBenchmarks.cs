@@ -8,20 +8,23 @@ namespace Cronos.Benchmark
     [RyuJitX64Job]
     public class CronBenchmarks
     {
-        private static readonly CronExpression MinutlyExpression = CronExpression.Parse("* * * * *");
-        private static readonly CronExpression HourlyExpression = CronExpression.Parse("0 * * * *");
-        private static readonly CronExpression DaylyExpression = CronExpression.Parse("0 3 * * *");
-        private static readonly CronExpression MonthlyExpression = CronExpression.Parse("0 6 1 * *");
-
-        private static readonly CrontabSchedule NCrontabSimpleExpression = NCrontab.CrontabSchedule.Parse("* * * * *", new CrontabSchedule.ParseOptions { IncludingSeconds = false });
+        private static readonly CronExpression SimpleExpression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
         private static readonly CronExpression ComplexExpression = CronExpression.Parse("*/10 12-20 * DEC 3");
 
-        private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow.Date;
-        private static readonly DateTime DateTimeNow = DateTime.UtcNow.Date;
-        private static readonly DateTimeOffset DateTimeNow2 = DateTimeOffset.UtcNow.AddMinutes(3);
-        private static readonly DateTimeOffset DateTimeNow3 = DateTimeOffset.UtcNow.AddMinutes(7);
-        private static readonly DateTimeOffset EndDateTimeOffset = DateTimeOffsetNow.AddYears(100);
-        private static readonly DateTime EndDateTime = DateTimeNow.AddYears(100);
+        private static readonly CronExpression SimpleUnreachableExpression = CronExpression.Parse("* * 30 02 *");
+        private static readonly CronExpression ComplexUnreachableExpression = CronExpression.Parse("* * LW * 1#1");
+
+        private static readonly CrontabSchedule SimpleExpressionNCrontab = CrontabSchedule.Parse("* * * * *");
+        private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+
+        private static readonly DateTime DateTimeNow = DateTime.UtcNow;
+        private static readonly DateTime DateTimeNowPlus100Years = DateTimeNow.AddYears(100);
+
+        private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow;
+        private static readonly DateTimeOffset DateTimeOffsetNowPlus100Years = DateTimeOffsetNow.AddYears(100);
+
+        private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
+        private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
 
         [Benchmark]
         public unsafe string ParseBaseline()
@@ -66,51 +69,81 @@ namespace Cronos.Benchmark
         }
 
         [Benchmark]
-        public DateTime? GetOccurrenceSimpleDateTime()
+        public DateTime? NextSimpleDateTime()
         {
-            return MinutlyExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
+            return SimpleExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, UtcTimeZone);
         }
 
         [Benchmark]
-        public DateTime? GetOccurrenceComplexDateTime()
+        public DateTime? NextComplexDateTime()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, EndDateTime, TimeZoneInfo.Utc);
+            return ComplexExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, UtcTimeZone);
         }
 
         [Benchmark]
-        public DateTimeOffset? GetOccurrenceSimpleDateTimeOffset()
+        public DateTimeOffset? NextSimpleDateTimeOffset()
         {
-            return MinutlyExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
+            return SimpleExpression.GetOccurrence(DateTimeOffsetNow, DateTimeOffsetNowPlus100Years, UtcTimeZone);
         }
 
         [Benchmark]
-        public DateTimeOffset? GetOccurrenceComplexDateTimeOffset()
+        public DateTimeOffset? NextComplexDateTimeOffset()
         {
-            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
-        }
-
-        //[Benchmark]
-        public DateTimeOffset? NCrontabSimple()
-        {
-            return NCrontabSimpleExpression.GetNextOccurrence(DateTimeNow);
+            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, DateTimeOffsetNowPlus100Years, UtcTimeZone);
         }
 
         [Benchmark]
-        public DateTimeOffset? GetOccurenceMinutelyOffset()
+        public DateTime? NextSimpleWithTimeZone()
         {
-            return HourlyExpression.GetOccurrence(DateTimeOffsetNow, EndDateTimeOffset, TimeZoneInfo.Utc);
+            return SimpleExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, PacificTimeZone);
         }
 
-        //[Benchmark]
-        //public DateTimeOffset? GetOccurenceDayly()
-        //{
-        //    return DaylyExpression.GetOccurrence(DateTimeNow3, EndDateTime, TimeZoneInfo.Utc);
-        //}
+        [Benchmark]
+        public DateTime? NextComplexWithTimeZone()
+        {
+            return ComplexExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, PacificTimeZone);
+        }
 
-        //[Benchmark]
-        //public DateTimeOffset? GetOccurenceMonthly()
-        //{
-        //    return MonthlyExpression.GetOccurrence(DateTimeNow3, EndDateTime, TimeZoneInfo.Utc);
-        //}
+        [Benchmark]
+        public void NextUnreachableSimple()
+        {
+            var result = SimpleUnreachableExpression
+                .GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100), UtcTimeZone);
+
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
+        public void NextUnreachableComplex()
+        {
+            var result = ComplexUnreachableExpression
+                .GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100), UtcTimeZone);
+
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
+        public CrontabSchedule ParseStarsNCrontab()
+        {
+            return CrontabSchedule.Parse("* * * * *");
+        }
+
+        [Benchmark]
+        public CrontabSchedule ParseComplexNCrontab()
+        {
+            return CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+        }
+
+        [Benchmark]
+        public DateTime NextSimpleNCrontab()
+        {
+            return SimpleExpressionNCrontab.GetNextOccurrence(DateTimeNow, DateTimeNowPlus100Years);
+        }
+
+        [Benchmark]
+        public DateTime NextComplexNCrontab()
+        {
+            return ComplexExpressionNCrontab.GetNextOccurrence(DateTimeNow, DateTimeNowPlus100Years);
+        }
     }
 }
