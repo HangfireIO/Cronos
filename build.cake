@@ -1,8 +1,12 @@
-#addin nuget:?package=Cake.VersionReader
 #tool "nuget:?package=xunit.runner.console"
+#addin "Cake.FileHelpers"
 
+// Don't edit manually! Use `.\build.ps1 -ScriptArgs '--newVersion="*.*.*"'` command instead!
 var version = "0.2.0";
-var configuration = "Release";
+
+var configuration = Argument("configuration", "Release");
+var newVersion = Argument("newVersion", version);
+var target = Argument("target", "Pack");
 
 Task("Restore-NuGet-Packages")
     .Does(()=> 
@@ -17,7 +21,20 @@ Task("Clean")
     StartProcess("dotnet", "clean -c:" + configuration);
 });
 
+Task("Version")
+    .Does(() => 
+    {
+        if(newVersion == version) return;
+
+        var versionRegex = @"[0-9]+(\.([0-9]+|\*)){1,3}";
+        var cakeRegex = "var version = \"" + versionRegex + "\"";
+        
+        ReplaceRegexInFiles("build.cake", cakeRegex, "var version = \"" + newVersion + "\"");
+        ReplaceRegexInFiles("appveyor.yml", "version: " + versionRegex, "version: " + newVersion + "");
+    });
+
 Task("Build")
+    .IsDependentOn("Version")
     .IsDependentOn("Clean")
     .IsDependentOn("Restore-NuGet-Packages")
     .Does(()=> 
@@ -77,4 +94,4 @@ Task("Pack")
     Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
 });
     
-RunTarget("Pack");
+RunTarget(target);

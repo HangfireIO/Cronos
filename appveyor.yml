@@ -7,6 +7,9 @@
 #   - Section names should be unique on each level.
 os: Visual Studio 2017 RC
 
+// Don't edit manually! Use `.\build.ps1 -ScriptArgs '--newVersion="*.*.*"'` command instead!
+version: 0.2.0
+
 cache:
   - packages
 
