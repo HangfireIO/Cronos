@@ -1,13 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cronos", "src\Cronos\Cronos.csproj", "{55AFE501-212E-4360-9C4B-D9958EA20124}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cronos.Tests", "tests\Cronos.Tests\Cronos.Tests.csproj", "{EDAA9F0C-DABC-486E-B58F-472658629EDD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos.Benchmarks", "benchmarks\Cronos.Benchmarks\Cronos.Benchmarks.csproj", "{841F8D1B-54E5-4173-AC1A-318B7BD73A8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{E7E9BEA8-5972-4B89-89C6-F7FB876F52FF}"
+	ProjectSection(SolutionItems) = preProject
+		.travis.yml = .travis.yml
+		appveyor.yml = appveyor.yml
+		build.cake = build.cake
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
