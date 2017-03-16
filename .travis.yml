@@ -5,7 +5,7 @@ sudo: required
 dist: trusty
 dotnet: 1.0.1
 
-language: cpp
+language: csharp
 
 os: 
   - linux
