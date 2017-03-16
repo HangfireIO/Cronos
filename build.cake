@@ -68,13 +68,9 @@ Task("AppVeyor")
         {
             version = tagName.Substring(1);
         }
-    }
-    else
-    {
-        version += "-build-0" + AppVeyor.Environment.Build.Number;
-    }
 
-    AppVeyor.UpdateBuildVersion(version);
+        AppVeyor.UpdateBuildVersion(version);
+    }
 });
 
 Task("Local")
