@@ -815,9 +815,8 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant.AddYears(100);
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
         }
@@ -1641,7 +1640,7 @@ namespace Cronos.Tests
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
         [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
-        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime(string cronExpression, string startTime, string endTime)
+        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime_And_ParamsTypeIsDateTimeOffset(string cronExpression, string startTime, string endTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
@@ -1649,6 +1648,36 @@ namespace Cronos.Tests
             var endInstant = GetInstantFromLocalTime(endTime, EasternTimeZone);
 
             var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+
+            Assert.Equal(null, occurrence);
+        }
+
+        [Theory]
+        [InlineData("55 *   *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
+        [InlineData("0  50  *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
+        [InlineData("0  10  *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
+        [InlineData("0  0   22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
+        [InlineData("0  0   11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
+        [InlineData("0  0   0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
+        [InlineData("0  0   0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
+        [InlineData("0  0   0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
+        [InlineData("0  0   0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
+        [InlineData("0  0   0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
+        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-02-25 23:59   ")]
+        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-02-27 23:59   ")]
+        [InlineData("0  0   0  5W *  *  ", "2017-02-03 12:11   ", "2017-02-05 23:59   ")]
+
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
+        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
+        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime_And_ParamsTypeIsDateTime(string cronExpression, string startTime, string endTime)
+        {
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+
+            var startUtc = GetInstantFromLocalTime(startTime, EasternTimeZone).UtcDateTime;
+            var endUtc = GetInstantFromLocalTime(endTime, EasternTimeZone).UtcDateTime;
+
+            var occurrence = expression.GetOccurrence(startUtc, endUtc, EasternTimeZone);
 
             Assert.Equal(null, occurrence);
         }

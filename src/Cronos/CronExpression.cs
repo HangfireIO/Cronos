@@ -10,6 +10,7 @@ namespace Cronos
     {
         private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
         private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
+        private static readonly DateTimeOffset MaxDateTimeOffset = DateTimeOffset.MaxValue.AddDays(-1);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
         private const int MinDaysInMonth = 28;
@@ -118,10 +119,10 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in UTC.
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/>.
         /// </summary>
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
-        /// is not <see cref="DateTimeKind.Utc"/> .
+        /// is <see cref="DateTimeKind.Unspecified"/> .
         /// </exception>
         public DateTime? GetOccurrence(DateTime startInclusive)
         {
@@ -139,10 +140,10 @@ namespace Cronos
 
         /// <summary>
         /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
-        /// up to <paramref name="endInclusive"/> in UTC.
+        /// up to <paramref name="endInclusive"/>.
         /// </summary>
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/> or <paramref name="endInclusive"/> 
-        /// is not <see cref="DateTimeKind.Utc"/>.
+        /// is <see cref="DateTimeKind.Unspecified"/>.
         /// </exception>
         public DateTime? GetOccurrence(DateTime startInclusive, DateTime endInclusive)
         {
@@ -203,6 +204,14 @@ namespace Cronos
 
             var occurrence = GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
             return occurrence?.UtcDateTime;
+        }
+
+        /// <summary>
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in given <paramref name="zone"/>.
+        /// </summary>
+        public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, TimeZoneInfo zone)
+        {
+            return GetOccurrence(startInclusive, MaxDateTimeOffset, zone);
         }
 
         /// <summary>
