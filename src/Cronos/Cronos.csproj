@@ -4,7 +4,7 @@
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <TargetFrameworks>netstandard1.0;net45</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Debug\netstandard1.0\.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard1.0\Cronos.xml</DocumentationFile>
    
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
