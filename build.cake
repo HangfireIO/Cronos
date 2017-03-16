@@ -80,7 +80,6 @@ Task("Local")
 });
 
 Task("Pack")
-    .IsDependentOn("Test")
     .Does(()=> 
 {
     var target = AppVeyor.IsRunningOnAppVeyor ? "AppVeyor" : "Local";
