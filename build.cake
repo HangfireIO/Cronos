@@ -8,7 +8,7 @@ var configuration = Argument("configuration", "Release");
 var newVersion = Argument("newVersion", version);
 var target = Argument("target", "Pack");
 
-Task("Restore-NuGet-Packages")
+Task("Restore")
     .Does(()=> 
 {
     DotNetCoreRestore();
@@ -36,7 +36,7 @@ Task("Version")
 Task("Build")
     .IsDependentOn("Version")
     .IsDependentOn("Clean")
-    .IsDependentOn("Restore-NuGet-Packages")
+    .IsDependentOn("Restore")
     .Does(()=> 
 {
     DotNetCoreBuild("src/Cronos/Cronos.csproj",  new DotNetCoreBuildSettings
