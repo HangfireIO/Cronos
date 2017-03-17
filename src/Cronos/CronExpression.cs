@@ -8,7 +8,13 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
-        private static readonly DateTime MaxDateTime = new DateTime(2100, 1, 1);
+        private const int MaxSecond = 0;
+        private const int MaxMinute = 0;
+        private const int MaxHour = 0;
+        private const int MaxDay = 1;
+        private const int MaxMonth = 1;
+        private const int MaxYear = 2100;
+        private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay, MaxHour, MaxMinute, MaxSecond);
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
@@ -274,32 +280,42 @@ namespace Cronos
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
         }
 
-        private DateTime? FindOccurence(DateTime baseTime, DateTime endTime)
-        {
-            CalendarHelper.FillDateTimeParts(
-                baseTime, 
-                out int baseSecond, 
-                out int baseMinute, 
-                out int baseHour, 
-                out int baseDay, 
-                out int baseMonth, 
-                out int baseYear);
+        private DateTime? FindOccurence(DateTime startTime, DateTime endTime)
+        { 
+            var endSecond = MaxSecond;
+            var endMinute = MaxMinute;
+            var endHour = MaxHour;
+            var endDay = MaxDay;
+            var endMonth = MaxMonth;
+            var endYear = MaxYear;
+
+            if (endTime < MaxDateTime)
+            {
+                CalendarHelper.FillDateTimeParts(
+                    endTime,
+                    out endSecond,
+                    out endMinute,
+                    out endHour,
+                    out endDay,
+                    out endMonth,
+                    out endYear);
+            }
 
             CalendarHelper.FillDateTimeParts(
-                endTime,
-                out int endSecond,
-                out int endMinute,
-                out int endHour,
-                out int endDay,
-                out int endMonth,
-                out int endYear);
+                startTime,
+                out int startSecond,
+                out int startMinute,
+                out int startHour,
+                out int startDay,
+                out int startMonth,
+                out int startYear);
 
-            var year = baseYear;
-            var month = baseMonth;
-            var day = baseDay;
-            var hour = baseHour;
-            var minute = baseMinute;
-            var second = baseSecond;
+            var year = startYear;
+            var month = startMonth;
+            var day = startDay;
+            var hour = startHour;
+            var minute = startMinute;
+            var second = startSecond;
 
             var minSecond = FindFirstSet(_second, CronField.Seconds.First, CronField.Seconds.Last);
             var minMinute = FindFirstSet(_minute, CronField.Minutes.First, CronField.Minutes.Last);
@@ -401,7 +417,7 @@ namespace Cronos
                     Rollover(CronField.Hours, false);
                     day = lastDayMonthWithOffset;
                 }
-                else if(lastDayMonthWithOffset < day)
+                else if (lastDayMonthWithOffset < day)
                 {
                     if (IsBeyondEndDate()) return null;
 
@@ -433,23 +449,23 @@ namespace Cronos
                 }
                 else if (shift < 0)
                 {
-                    if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, baseYear, baseMonth, baseDay, 0, 0, 0))
+                    if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, startYear, startMonth, startDay, 0, 0, 0))
                     {
                         Rollover(CronField.DaysOfMonth);
                         goto RetryMonth;
                     }
 
-                    if (year == baseYear && month == baseMonth && day == baseDay)
+                    if (year == startYear && month == startMonth && day == startDay)
                     {
-                        hour = baseHour;
-                        minute = baseMinute;
-                        second = baseSecond;
+                        hour = startHour;
+                        minute = startMinute;
+                        second = startSecond;
 
                         MoveToNextValue(CronField.Seconds, _second, ref second);
                         MoveToNextValue(CronField.Minutes, _minute, ref minute);
                         MoveToNextValue(CronField.Hours, _hour, ref hour);
 
-                        if (day == -1 || day != baseDay)
+                        if (day == -1 || day != startDay)
                         {
                             Rollover(CronField.DaysOfMonth);
                             goto RetryMonth;
