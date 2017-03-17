@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
-    <TargetFrameworks>netstandard1.0;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard1.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\netstandard1.0\Cronos.xml</DocumentationFile>
    

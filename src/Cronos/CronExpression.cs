@@ -483,7 +483,9 @@ namespace Cronos
             return new DateTime(CalendarHelper.DateTimeToTicks(year, month, day, hour, minute, second));
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private bool IsDayOfWeekMatch(int year, int month, int day)
         {
             if (_dayOfWeek == -1L) return true;
@@ -492,13 +494,17 @@ namespace Cronos
             return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private bool IsDayOfWeekMatch(DayOfWeek dayOfWeek)
         {
             return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
             if (startBit <= endBit && GetBit(value, startBit)) return startBit;
@@ -516,13 +522,17 @@ namespace Cronos
             return result;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private bool HasFlag(CronExpressionFlag value)
         {
             return (_flags & value) != 0;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
             while (*pointer == '\t' || *pointer == ' ')
@@ -859,43 +869,57 @@ namespace Cronos
             throw new ArgumentException("The supplied DateTime is invalid in Local time zone", paramName);
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static bool GetBit(long value, int index)
         {
             return (value & (1L << index)) != 0;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static void SetAllBits(out long bits)
         {
             bits = -1L;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static bool IsDigit(int code)
         {
             return code >= 48 && code <= 57;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static bool IsLetter(int code)
         {
             return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static int GetNumeric(int code)
         {
             return code - 48;
         }
 
+#if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static int ToUpper(int code)
         {
             if (code >= 97 && code <= 122)
