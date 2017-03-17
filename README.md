@@ -1,7 +1,7 @@
 # Cronos
 [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos)
 
-Cronos is .NET library to calculate occurrences based on [Cron](https://en.wikipedia.org/wiki/Cron) expressions. You can use UTC or custom time zone. Cronos deals with [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) interval jobs won't be missed, non-interval jobs won't be repeated.
+Cronos is .NET library to calculate occurrences based on [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression). You can use UTC or custom time zone. Cronos deals with [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) interval jobs won't be missed, non-interval jobs won't be repeated.
 
 ## Features
 
@@ -28,7 +28,7 @@ var nextUtcOccurrence = expression.GetOccurrenceAfter(DateTime.UtcNow);
 
 ### Using local time zone
 
-Calculate next occurrences for tasks scheduled in **Local** time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Local`:
+Calculate next occurrences in **Local** time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Local`:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
@@ -46,7 +46,7 @@ var nextUtcOccurrence = expression.GetOccurrenceAfter(DateTime.UtcNow));
 
 ### Specify custom time zone
 
-Calculate next occurrences of tasks scheduled in custom time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Utc`:
+Calculate next occurrences in custom time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Utc`:
 
 ```csharp
 var expression = CronExpression.Parse("30 * * * *");
