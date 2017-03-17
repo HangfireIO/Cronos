@@ -23,19 +23,7 @@ Get next occurrence of **every minute** job:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
-var nextUtcOccurrence = expression.GetNextOccurrence(DateTime.UtcNow);
-```
-
-### Specify upper bound
-
-Pass the upper bound for tasks which shouldn't be performed after certain date:
-
-```csharp
-var expression = CronExpression.Parse("0 0 * * *");
-
-var startTime = DateTime.UtcNow;
-var lastExecutionTime = DateTime.UtcNow.AddYears(1);
-var nextUtcOccurrence = expression.GetNextOccurrence(startTime, lastExecutionTime);
+var nextUtcOccurrence = expression.GetOccurrenceAfter(DateTime.UtcNow);
 ```
 
 ### Using local time zone
@@ -44,7 +32,7 @@ Calculate next occurrences for tasks scheduled in **Local** time zone. Notice th
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
-var localOccurrence = expression.GetNextOccurrence(DateTime.Now);
+var localOccurrence = expression.GetOccurrenceAfter(DateTime.Now);
 ```
 
 ### Secondly tasks
@@ -53,7 +41,7 @@ Use cron expressions containing seconds for secondly tasks:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * * *", CronFields.IncludeSeconds);
-var nextUtcOccurrence = expression.GetNextOccurrence(DateTime.UtcNow));
+var nextUtcOccurrence = expression.GetOccurrenceAfter(DateTime.UtcNow));
 ```
 
 ### Specify custom time zone
@@ -65,11 +53,7 @@ var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 var startUtcTime = DateTime.UtcNow;
 
-var nextUtcOccurrence = expression.GetNextOccurrence(startUtcTime, easternTimeZone));
-
-// Also you can set the upper bound:
-var endUtcTime = startUtcTime.AddYears(1);
-nextUtcOccurrence = expression.GetNextOccurrence(startUtcTime, endUtcTime, easternTimeZone);
+var nextUtcOccurrence = expression.GetOccurrenceAfter(startUtcTime, easternTimeZone));
 ```
 
 ### Using DateTimeOffset
@@ -77,13 +61,8 @@ nextUtcOccurrence = expression.GetNextOccurrence(startUtcTime, endUtcTime, easte
 ```csharp
 var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-var startDateTimeOffset = DateTimeOffset.Now;
 
-var nextDateTimeOffset = expression.GetNextOccurrence(startDateTimeOffset, easternTimeZone));
-
-// Also you can set the upper bound:
-var endDateTimeOffset = startDateTimeOffset.AddYears(1);
-nextDateTimeOffset = expression.GetNextOccurrence(startDateTimeOffset, endDateTimeOffset, easternTimeZone);
+var nextDateTimeOffset = expression.GetOccurrenceAfter(DateTimeOffset.Now, easternTimeZone));
 ```
 
 ### Friday the thirteenth
@@ -92,7 +71,7 @@ Find next friday the thirteenth:
 
 ```csharp
 var expression = CronExpression.Parse("0 0 13 * FRI");
-var nextFriday13th = expression.GetNextOccurrence(DateTime.Now);
+var nextFriday13th = expression.GetOccurrenceAfter(DateTime.Now);
 ```
 
 ### First weekday of each month
@@ -101,7 +80,7 @@ Cronos support special characters `L`, `W`, `#` and `?`. So you can specify "fir
 
 ```csharp
 var expression = CronExpression.Parse("0 0 1W * *");
-var nextFriday13th = expression.GetNextOccurrence(DateTime.Now);
+var nextFirstWeekDay = expression.GetOccurrenceAfter(DateTime.Now);
 ```
 
 Read [cron format describing](#cron-format) to learn more about using non-standard characters. 
@@ -124,7 +103,7 @@ var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time
 var startTime = new DateTimeOffset(2016, 03, 13, 01, 50, 00, easternTimeZone.BaseUtcOffset);
 
 // Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
-var occurrence = expression.GetNextOccurrence(startTime, DateTimeOffset.MaxValue, easternTimeZone);
+var occurrence = expression.GetOccurrenceAfter(startTime, easternTimeZone);
 
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
@@ -144,10 +123,10 @@ var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time
 var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
 var startDateTimeOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
 
-var nextOccurence = expression.GetNextOccurrence(startDateTimeOffset, DateTimeOffset.MaxValue, easternTimeZone);
+var nextOccurence = expression.GetOccurrenceAfter(startDateTimeOffset, easternTimeZone);
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
-nextOccurence = expression.GetNextOccurrence(nextOccurence.Value);
+nextOccurence = expression.GetOccurrenceAfter(nextOccurence.Value);
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
 // Next occurrence at 2016-03-13 01:30:00 AM -04:00
@@ -163,13 +142,13 @@ var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time
 var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
 var startDateTimeOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
 
-var nextOccurence = expression.GetNextOccurrence(startDateTimeOffset, DateTimeOffset.MaxValue, easternTimeZone);
+var nextOccurence = expression.GetOccurrenceAfter(startDateTimeOffset, easternTimeZone);
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
-nextOccurence = expression.GetNextOccurrence(nextOccurence.Value);
+nextOccurence = expression.GetOccurrenceAfter(nextOccurence.Value);
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
-nextOccurence = expression.GetNextOccurrence(nextOccurence.Value);
+nextOccurence = expression.GetOccurrenceAfter(nextOccurence.Value);
 Console.WriteLine("Next occurrence at " + nextOccurence);
 
 // Next occurrence at 2016-11-06 01:30:00 AM -04:00

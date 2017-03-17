@@ -8,10 +8,8 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
-        // We subtract 1 day to avoid ArgumentOutOfRangeException when MaxValue convert to value in another time zone.
-        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
-        private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
-        private static readonly DateTimeOffset MaxDateTimeOffset = DateTimeOffset.MaxValue.AddDays(-1);
+        private static readonly DateTime MaxDateTime = new DateTime(2100, 1, 1);
+
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
         private const int MinDaysInMonth = 28;
@@ -119,25 +117,6 @@ namespace Cronos
             }
         }
 
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
-        /// is <see cref="DateTimeKind.Unspecified"/> .
-        /// </exception>
-        public DateTime? GetOccurrence(DateTime startInclusive)
-        {
-            if(startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
-
-            if (startInclusive.Kind == DateTimeKind.Local)
-            {
-                var localTimeZone = TimeZoneInfo.Local;
-                if (localTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
-                return GetOccurenceByZonedTimes(startInclusive, MaxLocalDateTime, localTimeZone)?.LocalDateTime;
-            }
-
-            return GetOccurrence(startInclusive, MaxUtcDateTime, UtcTimeZone);
-        }
 
         /// <summary>
         /// Calculates next occurrence after <paramref name="after"/>.
@@ -145,66 +124,34 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="after"/>
         /// is <see cref="DateTimeKind.Unspecified"/> .
         /// </exception>
-        public DateTime? GetNextOccurrence(DateTime after)
+        public DateTime? GetOccurrenceAfter(DateTime after)
         {
-            // TODO: Check if after equals DateTime.MaxValue
+            if (after.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(after));
+
             var startInclusive = CalendarHelper.AddMillisecond(after);
 
             return GetOccurrence(startInclusive);
         }
 
         /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
-        /// up to <paramref name="endInclusive"/>.
+        /// Calculates the first occurrence starting with <paramref name="startInclusive"/>.
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/> or <paramref name="endInclusive"/> 
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
         /// is <see cref="DateTimeKind.Unspecified"/>.
         /// </exception>
-        public DateTime? GetOccurrence(DateTime startInclusive, DateTime endInclusive)
+        public DateTime? GetOccurrence(DateTime startInclusive)
         {
             if (startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
-            if (startInclusive > endInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(startInclusive), nameof(endInclusive));
 
             if (startInclusive.Kind == DateTimeKind.Local)
             {
-                if(endInclusive.Kind != DateTimeKind.Local) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Local);
-
                 var localTimeZone = TimeZoneInfo.Local;
                 if (localTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
-                if (localTimeZone.IsInvalidTime(endInclusive)) ThrowInvalidLocalTimeExpception(nameof(endInclusive));
 
-                return GetOccurenceByZonedTimes(startInclusive, endInclusive, localTimeZone)?.LocalDateTime;
+                return GetOccurenceByZonedTimes(startInclusive, localTimeZone)?.LocalDateTime;
             }
 
-            if (endInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(endInclusive), DateTimeKind.Utc);
-
-            return GetOccurrence(startInclusive, endInclusive, UtcTimeZone);
-        }
-
-        /// <summary>
-        /// Calculates next occurrence after <paramref name="after"/> and 
-        /// up to <paramref name="to"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="after"/> or <paramref name="to"/> 
-        /// is <see cref="DateTimeKind.Unspecified"/>.
-        /// </exception>
-        public DateTime? GetNextOccurrence(DateTime after, DateTime to)
-        {
-            // TODO: Check if after equals DateTime.MaxValue
-            var startInclusive = CalendarHelper.AddMillisecond(after);
-
-            return GetOccurrence(startInclusive, to);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> in given <paramref name="zone"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> 
-        /// is not <see cref="DateTimeKind.Utc"/>.
-        /// </exception>
-        public DateTime? GetOccurrence(DateTime utcStartInclusive, TimeZoneInfo zone)
-        {
-            return GetOccurrence(utcStartInclusive, MaxUtcDateTime, zone);
+            return GetOccurrence(startInclusive, UtcTimeZone);
         }
 
         /// <summary>
@@ -213,56 +160,47 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcAfter"/> 
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetNextOccurrence(DateTime utcAfter, TimeZoneInfo zone)
+        public DateTime? GetOccurrenceAfter(DateTime utcAfter, TimeZoneInfo zone)
         {
-            // TODO: Check if utcAfter equals DateTime.MaxValue
+            if(utcAfter.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcAfter));
+
             var utcStartInclusive = CalendarHelper.AddMillisecond(utcAfter);
 
             return GetOccurrence(utcStartInclusive, zone);
         }
 
         /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> and 
-        /// up to <paramref name="utcEndInclusive"/> in given <paramref name="zone"/>.
+        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/> or <paramref name="utcEndInclusive"/> 
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/>
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetOccurrence(DateTime utcStartInclusive, DateTime utcEndInclusive, TimeZoneInfo zone)
+        public DateTime? GetOccurrence(DateTime utcStartInclusive, TimeZoneInfo zone)
         {
-            if (utcStartInclusive > utcEndInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(utcStartInclusive), nameof(utcEndInclusive));
-
-            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive), DateTimeKind.Utc);
-            if (utcEndInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcEndInclusive), DateTimeKind.Utc);
+            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
 
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(utcStartInclusive, utcEndInclusive);
+                var found = FindOccurence(utcStartInclusive, MaxDateTime);
                 if (found == null) return null;
 
                 return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(utcStartInclusive, zone);
-            var zonedEnd = TimeZoneInfo.ConvertTime(utcEndInclusive, zone);
 
-            var occurrence = GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
+            var occurrence = GetOccurenceByZonedTimes(zonedStart, zone);
             return occurrence?.UtcDateTime;
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="utcAfter"/> and 
-        /// up to <paramref name="utcTo"/> in given <paramref name="zone"/>.
+        /// Calculates next occurrence after <paramref name="after"/> in given <paramref name="zone"/>.
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcAfter"/> or <paramref name="utcTo"/> 
-        /// is not <see cref="DateTimeKind.Utc"/>.
-        /// </exception>
-        public DateTime? GetNextOccurrence(DateTime utcAfter, DateTime utcTo, TimeZoneInfo zone)
+        public DateTimeOffset? GetOccurrenceAfter(DateTimeOffset after, TimeZoneInfo zone)
         {
-            // TODO: Check if utcAfter equals DateTime.MaxValue
-            var utcStartInclusive = CalendarHelper.AddMillisecond(utcAfter);
+            var startInclusive = CalendarHelper.AddMillisecond(after);
 
-            return GetOccurrence(utcStartInclusive, utcTo, zone);
+            return GetOccurrence(startInclusive, zone);
         }
 
         /// <summary>
@@ -270,31 +208,9 @@ namespace Cronos
         /// </summary>
         public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, TimeZoneInfo zone)
         {
-            return GetOccurrence(startInclusive, MaxDateTimeOffset, zone);
-        }
-
-        /// <summary>
-        /// Calculates next occurrence after <paramref name="after"/> in given <paramref name="zone"/>.
-        /// </summary>
-        public DateTimeOffset? GetNextOccurrence(DateTimeOffset after, TimeZoneInfo zone)
-        {
-            // TODO: Check if after equals DateTime.MaxValue
-            var startInclusive = CalendarHelper.AddMillisecond(after);
-
-            return GetOccurrence(startInclusive, MaxDateTimeOffset, zone);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> and 
-        /// up to <paramref name="endInclusive"/> in given <paramref name="zone"/>.
-        /// </summary>
-        public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, DateTimeOffset endInclusive, TimeZoneInfo zone)
-        {
-            if(startInclusive > endInclusive) ThrowEndTimeCantBeLessThanStartTime(nameof(startInclusive), nameof(endInclusive));
-
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(startInclusive.UtcDateTime, endInclusive.UtcDateTime);
+                var found = FindOccurence(startInclusive.UtcDateTime, MaxDateTime);
 
                 if (found == null) return null;
 
@@ -302,27 +218,13 @@ namespace Cronos
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
-            var zonedEnd = TimeZoneInfo.ConvertTime(endInclusive, zone);
 
-            return GetOccurenceByZonedTimes(zonedStart, zonedEnd, zone);
+            return GetOccurenceByZonedTimes(zonedStart, zone);
         }
 
-        /// <summary>
-        /// Calculates next occurrence after <paramref name="after"/> and 
-        /// up to <paramref name="to"/> in given <paramref name="zone"/>.
-        /// </summary>
-        public DateTimeOffset? GetNextOccurrence(DateTimeOffset after, DateTimeOffset to, TimeZoneInfo zone)
-        {
-            // TODO: Check if after equals DateTime.MaxValue
-            var startInclusive = CalendarHelper.AddMillisecond(after);
-
-            return GetOccurrence(startInclusive, to, zone);
-        }
-
-        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, DateTimeOffset zonedEndInclusive, TimeZoneInfo zone)
+        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, TimeZoneInfo zone)
         {
             var startLocalDateTime = zonedStartInclusive.DateTime;
-            var endLocalDateTime = zonedEndInclusive.DateTime;
 
             if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
             {
@@ -334,8 +236,6 @@ namespace Cronos
                     var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
                     var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
 
-                    if (earlyIntervalLocalEnd > zonedEndInclusive) earlyIntervalLocalEnd = zonedEndInclusive;
-
                     // Early period, try to find anything here.
                     var found = FindOccurence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
                     if (found.HasValue) return new DateTimeOffset(found.Value, earlyOffset);
@@ -346,9 +246,7 @@ namespace Cronos
                 // Skip late ambiguous interval.
                 var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, startLocalDateTime);
 
-                var abmiguousTimeLastInstant = ambiguousTimeEnd <= zonedEndInclusive
-                    ? ambiguousTimeEnd.DateTime.AddTicks(-1)
-                    : zonedEndInclusive.DateTime;
+                var abmiguousTimeLastInstant = ambiguousTimeEnd.DateTime.AddTicks(-1);
 
                 var foundInLateInterval = FindOccurence(startLocalDateTime, abmiguousTimeLastInstant);
 
@@ -358,15 +256,7 @@ namespace Cronos
                 startLocalDateTime = ambiguousTimeEnd.DateTime;
             }
 
-            if (endLocalDateTime != DateTime.MaxValue && TimeZoneHelper.IsAmbiguousTime(zone, endLocalDateTime))
-            {
-                // When endLocalDateTime falls on ambiguous period we set endLocalDateTime to end of ambiguous period.
-                // If occurrence fall on that ambiguous period we'll check if it less than zonedEndInclusive.
-                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, endLocalDateTime);
-                endLocalDateTime = ambiguousTimeEnd.DateTime.AddTicks(-1);
-            }
-
-            var occurrence = FindOccurence(startLocalDateTime, endLocalDateTime);
+            var occurrence = FindOccurence(startLocalDateTime, MaxDateTime);
             if (occurrence == null) return null;
 
             if (zone.IsInvalidTime(occurrence.Value))
@@ -378,9 +268,7 @@ namespace Cronos
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence.Value))
             {
                 var earlyOffset = TimeZoneHelper.GetDstOffset(occurrence.Value, zone);
-                var result = new DateTimeOffset(occurrence.Value, earlyOffset);
-
-                return result <= zonedEndInclusive ? result : (DateTimeOffset?)null;
+                return new DateTimeOffset(occurrence.Value, earlyOffset);
             }
 
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
@@ -954,9 +842,9 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowWrongDateTimeKindException(string paramName, DateTimeKind exceptedKind)
+        private static void ThrowWrongDateTimeKindException(string paramName)
         {
-            throw new ArgumentException("The supplied DateTime must have the Kind property set to " + exceptedKind, paramName);
+            throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -965,14 +853,10 @@ namespace Cronos
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc or Local", paramName);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowInvalidLocalTimeExpception(string paramName)
         {
             throw new ArgumentException("The supplied DateTime is invalid in Local time zone", paramName);
-        }
-
-        private void ThrowEndTimeCantBeLessThanStartTime(string startTimeParamName, string endTimeParamName)
-        {
-            throw new ArgumentException(endTimeParamName + "can't be less than " + startTimeParamName, endTimeParamName);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

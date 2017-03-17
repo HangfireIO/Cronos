@@ -18,10 +18,8 @@ namespace Cronos.Benchmark
         private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
 
         private static readonly DateTime DateTimeNow = DateTime.UtcNow;
-        private static readonly DateTime DateTimeNowPlus100Years = DateTimeNow.AddYears(100);
 
         private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow;
-        private static readonly DateTimeOffset DateTimeOffsetNowPlus100Years = DateTimeOffsetNow.AddYears(100);
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
         private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
@@ -71,44 +69,44 @@ namespace Cronos.Benchmark
         [Benchmark]
         public DateTime? NextSimpleDateTime()
         {
-            return SimpleExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, UtcTimeZone);
+            return SimpleExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextComplexDateTime()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, UtcTimeZone);
+            return ComplexExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTimeOffset? NextSimpleDateTimeOffset()
         {
-            return SimpleExpression.GetOccurrence(DateTimeOffsetNow, DateTimeOffsetNowPlus100Years, UtcTimeZone);
+            return SimpleExpression.GetOccurrence(DateTimeOffsetNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTimeOffset? NextComplexDateTimeOffset()
         {
-            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, DateTimeOffsetNowPlus100Years, UtcTimeZone);
+            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextSimpleWithTimeZone()
         {
-            return SimpleExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, PacificTimeZone);
+            return SimpleExpression.GetOccurrence(DateTimeNow, PacificTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextComplexWithTimeZone()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, DateTimeNowPlus100Years, PacificTimeZone);
+            return ComplexExpression.GetOccurrence(DateTimeNow, PacificTimeZone);
         }
 
         [Benchmark]
         public void NextUnreachableSimple()
         {
             var result = SimpleUnreachableExpression
-                .GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100), UtcTimeZone);
+                .GetOccurrence(DateTime.UtcNow, UtcTimeZone);
 
             if (result != null) throw new InvalidOperationException();
         }
@@ -117,7 +115,7 @@ namespace Cronos.Benchmark
         public void NextUnreachableComplex()
         {
             var result = ComplexUnreachableExpression
-                .GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100), UtcTimeZone);
+                .GetOccurrence(DateTime.UtcNow, UtcTimeZone);
 
             if (result != null) throw new InvalidOperationException();
         }
@@ -137,13 +135,13 @@ namespace Cronos.Benchmark
         [Benchmark]
         public DateTime NextSimpleNCrontab()
         {
-            return SimpleExpressionNCrontab.GetNextOccurrence(DateTimeNow, DateTimeNowPlus100Years);
+            return SimpleExpressionNCrontab.GetNextOccurrence(DateTimeNow);
         }
 
         [Benchmark]
         public DateTime NextComplexNCrontab()
         {
-            return ComplexExpressionNCrontab.GetNextOccurrence(DateTimeNow, DateTimeNowPlus100Years);
+            return ComplexExpressionNCrontab.GetNextOccurrence(DateTimeNow);
         }
     }
 }

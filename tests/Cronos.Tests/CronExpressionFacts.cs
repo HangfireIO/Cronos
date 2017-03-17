@@ -24,9 +24,6 @@ namespace Cronos.Tests
 
         private static readonly CronExpression MinutelyExpression = CronExpression.Parse("* * * * *");
 
-        private static readonly DateTime MaxUtcDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Utc);
-        private static readonly DateTime MaxLocalDateTime = DateTime.SpecifyKind(DateTime.MaxValue.AddDays(-1), DateTimeKind.Local);
-
         [Theory]
 
         // Handle tabs.
@@ -40,9 +37,8 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
             var startDateTimeOffset = new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero);
-            var endDateTimeOffset = new DateTimeOffset(2017, 03, 18, 12, 0, 0, TimeSpan.Zero);
 
-            var result = expression.GetOccurrence(startDateTimeOffset, endDateTimeOffset, TimeZoneInfo.Utc);
+            var result = expression.GetOccurrence(startDateTimeOffset, TimeZoneInfo.Utc);
 
             Assert.Equal(new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero), result);
         }
@@ -233,52 +229,11 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenEndTimeLessThanStartTime()
+        public void GetOccurrence_ThrowsAnException_WhenStartInclusiveHasAWrongKind()
         {
-            var localNow = DateTime.Now;
-            var utcNow = DateTime.UtcNow;
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.Now, TimeZoneInfo.Local));
 
-            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(localNow, localNow.AddTicks(-1)));
-            Assert.Equal("endInclusive", exception.ParamName);
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1)));
-            Assert.Equal("endInclusive", exception.ParamName);
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1), TimeZoneInfo.Utc));
-            Assert.Equal("utcEndInclusive", exception.ParamName);
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcNow, utcNow.AddTicks(-1), EasternTimeZone));
-            Assert.Equal("utcEndInclusive", exception.ParamName);
-
-            var localOffsetNow = DateTimeOffset.Now;
-            var utcOffsetNow = DateTimeOffset.UtcNow;
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcOffsetNow, utcOffsetNow.AddTicks(-1), EasternTimeZone));
-            Assert.Equal("endInclusive", exception.ParamName);
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(utcOffsetNow, utcOffsetNow.AddTicks(-1), TimeZoneInfo.Utc));
-            Assert.Equal("endInclusive", exception.ParamName);
-
-            exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(localOffsetNow, localOffsetNow.AddTicks(-1), EasternTimeZone));
-            Assert.Equal("endInclusive", exception.ParamName);
-        }
-
-
-        [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumentsHaveAWrongKind()
-        {
-            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
-                DateTime.Now,
-                MaxUtcDateTime,
-                TimeZoneInfo.Local));
-
-            var endException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(
-                DateTime.UtcNow,
-                MaxLocalDateTime,
-                TimeZoneInfo.Local));
-
-            Assert.Equal("utcStartInclusive", startException.ParamName);
-            Assert.Equal("utcEndInclusive", endException.ParamName);
+            Assert.Equal("utcStartInclusive", exception.ParamName);
         }
 
         [Fact]
@@ -307,33 +262,27 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenDateTimeArgumetnsHaveAWrongKind()
+        public void GetOccurrence_ThrowsAnException_WhenDateTimeStartInclusiveIsUnspecifiedDateTime()
         {
             var unspecifiedTime = new DateTime(2017, 03, 15);
 
-            var startException = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(unspecifiedTime, MaxUtcDateTime));
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(unspecifiedTime));
 
-            var endExceptionUtc = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.UtcNow, MaxLocalDateTime));
-
-            var endExceptionLocal = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.Now, MaxUtcDateTime));
-
-            Assert.Equal("startInclusive", startException.ParamName);
-            Assert.Equal("endInclusive", endExceptionUtc.ParamName);
-            Assert.Equal("endInclusive", endExceptionLocal.ParamName);
+            Assert.Equal("startInclusive", exception.ParamName);
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsLocalDateTime_WhenStartInclusiveAndEndInclusiveHaveLocalKind()
+        public void GetOccurrence_ReturnsLocalDateTime_WhenStartInclusiveHasLocalKind()
         { 
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now, DateTime.Now.AddYears(100));
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now);
 
             Assert.Equal(DateTimeKind.Local, occurrence?.Kind);
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsUtcDateTime_WhenStartInclusiveAndEndInclusiveHaveUtcKind()
+        public void GetOccurrence_ReturnsUtcDateTime_WhenStartInclusiveHasUtcKind()
         {
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow, DateTime.UtcNow.AddYears(100));
+            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow);
 
             Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
         }
@@ -637,7 +586,6 @@ namespace Cronos.Tests
         // Leap year.
 
         [InlineData("0 0 0 29 2 *", "2016-03-10 00:00", "2020-02-29 00:00")]
-        [InlineData("0 0 0 29 2 *", "2096-03-10 00:00", "2104-02-29 00:00")]
 
         // Support 'L' character in day of month field.
 
@@ -647,7 +595,6 @@ namespace Cronos.Tests
         [InlineData("* * * L * *","2016-02-29", "2016-02-29")]
         [InlineData("* * * L 2 *","2016-02-29", "2016-02-29")]
         [InlineData("* * * L * *","2017-02-28", "2017-02-28")]
-        [InlineData("* * * L * *","2100-02-05", "2100-02-28")]
         [InlineData("* * * L * *","2016-03-05", "2016-03-31")]
         [InlineData("* * * L * *","2016-03-31", "2016-03-31")]
         [InlineData("* * * L * *","2016-04-05", "2016-04-30")]
@@ -849,10 +796,9 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
             var startInstant = GetInstant(startTime);
-            var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstant(expectedTime);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
@@ -897,40 +843,12 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
-        }
-
-        [Theory]
-        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:20 -04:00", null)]
-        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00")]
-        [InlineData("30 * * * *", "2016-11-06 00:50 -04:00", "2016-11-06 01:20 -05:00", "2016-11-06 01:30 -04:00")]
-
-        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:20 -04:00", null)]
-        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00")]
-        [InlineData("30 * * * *", "2016-11-06 01:00 -04:00", "2016-11-06 01:20 -05:00", "2016-11-06 01:30 -04:00")]
-
-        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:20 -05:00", null)]
-        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:30 -05:00", "2016-11-06 01:30 -05:00")]
-        [InlineData("30 * * * *", "2016-11-06 01:40 -04:00", "2016-11-06 01:40 -05:00", "2016-11-06 01:30 -05:00")]
-        [InlineData("30 * * * *", "2016-11-06 01:20 -05:00", "2016-11-06 01:40 -05:00", "2016-11-06 01:30 -05:00")]
-        public void GetOccurrence_ReturnsCorrectDate_WhenEndTimeIsOnDstTransition(string cronExpression, string startTime, string endTime, string expectedTime)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-
-            var startInstant = GetInstant(startTime);
-            var endInstant = GetInstant(endTime);
-
-            var expextedInstant = expectedTime != null ? GetInstant(expectedTime) : (DateTimeOffset?)null;
-
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
-
-            Assert.Equal(expextedInstant, occurrence);
         }
 
         [Fact]
@@ -940,7 +858,7 @@ namespace Cronos.Tests
 
             var startInstant = new DateTimeOffset(2016, 11, 06, 02, 00, 00, 00, TimeSpan.FromHours(-5)).AddTicks(-1);
 
-            var executed = expression.GetOccurrence(startInstant, startInstant.AddYears(100), EasternTimeZone);
+            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Equal(new DateTimeOffset(2016, 11, 07, 01, 59, 59, 00, TimeSpan.FromHours(-5)), executed);
             Assert.Equal(TimeSpan.FromHours(-5), executed?.Offset);
@@ -977,39 +895,27 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
             var startInstant = GetInstantFromLocalTime(startTime, TimeZoneInfo.Utc);
-            var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc);
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+            var occurrence = expression.GetOccurrence(startInstant, TimeZoneInfo.Utc);
 
             Assert.Equal(expectedInstant, occurrence);
             Assert.Equal(expectedInstant.Offset, occurrence?.Offset);
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsNull_WhenArgsAreDateTime_And_NextOccurrenceIsBeyondEndTime()
+        public void GetOccurrence_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue()
         {
             var expression = CronExpression.Parse("* * * 4 *");
 
-            var startInstant = new DateTime(2017, 03, 13, 0, 0, 0, DateTimeKind.Utc);
-            var endInstant = new DateTime(2017, 03, 30, 0, 0, 0, DateTimeKind.Utc);
+            var startUtcDateTime = new DateTime(2099, 12, 13, 0, 0, 0, DateTimeKind.Utc);
+            var startDateTimeOffset = (DateTimeOffset)startUtcDateTime;
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
+            var occurrenceDateTime = expression.GetOccurrence(startUtcDateTime, TimeZoneInfo.Utc);
+            Assert.Equal(null, occurrenceDateTime);
 
-            Assert.Equal(null, occurrence);
-        }
-
-        [Fact]
-        public void GetOccurrence_ReturnsNull_WhenArgsAreDateTimeOffset_And_NextOccurrenceIsBeyondEndTime()
-        {
-            var expression = CronExpression.Parse("* * * 4 *");
-
-            var startInstant = new DateTimeOffset(2017, 03, 13, 0, 0, 0, TimeSpan.Zero);
-            var endInstant = new DateTimeOffset(2017, 03, 30, 0, 0, 0, TimeSpan.Zero);
-
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, TimeZoneInfo.Utc);
-
-            Assert.Equal(null, occurrence);
+            var occurrenceOffset = expression.GetOccurrence(startDateTimeOffset, TimeZoneInfo.Utc);
+            Assert.Equal(null, occurrenceOffset);
         }
 
         [Theory]
@@ -1022,10 +928,9 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, JordanTimeZone);
+            var executed = expression.GetOccurrence(startInstant, JordanTimeZone);
 
             // TODO: Rounding error.
             if (executed?.Millisecond == 999)
@@ -1047,10 +952,9 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstant(startTimeWithOffset);
-            var endInstant = startInstant.AddYears(100);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, endInstant, JordanTimeZone);
+            var executed = expression.GetOccurrence(startInstant, JordanTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
@@ -1061,12 +965,11 @@ namespace Cronos.Tests
         public void GetOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
         {
             var startInstant = new DateTimeOffset(2017, 03, 04, 00, 00, 00, new TimeSpan(12, 30, 00));
-            var endInstant = new DateTimeOffset(2019, 03, 04, 00, 00, 00, new TimeSpan(-12, 30, 00));
             var expectedInstant = startInstant;
 
             var expectedOffset = zone.GetUtcOffset(expectedInstant);
 
-            var executed = MinutelyExpression.GetOccurrence(startInstant, endInstant, zone);
+            var executed = MinutelyExpression.GetOccurrence(startInstant, zone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedOffset, executed?.Offset);
@@ -1078,7 +981,7 @@ namespace Cronos.Tests
         {
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
 
-            var executed = MinutelyExpression.GetOccurrence(startInstant, startInstant.AddYears(100), zone);
+            var executed = MinutelyExpression.GetOccurrence(startInstant, zone);
 
             Assert.Equal(startInstant, executed);
             Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
@@ -1175,9 +1078,8 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant.AddYears(200);
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Null(occurrence);
         }
@@ -1440,7 +1342,6 @@ namespace Cronos.Tests
         // Leap year.
 
         [InlineData("0 0 29 2 *", "2016-03-10 00:00", "2020-02-29 00:00")]
-        [InlineData("0 0 29 2 *", "2096-03-10 00:00", "2104-02-29 00:00")]
 
         // Support 'L' character in day of month field.
 
@@ -1450,7 +1351,6 @@ namespace Cronos.Tests
         [InlineData("* * L * *", "2016-02-29", "2016-02-29")]
         [InlineData("* * L 2 *", "2016-02-29", "2016-02-29")]
         [InlineData("* * L * *", "2017-02-28", "2017-02-28")]
-        [InlineData("* * L * *", "2100-02-05", "2100-02-28")]
         [InlineData("* * L * *", "2016-03-05", "2016-03-31")]
         [InlineData("* * L * *", "2016-03-31", "2016-03-31")]
         [InlineData("* * L * *", "2016-04-05", "2016-04-30")]
@@ -1615,71 +1515,10 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression);
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = startInstant.AddYears(100);
 
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
-        }
-
-        [Theory]
-        [InlineData("55 *   *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
-        [InlineData("0  50  *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
-        [InlineData("0  10  *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
-        [InlineData("0  0   22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
-        [InlineData("0  0   11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
-        [InlineData("0  0   0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
-        [InlineData("0  0   0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
-        [InlineData("0  0   0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
-        [InlineData("0  0   0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
-        [InlineData("0  0   0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
-        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-02-25 23:59   ")]
-        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-02-27 23:59   ")]
-        [InlineData("0  0   0  5W *  *  ", "2017-02-03 12:11   ", "2017-02-05 23:59   ")]
-
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
-        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime_And_ParamsTypeIsDateTimeOffset(string cronExpression, string startTime, string endTime)
-        {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
-
-            var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
-            var endInstant = GetInstantFromLocalTime(endTime, EasternTimeZone);
-
-            var occurrence = expression.GetOccurrence(startInstant, endInstant, EasternTimeZone);
-
-            Assert.Equal(null, occurrence);
-        }
-
-        [Theory]
-        [InlineData("55 *   *  *  *  *  ", "2017-02-21 12:00:00", "2017-02-21 12:00:54")]
-        [InlineData("0  50  *  *  *  *  ", "2017-02-21 12:01   ", "2017-02-21 12:49   ")]
-        [InlineData("0  10  *  *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 13:05   ")]
-        [InlineData("0  0   22 *  *  *  ", "2017-02-21 12:11   ", "2017-02-21 20:05   ")]
-        [InlineData("0  0   11 *  *  *  ", "2017-02-21 12:11   ", "2017-02-22 10:05   ")]
-        [InlineData("0  0   0  1  *  *  ", "2017-02-21 12:11   ", "2017-02-28 23:05   ")]
-        [InlineData("0  0   0  12 *  *  ", "2017-02-21 12:11   ", "2017-03-11 23:59   ")]
-        [InlineData("0  0   0  1  3  *  ", "2017-02-21 12:11   ", "2017-02-28 23:59   ")]
-        [InlineData("0  0   0  1  12 *  ", "2017-02-21 12:11   ", "2017-11-30 23:59   ")]
-        [InlineData("0  0   0  *  2  *  ", "2017-03-21 12:11   ", "2018-01-30 23:59   ")]
-        [InlineData("0  0   0  *  *  SUN", "2017-02-21 12:11   ", "2017-02-25 23:59   ")]
-        [InlineData("0  0   0  *  *  TUE", "2017-02-22 12:11   ", "2017-02-27 23:59   ")]
-        [InlineData("0  0   0  5W *  *  ", "2017-02-03 12:11   ", "2017-02-05 23:59   ")]
-
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-02 17:01   ", "2017-02-03 16:00   ")]
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:01   ", "2017-02-03 17:02   ")]
-        [InlineData("0  0,5 17 4W *  *  ", "2017-02-03 17:06   ", "2017-02-05 17:06   ")]
-        public void GetOccurrence_ReturnsNull_WhenNextOccurrenceIsAfterEndTime_And_ParamsTypeIsDateTime(string cronExpression, string startTime, string endTime)
-        {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
-
-            var startUtc = GetInstantFromLocalTime(startTime, EasternTimeZone).UtcDateTime;
-            var endUtc = GetInstantFromLocalTime(endTime, EasternTimeZone).UtcDateTime;
-
-            var occurrence = expression.GetOccurrence(startUtc, endUtc, EasternTimeZone);
-
-            Assert.Equal(null, occurrence);
         }
 
         [Theory]
@@ -1699,7 +1538,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(afterTime, EasternTimeZone);
 
-            var nextOccurrence = cronExpression.GetNextOccurrence(startInstant, EasternTimeZone);
+            var nextOccurrence = cronExpression.GetOccurrenceAfter(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextOccurrence);
         }
@@ -1723,7 +1562,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(afterTime, EasternTimeZone);
 
-            var nextOccurrence = cronExpression.GetNextOccurrence(startInstant, EasternTimeZone);
+            var nextOccurrence = cronExpression.GetOccurrenceAfter(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), nextOccurrence);
         }
