@@ -123,18 +123,17 @@ namespace Cronos
             }
         }
 
-
         /// <summary>
-        /// Calculates next occurrence after <paramref name="after"/>.
+        /// Calculates next occurrence after <paramref name="start"/>.
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="after"/>
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="start"/>
         /// is <see cref="DateTimeKind.Unspecified"/> .
         /// </exception>
-        public DateTime? GetOccurrenceAfter(DateTime after)
+        public DateTime? GetOccurrenceAfter(DateTime start)
         {
-            if (after.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(after));
+            if (start.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(start));
 
-            var startInclusive = CalendarHelper.AddMillisecond(after);
+            var startInclusive = CalendarHelper.AddMillisecond(start);
 
             return GetOccurrence(startInclusive);
         }
@@ -161,16 +160,16 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="utcAfter"/> in given <paramref name="zone"/>.
+        /// Calculates next occurrence after <paramref name="utcStart"/> in given <paramref name="zone"/>.
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcAfter"/> 
+        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStart"/> 
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetOccurrenceAfter(DateTime utcAfter, TimeZoneInfo zone)
+        public DateTime? GetOccurrenceAfter(DateTime utcStart, TimeZoneInfo zone)
         {
-            if(utcAfter.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcAfter));
+            if(utcStart.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStart));
 
-            var utcStartInclusive = CalendarHelper.AddMillisecond(utcAfter);
+            var utcStartInclusive = CalendarHelper.AddMillisecond(utcStart);
 
             return GetOccurrence(utcStartInclusive, zone);
         }
@@ -200,11 +199,11 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="after"/> in given <paramref name="zone"/>.
+        /// Calculates next occurrence after <paramref name="start"/> in given <paramref name="zone"/>.
         /// </summary>
-        public DateTimeOffset? GetOccurrenceAfter(DateTimeOffset after, TimeZoneInfo zone)
+        public DateTimeOffset? GetOccurrenceAfter(DateTimeOffset start, TimeZoneInfo zone)
         {
-            var startInclusive = CalendarHelper.AddMillisecond(after);
+            var startInclusive = CalendarHelper.AddMillisecond(start);
 
             return GetOccurrence(startInclusive, zone);
         }
