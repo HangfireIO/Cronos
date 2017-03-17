@@ -8,20 +8,20 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression
     {
+        private const int MinDaysInMonth = 28;
+        private const int MinNthDayOfWeek = 1;
+        private const int MaxNthDayOfWeek = 5;
+        private const int SundayBits = 0b1000_0001;
+
         private const int MaxSecond = 0;
         private const int MaxMinute = 0;
         private const int MaxHour = 0;
         private const int MaxDay = 1;
         private const int MaxMonth = 1;
         private const int MaxYear = 2100;
+
         private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay, MaxHour, MaxMinute, MaxSecond);
-
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
-
-        private const int MinDaysInMonth = 28;
-        private const int MinNthDayOfWeek = 1;
-        private const int MaxNthDayOfWeek = 5;
-        private const int SundayBits = 0b1000_0001;
 
         private static readonly int[] DeBruijnPositions =
         {
