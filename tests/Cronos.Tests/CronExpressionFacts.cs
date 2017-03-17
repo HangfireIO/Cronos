@@ -229,7 +229,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenStartInclusiveHasAWrongKind()
+        public void GetOccurrenceFrom_ThrowsAnException_WhenStartInclusiveHasAWrongKind()
         {
             var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrenceFrom(DateTime.Now, TimeZoneInfo.Local));
 
@@ -237,7 +237,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenStartInclusiveIsUnspecified()
+        public void GetOccurrenceFrom_ThrowsAnException_WhenStartInclusiveIsUnspecified()
         {
             var startTime = new DateTime(2017, 03, 15);
             var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrenceFrom(startTime));
@@ -246,7 +246,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ReturnUtcDateTime_WhenStartInclusiveHasUtcKind()
+        public void GetOccurrenceFrom_ReturnUtcDateTime_WhenStartInclusiveHasUtcKind()
         {
             var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.UtcNow);
 
@@ -254,7 +254,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ReturnLocalDateTime_WhenStartInclusiveHasLocalKind()
+        public void GetOccurrenceFrom_ReturnLocalDateTime_WhenStartInclusiveHasLocalKind()
         {
             var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.Now);
 
@@ -262,7 +262,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ThrowsAnException_WhenDateTimeStartInclusiveIsUnspecifiedDateTime()
+        public void GetOccurrenceFrom_ThrowsAnException_WhenDateTimeStartInclusiveIsUnspecifiedDateTime()
         {
             var unspecifiedTime = new DateTime(2017, 03, 15);
 
@@ -272,7 +272,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsLocalDateTime_WhenStartInclusiveHasLocalKind()
+        public void GetOccurrenceFrom_ReturnsLocalDateTime_WhenStartInclusiveHasLocalKind()
         { 
             var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.Now);
 
@@ -280,7 +280,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsUtcDateTime_WhenStartInclusiveHasUtcKind()
+        public void GetOccurrenceFrom_ReturnsUtcDateTime_WhenStartInclusiveHasUtcKind()
         {
             var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.UtcNow);
 
@@ -757,7 +757,7 @@ namespace Cronos.Tests
 
         // Last day of 400-year.
         [InlineData("* * * * * *", "2000-12-31 16:46", "2000-12-31 16:46")]
-        public void GetOccurrence_ReturnsCorrectDate(string cronExpression, string startTime, string expectedTime)
+        public void GetOccurrenceFrom_ReturnsCorrectDate(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
@@ -791,7 +791,7 @@ namespace Cronos.Tests
         [InlineData("0 0,59 *      *  *  *    ", "2016-03-13 03:00 -04:00", "2016-03-13 03:00 -04:00")]
                                                                                                
         [InlineData("0 30   *      *  3  SUN#2", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00")]
-        public void GetOccurrence_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string startTime, string expectedTime)
+        public void GetOccurrenceFrom_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
@@ -838,7 +838,7 @@ namespace Cronos.Tests
         [InlineData("0 0    1   6 11 *", "2015-11-07 01:00 -05:00", "2016-11-06 01:00 -04:00")]
 
         [InlineData("0 0    1   * 11 SUN#1", "2015-11-01 01:00 -05:00", "2016-11-06 01:00 -04:00")]
-        public void GetOccurrence_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
+        public void GetOccurrenceFrom_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
@@ -852,7 +852,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_HandleBorderConditions_WhenDSTEnds()
+        public void GetOccurrenceFrom_HandleBorderConditions_WhenDSTEnds()
         {
             var expression = CronExpression.Parse("59 59 01 * * *", CronFormat.IncludeSeconds);
 
@@ -890,7 +890,7 @@ namespace Cronos.Tests
         [InlineData("0 */30 * * * *", "2016-11-06 02:50", "2016-11-06 03:00")]
         [InlineData("0 */30 * * * *", "2016-11-06 03:10", "2016-11-06 03:30")]
         [InlineData("0 */30 * * * *", "2016-11-06 03:50", "2016-11-06 04:00")]
-        public void GetOccurrence_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
+        public void GetOccurrenceFrom_ReturnsCorrectUtcDate(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
@@ -904,7 +904,7 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrence_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue()
+        public void GetOccurrenceFrom_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue()
         {
             var expression = CronExpression.Parse("* * * 4 *");
 
@@ -923,7 +923,7 @@ namespace Cronos.Tests
         [InlineData("30 0 L  * *", "2017-03-31 01:00 +03:00", "2017-04-30 00:30 +03:00")]
         [InlineData("30 0 LW * *", "2018-03-29 23:59 +02:00", "2018-03-30 01:00 +03:00")]
         [InlineData("30 0 LW * *", "2018-03-30 01:00 +03:00", "2018-04-30 00:30 +03:00")]
-        public void GetOccurrence_HandleDifficultDSTCases_WhenTheClockJumpsForwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
+        public void GetOccurrenceFrom_HandleDifficultDSTCases_WhenTheClockJumpsForwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -947,7 +947,7 @@ namespace Cronos.Tests
         [InlineData("30 0 L  * *", "2014-10-31 00:30 +03:00", "2014-10-31 00:30 +03:00")]
         [InlineData("30 0 LW * *", "2015-10-30 00:30 +02:00", "2015-11-30 00:30 +02:00")]
         [InlineData("30 0 LW * *", "2015-10-30 00:30 +03:00", "2015-10-30 00:30 +03:00")]
-        public void GetOccurrence_HandleDifficultDSTCases_WhenTheClockJumpsBackwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
+        public void GetOccurrenceFrom_HandleDifficultDSTCases_WhenTheClockJumpsBackwardOnFriday(string cronExpression, string startTimeWithOffset, string expectedTimeWithOffset)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -962,7 +962,7 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
+        public void GetOccurrenceFrom_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
         {
             var startInstant = new DateTimeOffset(2017, 03, 04, 00, 00, 00, new TimeSpan(12, 30, 00));
             var expectedInstant = startInstant;
@@ -977,7 +977,7 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
+        public void GetOccurrenceFrom_ReturnsUtcDateTime(TimeZoneInfo zone)
         {
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
 
@@ -1073,7 +1073,7 @@ namespace Cronos.Tests
         [InlineData("* * LW    *    3#3  ", "1970-01-01")]
         [InlineData("* * LW    1    4#4  ", "1970-01-01")]
         [InlineData("* * LW    3-12 4#4  ", "1970-01-01")]
-        public void GetOccurrence_ReturnNull_WhenCronExpressionIsUnreachable(string cronExpression, string startTime)
+        public void GetOccurrenceFrom_ReturnNull_WhenCronExpressionIsUnreachable(string cronExpression, string startTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -1510,7 +1510,7 @@ namespace Cronos.Tests
         [InlineData("* * ? * *", "2016-12-09 02:46", "2016-12-09 02:46")]
         [InlineData("* * * * ?", "2016-12-09 16:09", "2016-12-09 16:09")]
         [InlineData("* * ? * *", "2099-12-09 16:46", "2099-12-09 16:46")]
-        public void GetOccurrence_ReturnsCorrectDate_WhenExpressionContains5Fields(string cronExpression, string startTime, string expectedTime)
+        public void GetOccurrenceFrom_ReturnsCorrectDate_WhenExpressionContains5Fields(string cronExpression, string startTime, string expectedTime)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -1532,7 +1532,7 @@ namespace Cronos.Tests
         [InlineData("5 5 5 * *", "2017-03-05 05:05", "2017-04-05 05:05")]
         [InlineData("5 5 5 5 *", "2017-05-05 05:05", "2018-05-05 05:05")]
         [InlineData("5 5 5 5 5", "2017-05-05 05:05", "2023-05-05 05:05")]
-        public void GetNextOccurrence_ReturnCorrectDate(string expression, string afterTime, string expectedTime)
+        public void GetOccurrenceAfter_ReturnCorrectDate(string expression, string afterTime, string expectedTime)
         {
             var cronExpression = CronExpression.Parse(expression);
 
@@ -1556,7 +1556,7 @@ namespace Cronos.Tests
         [InlineData("5 5 5 5 * *", "2017-03-05 05:05:05", "2017-04-05 05:05:05")]
         [InlineData("5 5 5 5 5 *", "2017-05-05 05:05:05", "2018-05-05 05:05:05")]
         [InlineData("5 5 5 5 5 5", "2017-05-05 05:05:05", "2023-05-05 05:05:05")]
-        public void GetNextOccurrence_ReturnCorrectDate_When6fiedsExpressionIsUsed(string expression, string afterTime, string expectedTime)
+        public void GetOccurrenceAfter_ReturnCorrectDate_When6fiedsExpressionIsUsed(string expression, string afterTime, string expectedTime)
         {
             var cronExpression = CronExpression.Parse(expression, CronFormat.IncludeSeconds);
 
