@@ -21,7 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
-    <PackageReference Include="System.Globalization" Version="4.0.11" />
+    <PackageReference Include="NETStandard.Library" Version="1.6.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
