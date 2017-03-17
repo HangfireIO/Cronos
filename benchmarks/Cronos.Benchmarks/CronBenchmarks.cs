@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Attributes.Jobs;
 using NCrontab;
 
-namespace Cronos.Benchmark
+namespace Cronos.Benchmarks
 {
     [RyuJitX64Job]
     public class CronBenchmarks
@@ -18,7 +18,6 @@ namespace Cronos.Benchmark
         private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
 
         private static readonly DateTime DateTimeNow = DateTime.UtcNow;
-
         private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow;
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
@@ -105,18 +104,14 @@ namespace Cronos.Benchmark
         [Benchmark]
         public void NextUnreachableSimple()
         {
-            var result = SimpleUnreachableExpression
-                .GetOccurrence(DateTime.UtcNow, UtcTimeZone);
-
+            var result = SimpleUnreachableExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 
         [Benchmark]
         public void NextUnreachableComplex()
         {
-            var result = ComplexUnreachableExpression
-                .GetOccurrence(DateTime.UtcNow, UtcTimeZone);
-
+            var result = ComplexUnreachableExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 
