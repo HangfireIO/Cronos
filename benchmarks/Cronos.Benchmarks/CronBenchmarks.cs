@@ -68,50 +68,50 @@ namespace Cronos.Benchmarks
         [Benchmark]
         public DateTime? NextSimpleDateTime()
         {
-            return SimpleExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
+            return SimpleExpression.GetOccurrenceFrom(DateTimeNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextComplexDateTime()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
+            return ComplexExpression.GetOccurrenceFrom(DateTimeNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTimeOffset? NextSimpleDateTimeOffset()
         {
-            return SimpleExpression.GetOccurrence(DateTimeOffsetNow, UtcTimeZone);
+            return SimpleExpression.GetOccurrenceFrom(DateTimeOffsetNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTimeOffset? NextComplexDateTimeOffset()
         {
-            return ComplexExpression.GetOccurrence(DateTimeOffsetNow, UtcTimeZone);
+            return ComplexExpression.GetOccurrenceFrom(DateTimeOffsetNow, UtcTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextSimpleWithTimeZone()
         {
-            return SimpleExpression.GetOccurrence(DateTimeNow, PacificTimeZone);
+            return SimpleExpression.GetOccurrenceFrom(DateTimeNow, PacificTimeZone);
         }
 
         [Benchmark]
         public DateTime? NextComplexWithTimeZone()
         {
-            return ComplexExpression.GetOccurrence(DateTimeNow, PacificTimeZone);
+            return ComplexExpression.GetOccurrenceFrom(DateTimeNow, PacificTimeZone);
         }
 
         [Benchmark]
         public void NextUnreachableSimple()
         {
-            var result = SimpleUnreachableExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
+            var result = SimpleUnreachableExpression.GetOccurrenceFrom(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 
         [Benchmark]
         public void NextUnreachableComplex()
         {
-            var result = ComplexUnreachableExpression.GetOccurrence(DateTimeNow, UtcTimeZone);
+            var result = ComplexUnreachableExpression.GetOccurrenceFrom(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 

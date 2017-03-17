@@ -38,7 +38,7 @@ namespace Cronos.Tests
 
             var startDateTimeOffset = new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero);
 
-            var result = expression.GetOccurrence(startDateTimeOffset, TimeZoneInfo.Utc);
+            var result = expression.GetOccurrenceFrom(startDateTimeOffset, TimeZoneInfo.Utc);
 
             Assert.Equal(new DateTimeOffset(2016, 03, 18, 12, 0, 0, TimeSpan.Zero), result);
         }
@@ -231,7 +231,7 @@ namespace Cronos.Tests
         [Fact]
         public void GetOccurrence_ThrowsAnException_WhenStartInclusiveHasAWrongKind()
         {
-            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(DateTime.Now, TimeZoneInfo.Local));
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrenceFrom(DateTime.Now, TimeZoneInfo.Local));
 
             Assert.Equal("utcStartInclusive", exception.ParamName);
         }
@@ -240,7 +240,7 @@ namespace Cronos.Tests
         public void GetOccurrence_ThrowsAnException_WhenStartInclusiveIsUnspecified()
         {
             var startTime = new DateTime(2017, 03, 15);
-            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(startTime));
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrenceFrom(startTime));
 
             Assert.Equal("startInclusive", exception.ParamName);
         }
@@ -248,7 +248,7 @@ namespace Cronos.Tests
         [Fact]
         public void GetOccurrence_ReturnUtcDateTime_WhenStartInclusiveHasUtcKind()
         {
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow);
+            var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.UtcNow);
 
             Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
         }
@@ -256,7 +256,7 @@ namespace Cronos.Tests
         [Fact]
         public void GetOccurrence_ReturnLocalDateTime_WhenStartInclusiveHasLocalKind()
         {
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now);
+            var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.Now);
 
             Assert.Equal(DateTimeKind.Local, occurrence?.Kind);
         }
@@ -266,7 +266,7 @@ namespace Cronos.Tests
         {
             var unspecifiedTime = new DateTime(2017, 03, 15);
 
-            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrence(unspecifiedTime));
+            var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetOccurrenceFrom(unspecifiedTime));
 
             Assert.Equal("startInclusive", exception.ParamName);
         }
@@ -274,7 +274,7 @@ namespace Cronos.Tests
         [Fact]
         public void GetOccurrence_ReturnsLocalDateTime_WhenStartInclusiveHasLocalKind()
         { 
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.Now);
+            var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.Now);
 
             Assert.Equal(DateTimeKind.Local, occurrence?.Kind);
         }
@@ -282,7 +282,7 @@ namespace Cronos.Tests
         [Fact]
         public void GetOccurrence_ReturnsUtcDateTime_WhenStartInclusiveHasUtcKind()
         {
-            var occurrence = MinutelyExpression.GetOccurrence(DateTime.UtcNow);
+            var occurrence = MinutelyExpression.GetOccurrenceFrom(DateTime.UtcNow);
 
             Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
         }
@@ -763,7 +763,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
 
-            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
         }
@@ -798,7 +798,7 @@ namespace Cronos.Tests
             var startInstant = GetInstant(startTime);
             var expectedInstant = GetInstant(expectedTime);
 
-            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var executed = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
@@ -845,7 +845,7 @@ namespace Cronos.Tests
             var startInstant = GetInstant(startTimeWithOffset);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var executed = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
@@ -858,7 +858,7 @@ namespace Cronos.Tests
 
             var startInstant = new DateTimeOffset(2016, 11, 06, 02, 00, 00, 00, TimeSpan.FromHours(-5)).AddTicks(-1);
 
-            var executed = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var executed = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Equal(new DateTimeOffset(2016, 11, 07, 01, 59, 59, 00, TimeSpan.FromHours(-5)), executed);
             Assert.Equal(TimeSpan.FromHours(-5), executed?.Offset);
@@ -897,7 +897,7 @@ namespace Cronos.Tests
             var startInstant = GetInstantFromLocalTime(startTime, TimeZoneInfo.Utc);
             var expectedInstant = GetInstantFromLocalTime(expectedTime, TimeZoneInfo.Utc);
 
-            var occurrence = expression.GetOccurrence(startInstant, TimeZoneInfo.Utc);
+            var occurrence = expression.GetOccurrenceFrom(startInstant, TimeZoneInfo.Utc);
 
             Assert.Equal(expectedInstant, occurrence);
             Assert.Equal(expectedInstant.Offset, occurrence?.Offset);
@@ -911,10 +911,10 @@ namespace Cronos.Tests
             var startUtcDateTime = new DateTime(2099, 12, 13, 0, 0, 0, DateTimeKind.Utc);
             var startDateTimeOffset = (DateTimeOffset)startUtcDateTime;
 
-            var occurrenceDateTime = expression.GetOccurrence(startUtcDateTime, TimeZoneInfo.Utc);
+            var occurrenceDateTime = expression.GetOccurrenceFrom(startUtcDateTime, TimeZoneInfo.Utc);
             Assert.Equal(null, occurrenceDateTime);
 
-            var occurrenceOffset = expression.GetOccurrence(startDateTimeOffset, TimeZoneInfo.Utc);
+            var occurrenceOffset = expression.GetOccurrenceFrom(startDateTimeOffset, TimeZoneInfo.Utc);
             Assert.Equal(null, occurrenceOffset);
         }
 
@@ -930,7 +930,7 @@ namespace Cronos.Tests
             var startInstant = GetInstant(startTimeWithOffset);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, JordanTimeZone);
+            var executed = expression.GetOccurrenceFrom(startInstant, JordanTimeZone);
 
             // TODO: Rounding error.
             if (executed?.Millisecond == 999)
@@ -954,7 +954,7 @@ namespace Cronos.Tests
             var startInstant = GetInstant(startTimeWithOffset);
             var expectedInstant = GetInstant(expectedTimeWithOffset);
 
-            var executed = expression.GetOccurrence(startInstant, JordanTimeZone);
+            var executed = expression.GetOccurrenceFrom(startInstant, JordanTimeZone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
@@ -969,7 +969,7 @@ namespace Cronos.Tests
 
             var expectedOffset = zone.GetUtcOffset(expectedInstant);
 
-            var executed = MinutelyExpression.GetOccurrence(startInstant, zone);
+            var executed = MinutelyExpression.GetOccurrenceFrom(startInstant, zone);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedOffset, executed?.Offset);
@@ -981,7 +981,7 @@ namespace Cronos.Tests
         {
             var startInstant = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
 
-            var executed = MinutelyExpression.GetOccurrence(startInstant, zone);
+            var executed = MinutelyExpression.GetOccurrenceFrom(startInstant, zone);
 
             Assert.Equal(startInstant, executed);
             Assert.Equal(DateTimeKind.Utc, executed.Value.Kind);
@@ -1079,7 +1079,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
 
-            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Null(occurrence);
         }
@@ -1516,7 +1516,7 @@ namespace Cronos.Tests
 
             var startInstant = GetInstantFromLocalTime(startTime, EasternTimeZone);
 
-            var occurrence = expression.GetOccurrence(startInstant, EasternTimeZone);
+            var occurrence = expression.GetOccurrenceFrom(startInstant, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedTime, EasternTimeZone), occurrence);
         }

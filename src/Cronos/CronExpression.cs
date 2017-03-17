@@ -135,7 +135,7 @@ namespace Cronos
 
             var startInclusive = CalendarHelper.AddMillisecond(start);
 
-            return GetOccurrence(startInclusive);
+            return GetOccurrenceFrom(startInclusive);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
         /// is <see cref="DateTimeKind.Unspecified"/>.
         /// </exception>
-        public DateTime? GetOccurrence(DateTime startInclusive)
+        public DateTime? GetOccurrenceFrom(DateTime startInclusive)
         {
             if (startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
 
@@ -156,7 +156,7 @@ namespace Cronos
                 return GetOccurenceByZonedTimes(startInclusive, localTimeZone)?.LocalDateTime;
             }
 
-            return GetOccurrence(startInclusive, UtcTimeZone);
+            return GetOccurrenceFrom(startInclusive, UtcTimeZone);
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace Cronos
 
             var utcStartInclusive = CalendarHelper.AddMillisecond(utcStart);
 
-            return GetOccurrence(utcStartInclusive, zone);
+            return GetOccurrenceFrom(utcStartInclusive, zone);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Cronos
         /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/>
         /// is not <see cref="DateTimeKind.Utc"/>.
         /// </exception>
-        public DateTime? GetOccurrence(DateTime utcStartInclusive, TimeZoneInfo zone)
+        public DateTime? GetOccurrenceFrom(DateTime utcStartInclusive, TimeZoneInfo zone)
         {
             if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
 
@@ -205,13 +205,13 @@ namespace Cronos
         {
             var startInclusive = CalendarHelper.AddMillisecond(start);
 
-            return GetOccurrence(startInclusive, zone);
+            return GetOccurrenceFrom(startInclusive, zone);
         }
 
         /// <summary>
         /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in given <paramref name="zone"/>.
         /// </summary>
-        public DateTimeOffset? GetOccurrence(DateTimeOffset startInclusive, TimeZoneInfo zone)
+        public DateTimeOffset? GetOccurrenceFrom(DateTimeOffset startInclusive, TimeZoneInfo zone)
         {
             if (zone == UtcTimeZone)
             {
