@@ -27,7 +27,8 @@ build_script:
 #---------------------------------#
 
 artifacts:
-  - path: build
+  - path: 'build\*.nupkg'
+  - path: 'build\*.zip'
 
 #---------------------------------#
 #      deployment configuration   #
