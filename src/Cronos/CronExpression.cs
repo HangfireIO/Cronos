@@ -13,14 +13,11 @@ namespace Cronos
         private const int MaxNthDayOfWeek = 5;
         private const int SundayBits = 0b1000_0001;
 
-        private const int MaxSecond = 0;
-        private const int MaxMinute = 0;
-        private const int MaxHour = 0;
         private const int MaxDay = 1;
         private const int MaxMonth = 1;
         private const int MaxYear = 2100;
 
-        private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay, MaxHour, MaxMinute, MaxSecond);
+        private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
         private static readonly int[] DeBruijnPositions =
@@ -281,9 +278,9 @@ namespace Cronos
 
         private DateTime? FindOccurence(DateTime startTime, DateTime endTime)
         { 
-            var endSecond = MaxSecond;
-            var endMinute = MaxMinute;
-            var endHour = MaxHour;
+            var endSecond = 0;
+            var endMinute = 0;
+            var endHour = 0;
             var endDay = MaxDay;
             var endMonth = MaxMonth;
             var endYear = MaxYear;
