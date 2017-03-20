@@ -743,7 +743,7 @@ namespace Cronos
                 }
                 else if (*pointer == '/')
                 {
-                    // TODO: Why?
+                    // If case of slash upper bound is high. E.g. '10/2` means 'every value from 10 to high with step size = 2'.
                     num2 = high;
                 }
                 else
