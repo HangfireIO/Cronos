@@ -13,6 +13,9 @@ namespace Cronos
         private const int MaxNthDayOfWeek = 5;
         private const int SundayBits = 0b1000_0001;
 
+        // All possible last days of month: the 28th, the 29th, the 30th, the 31th.
+        private const int LastDaysOfMonths = 0b1111 << MinDaysInMonth;
+
         private const int MaxDay = 1;
         private const int MaxMonth = 1;
         private const int MaxYear = 2100;
@@ -693,7 +696,7 @@ namespace Cronos
 
                 pointer++;
 
-                bits = 0b1111 << MinDaysInMonth; // TODO: Replace with a constant
+                bits = LastDaysOfMonths;
 
                 expression._flags |= CronExpressionFlag.DayOfMonthLast;
 
