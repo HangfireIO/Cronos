@@ -17,7 +17,26 @@ Task("Clean")
     StartProcess("dotnet", "clean -c:" + configuration);
 });
 
+Task("SpecifyPackageVersion")
+    .WithCriteria(AppVeyor.IsRunningOnAppVeyor)
+    .Does(() => 
+{
+    version = AppVeyor.Environment.Build.Version;
+
+    if (AppVeyor.Environment.Repository.Tag.IsTag)
+    {
+        var tagName = AppVeyor.Environment.Repository.Tag.Name;
+        if(tagName.StartsWith("v"))
+        {
+            version = tagName.Substring(1);
+        }
+
+        AppVeyor.UpdateBuildVersion(version);
+    }
+});
+
 Task("Build")
+    .IsDependentOn("SpecifyPackageVersion")
     .IsDependentOn("Clean")
     .IsDependentOn("Restore")
     .Does(()=> 
@@ -49,29 +68,10 @@ Task("Pack")
     Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
 });
 
-Task("AppVeyor")
-    .WithCriteria(AppVeyor.IsRunningOnAppVeyor)
-    .IsDependentOn("Pack")
-    .Does(() => 
-{
-    version = AppVeyor.Environment.Build.Version;
-
-    if (AppVeyor.Environment.Repository.Tag.IsTag)
-    {
-        var tagName = AppVeyor.Environment.Repository.Tag.Name;
-        if(tagName.StartsWith("v"))
-        {
-            version = tagName.Substring(1);
-        }
-
-        AppVeyor.UpdateBuildVersion(version);
-    }
-});
-
 Task("Default")
     .IsDependentOn("Pack");
 
 Task("CI")
-    .IsDependentOn("AppVeyor");
+    .IsDependentOn("Pack");
     
 RunTarget(target);
