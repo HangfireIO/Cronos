@@ -35,9 +35,9 @@ var expression = CronExpression.Parse("* * * * *");
 var localOccurrence = expression.GetOccurrenceAfter(DateTime.Now);
 ```
 
-### Secondly tasks
+### Secondly jobs
 
-Use cron expressions containing seconds for secondly tasks:
+Use cron expressions containing seconds:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * * *", CronFields.IncludeSeconds);
