@@ -102,14 +102,14 @@ namespace Cronos
 
                     if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
                     {
-                        ThrowFormatException("'{0}': '?' is not supported.", CronField.DaysOfWeek.ToString());
+                        ThrowFormatException(CronField.DaysOfWeek, "'?' is not supported.");
                     }
 
                     ParseField(CronField.DaysOfWeek, ref pointer, cronExpression, ref cronExpression._dayOfWeek);
 
-                    if (*pointer != '\0')
+                    if (!IsEndOfString(*pointer))
                     {
-                        ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected. Please use the 'fields' argument to specify non-standard CRON fields.", *pointer, pointer - value);
+                        ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected. Please use the '{2}' argument to specify non-standard CRON fields.", *pointer, pointer - value, nameof(format));
                     }
                     
                     // Make sundays equivalent.
@@ -550,10 +550,7 @@ namespace Cronos
 #endif
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
-            while (*pointer == '\t' || *pointer == ' ')
-            {
-                pointer++;
-            }
+            while (IsWhiteSpace(*pointer)) pointer++; 
         }
 
         private static unsafe void ParseField(
@@ -574,6 +571,8 @@ namespace Cronos
                 if (*pointer != '/')
                 {
                     SetAllBits(out bits);
+
+                    if(!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '*'.", *pointer);
 
                     SkipWhiteSpaces(ref pointer);
 
@@ -611,10 +610,12 @@ namespace Cronos
 
                     if (pointer == null || expression._nthdayOfWeek < MinNthDayOfWeek || expression._nthdayOfWeek > MaxNthDayOfWeek)
                     {
-                        ThrowFormatException("'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
+                        ThrowFormatException(field, "'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
                     }
                 }
             }
+
+            if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "Unexpected character '{0}'.", *pointer);
 
             SkipWhiteSpaces(ref pointer);
         }
@@ -643,7 +644,7 @@ namespace Cronos
 
             if (*pointer == 'W' && !singleValue)
             {
-                ThrowFormatException("'{0}': using some numbers with 'W' is not supported.", field.ToString());
+                ThrowFormatException(field, "Using some numbers with 'W' is not supported.");
             }
         }
 
@@ -668,7 +669,7 @@ namespace Cronos
             {
                 if (field != CronField.DaysOfMonth && field != CronField.DaysOfWeek)
                 {
-                    ThrowFormatException("'?' is not supported for the '{0}' field.", field);
+                    ThrowFormatException(field, "'?' is not supported.");
                 }
 
                 pointer++;
@@ -680,7 +681,7 @@ namespace Cronos
 
                 if (*pointer == '/')
                 {
-                    ThrowFormatException("'{0}': '/' is not allowed after '?'.", field);
+                    ThrowFormatException(field, "'/' is not allowed after '?'.");
                 }
 
                 SetAllBits(out bits);
@@ -691,7 +692,7 @@ namespace Cronos
             {
                 if (field != CronField.DaysOfMonth)
                 {
-                    ThrowFormatException("'L' is not supported for the '{0}' field.", field);
+                    ThrowFormatException(field, "'L' is not supported.");
                 }
 
                 pointer++;
@@ -708,7 +709,7 @@ namespace Cronos
                     // Get the number following the dash.
                     if ((pointer = GetNumber(out int lastMonthOffset, 0, null, pointer)) == null || lastMonthOffset < 0 || lastMonthOffset >= high)
                     {
-                        ThrowFormatException("Last month offset in '{0}' field must be a number between {1} and {2} (all inclusive).", field, low, high);
+                        ThrowFormatException(field, "Last month offset must be a number between {0} and {1} (all inclusive).", low, high);
                     }
 
                     bits = bits >> lastMonthOffset;
@@ -722,7 +723,7 @@ namespace Cronos
 
                 if ((pointer = GetNumber(out num1, low, names, pointer)) == null || num1 < low || num1 > high)
                 {
-                    ThrowFormatException("Value of '{0}' field must be a number between {1} and {2} (all inclusive).", field, low, high);
+                    ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
                 }
 
                 if (*pointer == '-')
@@ -733,12 +734,12 @@ namespace Cronos
                     // Get the number following the dash.
                     if ((pointer = GetNumber(out num2, low, names, pointer)) == null || num2 < low || num2 > high)
                     {
-                        ThrowFormatException("Range in '{0}' field must contain numbers between {1} and {2} (all inclusive).", field, low, high);
+                        ThrowFormatException(field, "Range must contain numbers between {0} and {1} (all inclusive).", low, high);
                     }
 
                     if (*pointer == 'W')
                     {
-                        ThrowFormatException("'{0}': 'W' is not allowed after '-'.", field);
+                        ThrowFormatException(field, "'W' is not allowed after '-'.");
                     }
                 }
                 else if (*pointer == '/')
@@ -765,11 +766,11 @@ namespace Cronos
                 // sent as a 0 since there is no offset either.
                 if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0 || num3 > high)
                 {
-                    ThrowFormatException("Step in '{0}' field must be a number between 1 and {1} (all inclusive).", field, high);
+                    ThrowFormatException(field, "Step must be a number between 1 and {0} (all inclusive).", high);
                 }
                 if (*pointer == 'W')
                 {
-                    ThrowFormatException("'{0}': 'W' is not allowed after '/'.", field);
+                    ThrowFormatException(field, "'W' is not allowed after '/'.");
                 }
             }
             else
@@ -861,9 +862,15 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowFormatException(CronField field, string format, params object[] args)
+        {
+            throw new CronFormatException(field, String.Format(format, args));
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(string format, params object[] args)
         {
-            throw new FormatException(String.Format(format, args));
+            throw new CronFormatException(String.Format(format, args));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -906,6 +913,22 @@ namespace Cronos
         private static void SetAllBits(out long bits)
         {
             bits = -1L;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool IsEndOfString(int code)
+        {
+            return code == '\0';
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static bool IsWhiteSpace(int code)
+        {
+            return code == '\t' || code == ' ';
         }
 
 #if !NET40

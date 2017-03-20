@@ -18,7 +18,7 @@
         public static readonly CronField Seconds = new CronField("Seconds", 0, 59, null, null);
         public static readonly CronField Minutes = new CronField("Minutes", 0, 59, null, Seconds);
         public static readonly CronField Hours = new CronField("Hours", 0, 23, null, Minutes);
-        public static readonly CronField DaysOfMonth = new CronField("Days", 1, 31, null, Hours);
+        public static readonly CronField DaysOfMonth = new CronField("Days of month", 1, 31, null, Hours);
         public static readonly CronField Months = new CronField("Months", 1, 12, MonthNamesArray, DaysOfMonth);
 
         // 0 and 7 are both Sunday, for compatibility reasons.
