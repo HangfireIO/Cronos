@@ -1,11 +1,7 @@
 #tool "nuget:?package=xunit.runner.console"
-#addin "Cake.FileHelpers"
-
-// Don't edit manually! Use `.\build.ps1 -ScriptArgs '--newVersion="*.*.*"'` command instead!
-var version = "0.2.0";
 
 var configuration = Argument("configuration", "Release");
-var newVersion = Argument("newVersion", version);
+var version = Argument<string>("buildVersion", null);
 var target = Argument("target", "Default");
 
 Task("Restore")
@@ -21,29 +17,15 @@ Task("Clean")
     StartProcess("dotnet", "clean -c:" + configuration);
 });
 
-Task("Version")
-    .Does(() => 
-    {
-        if(newVersion == version) return;
-
-        var versionRegex = @"[0-9]+(\.([0-9]+|\*)){1,3}";
-        var cakeRegex = "var version = \"" + versionRegex + "\"";
-        
-        ReplaceRegexInFiles("build.cake", cakeRegex, "var version = \"" + newVersion + "\"");
-        ReplaceRegexInFiles("appveyor.yml", "version: " + versionRegex, "version: " + newVersion + "");
-    });
-
 Task("Build")
-    .IsDependentOn("Version")
     .IsDependentOn("Clean")
     .IsDependentOn("Restore")
     .Does(()=> 
 {
-    DotNetCoreBuild("src/Cronos/Cronos.csproj",  new DotNetCoreBuildSettings
-    {
-        Configuration = configuration,
-        ArgumentCustomization = args => args.Append("/p:Version=" + version)
-    });
+    var buildSettings =  new DotNetCoreBuildSettings { Configuration = configuration };
+    if(!string.IsNullOrEmpty(version)) buildSettings.ArgumentCustomization = args => args.Append("/p:Version=" + version);
+
+    DotNetCoreBuild("src/Cronos/Cronos.csproj",  buildSettings);
 });
 
 Task("Test")
@@ -70,9 +52,11 @@ Task("Pack")
 Task("AppVeyor")
     .WithCriteria(AppVeyor.IsRunningOnAppVeyor)
     .IsDependentOn("Pack")
-    .Does(()=> 
+    .Does(() => 
 {
-    if (AppVeyor.Environment.Repository.Tag.IsTag) 
+    version = AppVeyor.Environment.Build.Version;
+
+    if (AppVeyor.Environment.Repository.Tag.IsTag)
     {
         var tagName = AppVeyor.Environment.Repository.Tag.Name;
         if(tagName.StartsWith("v"))

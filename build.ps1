@@ -42,6 +42,7 @@ http://cakebuild.net
 Param(
     [string]$Script = "build.cake",
     [string]$Target = "Default",
+    [string]$Version = "",
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
@@ -157,5 +158,5 @@ if (!(Test-Path $CAKE_EXE)) {
 # Start Cake
 Write-Host "Running build script..."
 
-Invoke-Expression "& `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
+Invoke-Expression "& `"$CAKE_EXE`" `"$Script`" -target=`"$Target`" -configuration=`"$Configuration`" -buildVersion=`"$Version`" -verbosity=`"$Verbosity`" $UseMono $UseDryRun $UseExperimental $ScriptArgs"
 exit $LASTEXITCODE
