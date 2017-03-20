@@ -6,7 +6,7 @@ var version = "0.2.0";
 
 var configuration = Argument("configuration", "Release");
 var newVersion = Argument("newVersion", version);
-var target = Argument("target", "Pack");
+var target = Argument("target", "Default");
 
 Task("Restore")
     .Does(()=> 
@@ -57,8 +57,19 @@ Task("Test")
     });
 });
 
-Task("AppVeyor")
+Task("Pack")
     .IsDependentOn("Test")
+    .Does(()=> 
+{
+    CreateDirectory("build");
+    
+    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
+    Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
+});
+
+Task("AppVeyor")
+    .WithCriteria(AppVeyor.IsRunningOnAppVeyor)
+    .IsDependentOn("Pack")
     .Does(()=> 
 {
     if (AppVeyor.Environment.Repository.Tag.IsTag) 
@@ -73,22 +84,10 @@ Task("AppVeyor")
     }
 });
 
-Task("Local")
-    .Does(()=> 
-{
-    RunTarget("Test");
-});
+Task("Default")
+    .IsDependentOn("Pack");
 
-Task("Pack")
-    .Does(()=> 
-{
-    var target = AppVeyor.IsRunningOnAppVeyor ? "AppVeyor" : "Local";
-    RunTarget(target);
-
-    CreateDirectory("build");
-    
-    CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
-    Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
-});
+Task("CI")
+    .IsDependentOn("AppVeyor");
     
 RunTarget(target);
