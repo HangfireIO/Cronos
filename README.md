@@ -1,7 +1,7 @@
 # Cronos
 [![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos)
 
-Cronos is .NET library to parse [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression) and calculate occurrences for them. Cronos works correctly regardless of the time zone: **UTC**, **Local** or any other. You  shouldn't care about [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) [interval jobs](#interval) won't be missed, [non-interval jobs](#non-interval) won't be repeated.
+Cronos is .NET library to parse [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression) and calculate occurrences for them. Cronos works correctly regardless of the time zone: **UTC**, **Local** or any other. You  shouldn't care about [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps backward) [interval jobs](#interval) won't be missed, [non-interval jobs](#non-interval) won't be repeated.
 
 ## Features
 
@@ -28,7 +28,7 @@ var next = expression.GetOccurrenceAfter(DateTime.UtcNow);
 
 ### Using local time zone
 
-Calculate next occurrences in **Local** time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Local`:
+Calculate next occurrences in **Local** time zone. Notice that `Kind` property of passing parameter must be `DateTimeKind.Local`:
 
 ```csharp
 var expression = CronExpression.Parse("* * * * *");
