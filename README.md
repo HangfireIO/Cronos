@@ -1,7 +1,7 @@
 # Cronos
 [![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos)
 
-Cronos is .NET library to parse [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression) and calculate occurrences for them. Cronos works correctly regardless of the time zone: **UTC**, **Local** or any other. You  shouldn't care about [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time) because Cronos deals with it. When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) [interval jobs](#interval) won't be missed, [non-interval jobs](#non-interval) won't be repeated.
+Cronos is .NET library to parse [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression) and calculate occurrences for them. Cronos works correctly regardless of the time zone: **UTC**, **Local** or any other. You  shouldn't care about [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps forward) [interval jobs](#interval) won't be missed, [non-interval jobs](#non-interval) won't be repeated.
 
 ## Features
 
@@ -51,9 +51,8 @@ Calculate next occurrences in custom time zone. Notice that `Kind` property of p
 ```csharp
 var expression = CronExpression.Parse("30 * * * *");
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-var startUtc = DateTime.UtcNow;
 
-var next = expression.GetOccurrenceAfter(startUtc, easternTimeZone));
+var next = expression.GetOccurrenceAfter(DateTime.UtcNow, easternTimeZone));
 ```
 
 ### Using DateTimeOffset
@@ -221,7 +220,7 @@ Hyphens define ranges.
 
 **W character**
 
-`W` character is allowed for the day-of-month field. This character is used to specify the weekday (Monday-Friday) nearest the given day. As an example, if you were to specify `15W` as the value for the day-of-month field, the meaning is: "the nearest weekday to the 15th of the month." So, if the 15th is a Saturday, `Next` returns Friday the 14th. If the 15th is a Sunday, `Next` returns Monday the 16th. If the 15th is a Tuesday, then `Next` returns Tuesday the 15th. However, if you specify "1W" as the value for day-of-month, and the 1st is a Saturday, `Next` returns the 3rd, as it does not 'jump' over the boundary of a month's days. The 'W' character can be specified only when the day-of-month is a single day, not a range or list of days.
+`W` character is allowed for the day-of-month field. This character is used to specify the weekday (Monday-Friday) nearest the given day. As an example, if you were to specify `15W` as the value for the day-of-month field, the meaning is: "the nearest weekday to the 15th of the month." So, if the 15th is a Saturday, occurrence is Friday the 14th. If the 15th is a Sunday, occurrence is Monday the 16th. If the 15th is a Tuesday, then occurrence is Tuesday the 15th. However, if you specify "1W" as the value for day-of-month, and the 1st is a Saturday, occurrence will be the 3rd, as it does not 'jump' over the boundary of a month's days. The 'W' character can be specified only when the day-of-month is a single day, not a range or list of days.
 
 | Expression        | Description                                              |
 |-------------------|----------------------------------------------------------|
