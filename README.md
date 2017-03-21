@@ -1,15 +1,24 @@
 # Cronos
 [![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos)
 
-Cronos is .NET library to parse [Cron expressions](https://en.wikipedia.org/wiki/Cron#CRON_expression) and calculate occurrences for them. Cronos works correctly regardless of the time zone: **UTC**, **Local** or any other. You  shouldn't care about [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time). When Daylight saving time [starts](#setting-the-clocks-forward) (the clock jumps forward) no jobs will be missed, when Daylight saving time [ends](#setting-the-clocks-backward) (the clock jumps backward) [interval jobs](#interval) won't be missed, [non-interval jobs](#non-interval) won't be repeated.
+**Cronos** is a .NET library for parsing Cron expressions and calculating next occurrences, that targets .NET Framework and .NET Standard. It was designed with time zones in mind, and correctly handles forward/backward Daylight Saving Time transitions (as in *nix Cron). And it's blazingly fast!
 
-## Features
+*Please note this library doesn't include any task/job scheduler, it only works with Cron expressions.*
 
-* Calculate occurrences in UTC and custom time zone. Handle the transition from standard time to **daylight saving time** and vice versa.
-* Parse cron expressions comprising five or six fields. See [Cron format](#cron-format).
-* Support extended format with non-standard characters: `?`, `L`, `W`, `#`.
+* Supports **standard Cron format** with optional seconds.
+* Supports **non-standard characters** like `L`, `W`, `#` and their combinations.
+* Supports **reversed ranges**, like `23-01` (equivalent to `23,00,01`) or `DEC-FEB` (equivalent to `DEC,JAN,FEB`).
+* Supports **time zones**, and performs all the date/time conversions for you.
+* **Does not skip** occurrences on Standard Time (ST) to Daylight Saving Time (DST) transitions (when the clock jumps forward).
+* **Does not skip** interval-based occurrences on DST to ST transitions (backward jump).
+* **Does not retry** non-interval based occurrences on DST to ST transitions (backward jump).
+* When both *day of week* and *day of month* specified, *AND* operator will be used (different than in *nix Cron).
+* For day of week field, 0 and 7 stays for Sunday, 1 for Monday.
+* Contains 1000+ unit tests to ensure all is working correctly.
 
 ## Installation
+
+Cronos is distributed as a NuGet package, you can install it from the official NuGet Gallery. Please use the following command to install it using the NuGet Package Manager Console window.
 
 ```
 PM> Install-Package Cronos
@@ -17,146 +26,61 @@ PM> Install-Package Cronos
 
 ## Usage
 
-### Get next occurrence
-
-Get next occurrence of **every minute** job:
+We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To learn about Cron format, please see the next section.
 
 ```csharp
-var expression = CronExpression.Parse("* * * * *");
-var next = expression.GetOccurrenceAfter(DateTime.UtcNow);
+using Cronos;
+
+CronExpression expression = CronExpression.Parse("* * * * *");
+
+DateTime? nextLocal = expression.GetNextOccurrence(DateTime.Now);
+DateTime? nextUtc   = expression.GetNextOccurrence(DateTime.UtcNow);
 ```
 
-### Using local time zone
+Both the `nextLocal` and `nextUtc` will contain the next occurrence, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
 
-Calculate next occurrences in **Local** time zone. Notice that `Kind` property of passing parameter must be `DateTimeKind.Local`:
+All the time zone handling logic will be done behind the scenes: `nextLocal` will contain an occurrence in the `TimeZoneInfo.Local` time zone with `DateTimeKind.Local` specified, and `nextUtc` will contain an occurrence in the `TimeZoneInfo.Utc` zone with `DateTimeKind.Utc` specified. All Daylight Saving Time transition's corner cases are handled automatically (see below).
+
+When invalid Cron expression is given, an instance of the `CronFormatException` class is thrown.
+
+### Passing custom DateTime or DateTimeOffset
+
+When dealing with custom `DateTime` instances, always specify its `Kind` property (for example, using the `DateTime.SpecifyKind` method). When a date/time with `DateTimeKind.Unspecified` is given, Cronos will throw the `ArgumentException`, because it's unclear what time zone to use, and the result is prone to errors.
 
 ```csharp
-var expression = CronExpression.Parse("* * * * *");
-var next = expression.GetOccurrenceAfter(DateTime.Now);
+CronExpression expression = CronExpression.Parse("* * * * *");
+DateTime from = new DateTime(2017, 03, 21, 18, 23, 00, DateTimeKind.Local); // Or DateTimeKind.Utc
+
+DateTime? next = expression.GetNextOccurrence(from);
 ```
 
-### Secondly jobs
-
-Use cron expressions containing seconds:
+If you are using the `DateTimeOffset` class, you either need to convert it to local or UTC first (using `UtcDateTime` or `LocalDateTime` properties), or specify a time zone explicitly (please see the next section).
 
 ```csharp
-var expression = CronExpression.Parse("* * * * * *", CronFields.IncludeSeconds);
-var next = expression.GetOccurrenceAfter(DateTime.UtcNow));
+DateTime? next = expression.GetNextOccurrence(DateTimeOffset.Now.UtcDateTime);
 ```
 
-### Specify custom time zone
+### Working with time zones
 
-Calculate next occurrences in custom time zone. Notice that `Kind` property of passing parameter mast be `DateTimeKind.Utc`:
+It is possible to specify a time zone directly, but in this case you should always pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
 
 ```csharp
-var expression = CronExpression.Parse("30 * * * *");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+CronExpression expression = CronExpression.Parse("* * * * *");
+TimeZoneInfo easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-var next = expression.GetOccurrenceAfter(DateTime.UtcNow, easternTimeZone));
+DateTime?       next = expression.GetNextOccurrence(DateTime.UtcNow, easternTimeZone));
+DateTimeOffset? next = expression.GetNextOccurrence(DateTimeOffset.UtcNow, easternTimeZone);
 ```
 
-### Using DateTimeOffset
+Resulting time will be in UTC. All Daylight Saving Time transition's corner cases are handled automatically (see below).
+
+### Adding seconds to an expression
+
+If you want to specify seconds, use another overload of the `Parse` method and specify the `CronFields` argument as below:
 
 ```csharp
-var expression = CronExpression.Parse("30 * * * *");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var next = expression.GetOccurrenceAfter(DateTimeOffset.Now, easternTimeZone));
-```
-
-### Friday the thirteenth
-
-Find next friday the thirteenth:
-
-```csharp
-var expression = CronExpression.Parse("0 0 13 * FRI");
-var friday13th = expression.GetOccurrenceAfter(DateTime.Now);
-```
-
-### First weekday of each month
-
-Cronos support special characters `L`, `W`, `#` and `?`. So you can specify "first weekday of each month":
-
-```csharp
-var expression = CronExpression.Parse("0 0 1W * *");
-var firstWeekDay = expression.GetOccurrenceAfter(DateTime.Now);
-```
-
-Read [cron format describing](#cron-format) to learn more about using non-standard characters. 
-
-### Daylight Saving Time
-
-**Cronos** handles the transition from standard time (ST) to Daylight saving time (DST). 
-
-#### Setting the clocks forward
-
-If next occurrence falls on invalid time when the clocks jump forward then next occurrence will shift to next valid time. See example:
-
-```csharp
-var expression = CronExpression.Parse("0 30 2 * * *");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-// 2016-03-13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
-// So duration from 2:00 am to 2:59 am is invalid.
-
-var startTime = new DateTimeOffset(2016, 03, 13, 01, 50, 00, easternTimeZone.BaseUtcOffset);
-
-// Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
-var next = expression.GetOccurrenceAfter(startTime, easternTimeZone);
-
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-03-13 03:00:00 AM -04:00
-```
-
-#### Setting the clocks backward
-
-When DST ends you set the clocks backward so you have duration which repeats twice. If you are in USA the duration was e.g. 2016/11/06 from 1:00 am to 1:59 am. If next occurrence falls on this duration behavior depends on kind of cron expression: non-interval or interval.
-
-##### Non-interval
-
-Cron expression is non-interval if it describes certain time of a day, e.g. `"0 30 1 * * ?"` - 1:30 am every day, or `"0 0,45 1,2 * * ?"` - 1:00 am, 1:45 am, 2:00 am, 2:45 am every day. In this case each cron job will be scheduled only before clock shifts. Reason is when you describe certain time of day you mean that it should be scheduled once a day regardless whether there is clock shifts in that day.
-
-```csharp
-var expression = CronExpression.Parse("0 30 1 * * ?");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
-var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
-
-var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
-Console.WriteLine("Next occurrence at " + next);
-
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-03-13 01:30:00 AM -04:00
-// Next occurrence at 2016-03-13 02:30:00 AM -05:00
-```
-
-##### Interval
-
-Cron expression is interval if it describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
-
-```csharp
-var expression = CronExpression.Parse("0 30 * * * ?");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
-var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
-
-var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
-Console.WriteLine("Next occurrence at " + next);
-
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
-
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-11-06 01:30:00 AM -04:00
-// Next occurrence at 2016-11-06 01:30:00 AM -05:00
-// Next occurrence at 2016-11-06 02:30:00 AM -05:00
+CronExpression expression = CronExpression.Parse("*/30 * * * * *", CronFields.IncludeSeconds);
+DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
 ```
 
 ## Cron format
@@ -273,6 +197,80 @@ You can specify both Day of month and Day of week, it allows you to specify cons
 | `0 0 13 * 5`      | At 00:00, Friday the thirteenth                                                            |
 | `0 0 13 2 5`      | At 00:00, Friday the thirteenth, only in February                                          |
 
+## Daylight Saving Time
+
+**Cronos** handles the transition from standard time (ST) to Daylight saving time (DST). 
+
+### Setting the clocks forward
+
+If next occurrence falls on invalid time when the clocks jump forward then next occurrence will shift to next valid time. See example:
+
+```csharp
+var expression = CronExpression.Parse("0 30 2 * * *");
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+// 2016-03-13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
+// So duration from 2:00 am to 2:59 am is invalid.
+
+var startTime = new DateTimeOffset(2016, 03, 13, 01, 50, 00, easternTimeZone.BaseUtcOffset);
+
+// Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
+var next = expression.GetOccurrenceAfter(startTime, easternTimeZone);
+
+Console.WriteLine("Next occurrence at " + next);
+
+// Next occurrence at 2016-03-13 03:00:00 AM -04:00
+```
+
+### Setting the clocks backward
+
+When DST ends you set the clocks backward so you have duration which repeats twice. If you are in USA the duration was e.g. 2016/11/06 from 1:00 am to 1:59 am. If next occurrence falls on this duration behavior depends on kind of cron expression: non-interval or interval.
+
+#### Non-interval
+
+Cron expression is non-interval if it describes certain time of a day, e.g. `"0 30 1 * * ?"` - 1:30 am every day, or `"0 0,45 1,2 * * ?"` - 1:00 am, 1:45 am, 2:00 am, 2:45 am every day. In this case each cron job will be scheduled only before clock shifts. Reason is when you describe certain time of day you mean that it should be scheduled once a day regardless whether there is clock shifts in that day.
+
+```csharp
+var expression = CronExpression.Parse("0 30 1 * * ?");
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
+var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
+
+var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
+Console.WriteLine("Next occurrence at " + next);
+
+next = expression.GetOccurrenceAfter(next.Value);
+Console.WriteLine("Next occurrence at " + next);
+
+// Next occurrence at 2016-03-13 01:30:00 AM -04:00
+// Next occurrence at 2016-03-13 02:30:00 AM -05:00
+```
+
+#### Interval
+
+Cron expression is interval if it describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
+
+```csharp
+var expression = CronExpression.Parse("0 30 * * * ?");
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
+var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
+
+var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
+Console.WriteLine("Next occurrence at " + next);
+
+next = expression.GetOccurrenceAfter(next.Value);
+Console.WriteLine("Next occurrence at " + next);
+
+next = expression.GetOccurrenceAfter(next.Value);
+Console.WriteLine("Next occurrence at " + next);
+
+// Next occurrence at 2016-11-06 01:30:00 AM -04:00
+// Next occurrence at 2016-11-06 01:30:00 AM -05:00
+// Next occurrence at 2016-11-06 02:30:00 AM -05:00
+```
 
 ## License
 
