@@ -2,13 +2,20 @@
 
 namespace Cronos
 {
-    internal class CronFormatException : FormatException
+    /// <summary>
+    /// Represents an exception that's thrown, when invalid Cron expression is given.
+    /// </summary>
+    public class CronFormatException : FormatException
     {
-        public CronFormatException(CronField field, string message): base($"{field}: {message}")
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CronFormatException"/> class with
+        /// the given message.
+        /// </summary>
+        public CronFormatException(string message) : base(message)
         {
         }
 
-        public CronFormatException(string message) : base(message)
+        internal CronFormatException(CronField field, string message) : this($"{field}: {message}")
         {
         }
     }
