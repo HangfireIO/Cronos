@@ -124,105 +124,67 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="start"/>.
+        /// Calculates next occurrence starting with <param name="from"/> (optionally <param name="inclusive"/>).
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="start"/>
-        /// is <see cref="DateTimeKind.Unspecified"/> .
-        /// </exception>
-        public DateTime? GetOccurrenceAfter(DateTime start)
+        public DateTime? GetNextOccurrence(DateTime from, bool inclusive = false)
         {
-            if (start.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(start));
+            if (from.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(from));
 
-            var startInclusive = CalendarHelper.AddMillisecond(start);
+            if (!inclusive) from = CalendarHelper.AddMillisecond(from);
 
-            return GetOccurrenceFrom(startInclusive);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="startInclusive"/>
-        /// is <see cref="DateTimeKind.Unspecified"/>.
-        /// </exception>
-        public DateTime? GetOccurrenceFrom(DateTime startInclusive)
-        {
-            if (startInclusive.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(startInclusive));
-
-            if (startInclusive.Kind == DateTimeKind.Local)
+            if (from.Kind == DateTimeKind.Local)
             {
                 var localTimeZone = TimeZoneInfo.Local;
-                if (localTimeZone.IsInvalidTime(startInclusive)) ThrowInvalidLocalTimeExpception(nameof(startInclusive));
+                if (localTimeZone.IsInvalidTime(from)) ThrowInvalidLocalTimeExpception(nameof(from));
 
-                return GetOccurenceByZonedTimes(startInclusive, localTimeZone)?.LocalDateTime;
+                return GetOccurenceByZonedTimes(from, localTimeZone)?.LocalDateTime;
             }
 
-            return GetOccurrenceFrom(startInclusive, UtcTimeZone);
+            var found = FindOccurence(from, MaxDateTime);
+            if (found == null) return null;
+
+            return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="utcStart"/> in given <paramref name="zone"/>.
+        /// Calculates next occurrence starting with <param name="fromUtc"/> (optionally <param name="inclusive"/>) in given <param name="zone"/>
         /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStart"/> 
-        /// is not <see cref="DateTimeKind.Utc"/>.
-        /// </exception>
-        public DateTime? GetOccurrenceAfter(DateTime utcStart, TimeZoneInfo zone)
+        public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
         {
-            if(utcStart.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStart));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            var utcStartInclusive = CalendarHelper.AddMillisecond(utcStart);
-
-            return GetOccurrenceFrom(utcStartInclusive, zone);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="utcStartInclusive"/> in given <paramref name="zone"/>.
-        /// </summary>
-        /// <exception cref="ArgumentException">The <see cref="DateTime.Kind"/> property of <paramref name="utcStartInclusive"/>
-        /// is not <see cref="DateTimeKind.Utc"/>.
-        /// </exception>
-        public DateTime? GetOccurrenceFrom(DateTime utcStartInclusive, TimeZoneInfo zone)
-        {
-            if (utcStartInclusive.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(utcStartInclusive));
+            if (!inclusive) fromUtc = CalendarHelper.AddMillisecond(fromUtc);
 
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(utcStartInclusive, MaxDateTime);
+                var found = FindOccurence(fromUtc, MaxDateTime);
                 if (found == null) return null;
 
                 return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
             }
 
-            var zonedStart = TimeZoneInfo.ConvertTime(utcStartInclusive, zone);
+            var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
 
             var occurrence = GetOccurenceByZonedTimes(zonedStart, zone);
             return occurrence?.UtcDateTime;
         }
 
         /// <summary>
-        /// Calculates next occurrence after <paramref name="start"/> in given <paramref name="zone"/>.
+        /// Calculates next occurrence starting with <param name="from"/> (optionally <param name="inclusive"/>) in given <param name="zone"/>
         /// </summary>
-        public DateTimeOffset? GetOccurrenceAfter(DateTimeOffset start, TimeZoneInfo zone)
+        public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
-            var startInclusive = CalendarHelper.AddMillisecond(start);
+            if (!inclusive) from = CalendarHelper.AddMillisecond(from);
 
-            return GetOccurrenceFrom(startInclusive, zone);
-        }
-
-        /// <summary>
-        /// Calculates the first occurrence starting with <paramref name="startInclusive"/> in given <paramref name="zone"/>.
-        /// </summary>
-        public DateTimeOffset? GetOccurrenceFrom(DateTimeOffset startInclusive, TimeZoneInfo zone)
-        {
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(startInclusive.UtcDateTime, MaxDateTime);
-
+                var found = FindOccurence(from.UtcDateTime, MaxDateTime);
                 if (found == null) return null;
 
                 return new DateTimeOffset(found.Value, TimeSpan.Zero);
             }
 
-            var zonedStart = TimeZoneInfo.ConvertTime(startInclusive, zone);
+            var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
 
             return GetOccurenceByZonedTimes(zonedStart, zone);
         }
