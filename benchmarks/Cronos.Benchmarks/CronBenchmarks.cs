@@ -72,6 +72,12 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public CronExpression ParseMacro()
+        {
+            return CronExpression.Parse("@every_second");
+        }
+
+        [Benchmark]
         public DateTime? NextSimpleDateTime()
         {
             return SimpleExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
