@@ -30,6 +30,9 @@ namespace Cronos.Tests
 
         // Handle white spaces at the beginning and end of expression.
         [InlineData(" 	*	*	* * * *    ")]
+
+        // Handle white spaces for macros.
+        [InlineData("  @every_second ")]
         public void HandleWhiteSpaces(string cronExpression)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
@@ -326,23 +329,83 @@ namespace Cronos.Tests
         [InlineData("* * * ? *", CronFormat.Standard, "Months")]
         [InlineData("* * ? * ?", CronFormat.Standard, "Days of week")]
 
-        [InlineData("? * * * * *", CronFormat.IncludeSeconds, "Seconds"     )]
-        [InlineData("* ? * * * *", CronFormat.IncludeSeconds, "Minutes"     )]
-        [InlineData("* * ? * * *", CronFormat.IncludeSeconds, "Hours"       )]
-        [InlineData("* * * * ? *", CronFormat.IncludeSeconds, "Months"      )]
+        [InlineData("? * * * * *", CronFormat.IncludeSeconds, "Seconds")]
+        [InlineData("* ? * * * *", CronFormat.IncludeSeconds, "Minutes")]
+        [InlineData("* * ? * * *", CronFormat.IncludeSeconds, "Hours")]
+        [InlineData("* * * * ? *", CronFormat.IncludeSeconds, "Months")]
         [InlineData("* * * ? * ?", CronFormat.IncludeSeconds, "Days of week")]
 
         // Fields count is invalid.
         [InlineData("* * *        ", CronFormat.Standard, "Months")]
-        [InlineData("* * * * * * *", CronFormat.Standard, ""      )]
+        [InlineData("* * * * * * *", CronFormat.Standard, "")]
 
-        [InlineData("* * * *"      , CronFormat.IncludeSeconds, "Months")]
-        [InlineData("* * * * * * *", CronFormat.IncludeSeconds, ""      )]
+        [InlineData("* * * *", CronFormat.IncludeSeconds, "Months")]
+        [InlineData("* * * * * * *", CronFormat.IncludeSeconds, "")]
+
+        // Macro is invalid.
+        [InlineData("@", CronFormat.Standard, "")]
+
+        [InlineData("@invalid        ", CronFormat.Standard, "")]
+        [InlineData("          @yearl", CronFormat.Standard, "")]
+        [InlineData("@yearl          ", CronFormat.Standard, "")]
+        [InlineData("@yearly !       ", CronFormat.Standard, "")]
+        [InlineData("@every_hour     ", CronFormat.Standard, "")]
+        [InlineData("@@daily         ", CronFormat.Standard, "")]
+        [InlineData("@yeannually     ", CronFormat.Standard, "")]
+        [InlineData("@yweekly        ", CronFormat.Standard, "")]
+        [InlineData("@ymonthly       ", CronFormat.Standard, "")]
+        [InlineData("@ydaily         ", CronFormat.Standard, "")]
+        [InlineData("@ymidnight      ", CronFormat.Standard, "")]
+        [InlineData("@yhourly        ", CronFormat.Standard, "")]
+        [InlineData("@yevery_second  ", CronFormat.Standard, "")]
+        [InlineData("@yevery_minute  ", CronFormat.Standard, "")]
+        [InlineData("@every_minsecond", CronFormat.Standard, "")]
+
+        [InlineData("@", CronFormat.IncludeSeconds, "")]
+
+        [InlineData("@invalid        ", CronFormat.IncludeSeconds, "")]
+        [InlineData("          @yearl", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yearl          ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yearly !       ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@every_hour     ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@@daily         ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yeannually     ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yweekly        ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@ymonthly       ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@ydaily         ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@ymidnight      ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yhourly        ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yevery_second  ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@yevery_minute  ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@every_minsecond", CronFormat.IncludeSeconds, "")]
         public void Parse_ThrowsCronFormatException_WhenCronExpressionIsInvalid(string cronExpression, CronFormat format, string invalidField)
         {
             var exception = Assert.Throws<CronFormatException>(() => CronExpression.Parse(cronExpression, format));
 
             Assert.Contains(invalidField, exception.Message);
+        }
+
+        [Theory]
+        [InlineData("  @yearly      ", CronFormat.Standard)]
+        [InlineData("  @annually    ", CronFormat.Standard)]
+        [InlineData("  @monthly     ", CronFormat.Standard)]
+        [InlineData("  @weekly      ", CronFormat.Standard)]
+        [InlineData("  @daily       ", CronFormat.Standard)]
+        [InlineData("  @midnight    ", CronFormat.Standard)]
+        [InlineData("  @every_minute", CronFormat.Standard)]
+        [InlineData("  @every_second", CronFormat.Standard)]
+
+        [InlineData("  @yearly      ", CronFormat.IncludeSeconds)]
+        [InlineData("  @annually    ", CronFormat.IncludeSeconds)]
+        [InlineData("  @monthly     ", CronFormat.IncludeSeconds)]
+        [InlineData("  @weekly      ", CronFormat.IncludeSeconds)]
+        [InlineData("  @daily       ", CronFormat.IncludeSeconds)]
+        [InlineData("  @midnight    ", CronFormat.IncludeSeconds)]
+        [InlineData("  @every_minute", CronFormat.IncludeSeconds)]
+        [InlineData("  @every_second", CronFormat.IncludeSeconds)]
+        public void Parse_DoesNotThrowAnException_WhenExpressionIsMacro(string cronExpression, CronFormat format)
+        {
+            CronExpression.Parse(cronExpression);
         }
 
         [Theory]
@@ -1606,6 +1669,28 @@ namespace Cronos.Tests
         [InlineData("* * * * ?", "2016-12-09 16:09", "2016-12-09 16:09")]
         [InlineData("* * ? * *", "2099-12-09 16:46", "2099-12-09 16:46")]
         public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionContains5FieldsAndInclusiveIsTrue(string cronExpression, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
+
+            var occurrence = expression.GetNextOccurrence(fromInstant, EasternTimeZone, inclusive: true);
+
+            Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), occurrence);
+        }
+
+        [Theory]
+
+        [InlineData("@every_second", "2017-03-23 16:46:05", "2017-03-23 16:46:05")]
+
+        [InlineData("@every_minute", "2017-03-23 16:46", "2017-03-23 16:46")]
+        [InlineData("@hourly      ", "2017-03-23 16:46", "2017-03-23 17:00")]
+        [InlineData("@daily       ", "2017-03-23 16:46", "2017-03-24 00:00")]
+        [InlineData("@midnight    ", "2017-03-23 16:46", "2017-03-24 00:00")]
+        [InlineData("@monthly     ", "2017-03-23 16:46", "2017-04-01 00:00")]
+        [InlineData("@yearly      ", "2017-03-23 16:46", "2018-01-01 00:00")]
+        [InlineData("@annually    ", "2017-03-23 16:46", "2018-01-01 00:00")]
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionIsMacros(string cronExpression, string fromString, string expectedString)
         {
             var expression = CronExpression.Parse(cronExpression);
 

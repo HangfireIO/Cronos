@@ -23,6 +23,14 @@ namespace Cronos
         private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
+        private static readonly CronExpression Yearly = CronExpression.Parse("0 0 1 1 * ");
+        private static readonly CronExpression Weekly = CronExpression.Parse("0 0 * * 0 ");
+        private static readonly CronExpression Monthly = CronExpression.Parse("0 0 1 * * ");
+        private static readonly CronExpression Daily = CronExpression.Parse("0 0 * * * ");
+        private static readonly CronExpression Hourly = CronExpression.Parse("0 * * * * ");
+        private static readonly CronExpression Minutely = CronExpression.Parse("* * * * * ");
+        private static readonly CronExpression Secondly = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
         private static readonly int[] DeBruijnPositions =
         {
             0, 1, 2, 53, 3, 7, 54, 27,
@@ -73,8 +81,6 @@ namespace Cronos
         {
             if (string.IsNullOrEmpty(expression)) throw new ArgumentNullException(nameof(expression));
 
-            var cronExpression = new CronExpression();
-
             unsafe
             {
                 fixed (char* value = expression)
@@ -82,6 +88,21 @@ namespace Cronos
                     var pointer = value;
 
                     SkipWhiteSpaces(ref pointer);
+
+                    if (*pointer == '@')
+                    {
+                        var macroExpression = ParseMacro(ref pointer);
+                        if (macroExpression == null) ThrowFormatException("Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
+
+                        pointer++;
+                        SkipWhiteSpaces(ref pointer);
+
+                        if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected.", *pointer, pointer - value);
+
+                        return macroExpression;
+                    }
+
+                    var cronExpression = new CronExpression();
 
                     if ((format & CronFormat.IncludeSeconds) != 0)
                     {
@@ -513,6 +534,105 @@ namespace Cronos
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
             while (IsWhiteSpace(*pointer)) pointer++; 
+        }
+
+        private static unsafe CronExpression ParseMacro(ref char* pointer)
+        {
+            pointer++;
+            var firstCharPointer = pointer;
+
+            if (ToUpper(*pointer) == 'Y' &&
+                ToUpper(*++pointer) == 'E' &&
+                ToUpper(*++pointer) == 'A' &&
+                ToUpper(*++pointer) == 'R' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'Y')
+                return Yearly;
+
+            if (ToUpper(*firstCharPointer) == 'A' &&
+                ToUpper(*++pointer) == 'N' &&
+                ToUpper(*++pointer) == 'N' &&
+                ToUpper(*++pointer) == 'U' &&
+                ToUpper(*++pointer) == 'A' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'Y')
+                return Yearly;
+
+            if (ToUpper(*firstCharPointer) == 'W' &&
+                ToUpper(*++pointer) == 'E' &&
+                ToUpper(*++pointer) == 'E' &&
+                ToUpper(*++pointer) == 'K' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'Y')
+                return Weekly;
+
+            if (ToUpper(*firstCharPointer) == 'M')
+            {
+                pointer++;
+                if (ToUpper(*pointer) == 'O' &&
+                    ToUpper(*++pointer) == 'N' &&
+                    ToUpper(*++pointer) == 'T' &&
+                    ToUpper(*++pointer) == 'H' &&
+                    ToUpper(*++pointer) == 'L' &&
+                    ToUpper(*++pointer) == 'Y')
+                    return Monthly;
+
+                if (pointer-1 != firstCharPointer) return null;
+
+                if (ToUpper(*pointer) == 'I' &&
+                    ToUpper(*++pointer) == 'D' &&
+                    ToUpper(*++pointer) == 'N' &&
+                    ToUpper(*++pointer) == 'I' &&
+                    ToUpper(*++pointer) == 'G' &&
+                    ToUpper(*++pointer) == 'H' &&
+                    ToUpper(*++pointer) == 'T')
+                    return Daily;
+            }
+
+            if (ToUpper(*firstCharPointer) == 'D' &&
+                ToUpper(*++pointer) == 'A' &&
+                ToUpper(*++pointer) == 'I' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'Y')
+                return Daily;
+
+            if (ToUpper(*firstCharPointer) == 'H' &&
+                ToUpper(*++pointer) == 'O' &&
+                ToUpper(*++pointer) == 'U' &&
+                ToUpper(*++pointer) == 'R' &&
+                ToUpper(*++pointer) == 'L' &&
+                ToUpper(*++pointer) == 'Y')
+                return Hourly;
+
+            if (ToUpper(*firstCharPointer) == 'E' &&
+                ToUpper(*++pointer) == 'V' &&
+                ToUpper(*++pointer) == 'E' &&
+                ToUpper(*++pointer) == 'R' &&
+                ToUpper(*++pointer) == 'Y' &&
+                ToUpper(*++pointer) == '_')
+            {
+                pointer++;
+                if (ToUpper(*pointer) == 'M' &&
+                    ToUpper(*++pointer) == 'I' &&
+                    ToUpper(*++pointer) == 'N' &&
+                    ToUpper(*++pointer) == 'U' &&
+                    ToUpper(*++pointer) == 'T' &&
+                    ToUpper(*++pointer) == 'E')
+                    return Minutely;
+
+                if (*(pointer-1) != '_') return null;
+
+                if (ToUpper(*pointer) == 'S' &&
+                    ToUpper(*++pointer) == 'E' &&
+                    ToUpper(*++pointer) == 'C' &&
+                    ToUpper(*++pointer) == 'O' &&
+                    ToUpper(*++pointer) == 'N' &&
+                    ToUpper(*++pointer) == 'D')
+                    return Secondly;
+            }
+
+            return null;
         }
 
         private static unsafe void ParseField(
