@@ -66,7 +66,9 @@ Task("OpenCover")
     OpenCover(
         tool => { tool.XUnit2("tests/Cronos.Tests/bin/" + configuration + "/**/Cronos.Tests.dll", new XUnit2Settings { ShadowCopy = false }); },
         new FilePath("coverage.xml"),
-        new OpenCoverSettings());
+        new OpenCoverSettings()
+            .WithFilter("+[Cronos]*")
+            .WithFilter("-[Cronos.Tests]*"));
 });
 
 Task("Pack")
