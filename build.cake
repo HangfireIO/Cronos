@@ -1,4 +1,5 @@
 #tool "nuget:?package=xunit.runner.console"
+#tool "nuget:?package=OpenCover"
 
 var configuration = Argument("configuration", "Release");
 var version = Argument<string>("buildVersion", null);
@@ -58,8 +59,18 @@ Task("Test")
     });
 });
 
-Task("Pack")
+Task("OpenCover")
     .IsDependentOn("Test")
+    .Does(() => 
+{
+    OpenCover(
+        tool => { tool.XUnit2("tests/Cronos.Tests/bin/" + configuration + "/**/Cronos.Tests.dll", new XUnit2Settings { ShadowCopy = false }); },
+        new FilePath("coverage.xml"),
+        new OpenCoverSettings());
+});
+
+Task("Pack")
+    .IsDependentOn("OpenCover")
     .Does(()=> 
 {
     CreateDirectory("build");

@@ -38,6 +38,9 @@ bld/
 *.VisualState.xml
 TestResult.xml
 
+# OpenCover results
+coverage.xml
+
 # Build Results of an ATL Project
 [Dd]ebugPS/
 [Rr]eleasePS/
