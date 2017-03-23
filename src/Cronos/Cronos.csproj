@@ -5,7 +5,8 @@
     <TargetFrameworks>netstandard1.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\netstandard1.0\Cronos.xml</DocumentationFile>
-   
+    <DebugType>full</DebugType>
+
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
     <Owners>aidmsu, odinserj</Owners>
