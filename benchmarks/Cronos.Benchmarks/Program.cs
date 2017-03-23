@@ -11,7 +11,7 @@ namespace Cronos.Benchmarks
 
             for (var i = 0; i < 100000000; i++)
             {
-                benchmarks.IsUnreachable();
+                benchmarks.NextUnreachableSimple();
             }*/
 
             BenchmarkRunner.Run<CronBenchmarks>();
