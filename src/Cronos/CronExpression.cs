@@ -539,100 +539,102 @@ namespace Cronos
         private static unsafe CronExpression ParseMacro(ref char* pointer)
         {
             pointer++;
-            var firstCharPointer = pointer;
-
-            if (ToUpper(*pointer) == 'Y' &&
-                ToUpper(*++pointer) == 'E' &&
-                ToUpper(*++pointer) == 'A' &&
-                ToUpper(*++pointer) == 'R' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'Y')
-                return Yearly;
-
-            if (ToUpper(*firstCharPointer) == 'A' &&
-                ToUpper(*++pointer) == 'N' &&
-                ToUpper(*++pointer) == 'N' &&
-                ToUpper(*++pointer) == 'U' &&
-                ToUpper(*++pointer) == 'A' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'Y')
-                return Yearly;
-
-            if (ToUpper(*firstCharPointer) == 'W' &&
-                ToUpper(*++pointer) == 'E' &&
-                ToUpper(*++pointer) == 'E' &&
-                ToUpper(*++pointer) == 'K' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'Y')
-                return Weekly;
-
-            if (ToUpper(*firstCharPointer) == 'M')
+            switch (ToUpper(*pointer))
             {
-                pointer++;
-                if (ToUpper(*pointer) == 'O' &&
-                    ToUpper(*++pointer) == 'N' &&
-                    ToUpper(*++pointer) == 'T' &&
-                    ToUpper(*++pointer) == 'H' &&
-                    ToUpper(*++pointer) == 'L' &&
-                    ToUpper(*++pointer) == 'Y')
-                    return Monthly;
+                case 'A':
+                    if (ToUpper(*++pointer) == 'N' &&
+                        ToUpper(*++pointer) == 'N' &&
+                        ToUpper(*++pointer) == 'U' &&
+                        ToUpper(*++pointer) == 'A' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Yearly;
+                    return null;
+                case 'D':
+                    if (ToUpper(*++pointer) == 'A' &&
+                        ToUpper(*++pointer) == 'I' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Daily;
+                    return null;
+                case 'E':
+                    if (ToUpper(*++pointer) == 'V' &&
+                        ToUpper(*++pointer) == 'E' &&
+                        ToUpper(*++pointer) == 'R' &&
+                        ToUpper(*++pointer) == 'Y' &&
+                        ToUpper(*++pointer) == '_')
+                    {
+                        pointer++;
+                        if (ToUpper(*pointer) == 'M' &&
+                            ToUpper(*++pointer) == 'I' &&
+                            ToUpper(*++pointer) == 'N' &&
+                            ToUpper(*++pointer) == 'U' &&
+                            ToUpper(*++pointer) == 'T' &&
+                            ToUpper(*++pointer) == 'E')
+                            return Minutely;
 
-                if (pointer-1 != firstCharPointer) return null;
+                        if (*(pointer - 1) != '_') return null;
 
-                if (ToUpper(*pointer) == 'I' &&
-                    ToUpper(*++pointer) == 'D' &&
-                    ToUpper(*++pointer) == 'N' &&
-                    ToUpper(*++pointer) == 'I' &&
-                    ToUpper(*++pointer) == 'G' &&
-                    ToUpper(*++pointer) == 'H' &&
-                    ToUpper(*++pointer) == 'T')
-                    return Daily;
+                        if (*(pointer - 1) == '_' &&
+                            ToUpper(*pointer) == 'S' &&
+                            ToUpper(*++pointer) == 'E' &&
+                            ToUpper(*++pointer) == 'C' &&
+                            ToUpper(*++pointer) == 'O' &&
+                            ToUpper(*++pointer) == 'N' &&
+                            ToUpper(*++pointer) == 'D')
+                            return Secondly;
+                    }
+
+                    return null;
+                case 'H':
+                    if (ToUpper(*++pointer) == 'O' &&
+                        ToUpper(*++pointer) == 'U' &&
+                        ToUpper(*++pointer) == 'R' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Hourly;
+                    return null;
+                case 'M':
+                    pointer++;
+                    if (ToUpper(*pointer) == 'O' &&
+                        ToUpper(*++pointer) == 'N' &&
+                        ToUpper(*++pointer) == 'T' &&
+                        ToUpper(*++pointer) == 'H' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Monthly;
+
+                    if (ToUpper(*(pointer - 1)) == 'M' &&
+                        ToUpper(*pointer) == 'I' &&
+                        ToUpper(*++pointer) == 'D' &&
+                        ToUpper(*++pointer) == 'N' &&
+                        ToUpper(*++pointer) == 'I' &&
+                        ToUpper(*++pointer) == 'G' &&
+                        ToUpper(*++pointer) == 'H' &&
+                        ToUpper(*++pointer) == 'T')
+                        return Daily;
+
+                    return null;
+                case 'W':
+                    if (ToUpper(*++pointer) == 'E' &&
+                        ToUpper(*++pointer) == 'E' &&
+                        ToUpper(*++pointer) == 'K' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Weekly;
+                    return null;
+                case 'Y':
+                    if (ToUpper(*++pointer) == 'E' &&
+                        ToUpper(*++pointer) == 'A' &&
+                        ToUpper(*++pointer) == 'R' &&
+                        ToUpper(*++pointer) == 'L' &&
+                        ToUpper(*++pointer) == 'Y')
+                        return Yearly;
+                    return null;
+                default:
+                    return null;
             }
-
-            if (ToUpper(*firstCharPointer) == 'D' &&
-                ToUpper(*++pointer) == 'A' &&
-                ToUpper(*++pointer) == 'I' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'Y')
-                return Daily;
-
-            if (ToUpper(*firstCharPointer) == 'H' &&
-                ToUpper(*++pointer) == 'O' &&
-                ToUpper(*++pointer) == 'U' &&
-                ToUpper(*++pointer) == 'R' &&
-                ToUpper(*++pointer) == 'L' &&
-                ToUpper(*++pointer) == 'Y')
-                return Hourly;
-
-            if (ToUpper(*firstCharPointer) == 'E' &&
-                ToUpper(*++pointer) == 'V' &&
-                ToUpper(*++pointer) == 'E' &&
-                ToUpper(*++pointer) == 'R' &&
-                ToUpper(*++pointer) == 'Y' &&
-                ToUpper(*++pointer) == '_')
-            {
-                pointer++;
-                if (ToUpper(*pointer) == 'M' &&
-                    ToUpper(*++pointer) == 'I' &&
-                    ToUpper(*++pointer) == 'N' &&
-                    ToUpper(*++pointer) == 'U' &&
-                    ToUpper(*++pointer) == 'T' &&
-                    ToUpper(*++pointer) == 'E')
-                    return Minutely;
-
-                if (*(pointer-1) != '_') return null;
-
-                if (ToUpper(*pointer) == 'S' &&
-                    ToUpper(*++pointer) == 'E' &&
-                    ToUpper(*++pointer) == 'C' &&
-                    ToUpper(*++pointer) == 'O' &&
-                    ToUpper(*++pointer) == 'N' &&
-                    ToUpper(*++pointer) == 'D')
-                    return Secondly;
-            }
-
-            return null;
         }
 
         private static unsafe void ParseField(

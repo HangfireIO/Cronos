@@ -72,9 +72,15 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
-        public CronExpression ParseMacro()
+        public CronExpression ParseMacroEverySecond()
         {
             return CronExpression.Parse("@every_second");
+        }
+
+        [Benchmark]
+        public CronExpression ParseMacroDaily()
+        {
+            return CronExpression.Parse("@daily");
         }
 
         [Benchmark]
