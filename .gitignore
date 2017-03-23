@@ -12,6 +12,7 @@
 
 # Build results
 [Bb]uild/
+BenchmarkDotNet.Artifacts/
 [Tt]ools/
 [Dd]ebug/
 [Dd]ebugPublic/
