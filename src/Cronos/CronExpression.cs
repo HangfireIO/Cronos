@@ -95,6 +95,7 @@ namespace Cronos
                         if (macroExpression == null) ThrowFormatException("Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
 
                         pointer++;
+
                         SkipWhiteSpaces(ref pointer);
 
                         if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected.", *pointer, pointer - value);
@@ -151,17 +152,15 @@ namespace Cronos
         {
             if (from.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(from));
 
-            if (!inclusive) from = CalendarHelper.AddMillisecond(from);
-
             if (from.Kind == DateTimeKind.Local)
             {
                 var localTimeZone = TimeZoneInfo.Local;
                 if (localTimeZone.IsInvalidTime(from)) ThrowInvalidLocalTimeExpception(nameof(from));
 
-                return GetOccurenceByZonedTimes(from, localTimeZone)?.LocalDateTime;
+                return GetOccurenceByZonedTimes(from, TimeZoneInfo.Local, inclusive)?.LocalDateTime;
             }
 
-            var found = FindOccurence(from, MaxDateTime);
+            var found = FindOccurence(from, MaxDateTime, inclusive);
             if (found == null) return null;
 
             return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
@@ -174,11 +173,9 @@ namespace Cronos
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            if (!inclusive) fromUtc = CalendarHelper.AddMillisecond(fromUtc);
-
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(fromUtc, MaxDateTime);
+                var found = FindOccurence(fromUtc, MaxDateTime, inclusive);
                 if (found == null) return null;
 
                 return DateTime.SpecifyKind(found.Value, DateTimeKind.Utc);
@@ -186,7 +183,7 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
 
-            var occurrence = GetOccurenceByZonedTimes(zonedStart, zone);
+            var occurrence = GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
             return occurrence?.UtcDateTime;
         }
 
@@ -195,11 +192,9 @@ namespace Cronos
         /// </summary>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
-            if (!inclusive) from = CalendarHelper.AddMillisecond(from);
-
             if (zone == UtcTimeZone)
             {
-                var found = FindOccurence(from.UtcDateTime, MaxDateTime);
+                var found = FindOccurence(from.UtcDateTime, MaxDateTime, inclusive);
                 if (found == null) return null;
 
                 return new DateTimeOffset(found.Value, TimeSpan.Zero);
@@ -207,10 +202,10 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
 
-            return GetOccurenceByZonedTimes(zonedStart, zone);
+            return GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
         }
 
-        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, TimeZoneInfo zone)
+        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, TimeZoneInfo zone, bool inclusive)
         {
             var startLocalDateTime = zonedStartInclusive.DateTime;
 
@@ -225,10 +220,11 @@ namespace Cronos
                     var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
 
                     // Early period, try to find anything here.
-                    var found = FindOccurence(startLocalDateTime, earlyIntervalLocalEnd.DateTime);
+                    var found = FindOccurence(startLocalDateTime, earlyIntervalLocalEnd.DateTime, inclusive);
                     if (found.HasValue) return new DateTimeOffset(found.Value, earlyOffset);
 
                     startLocalDateTime = TimeZoneHelper.GetStandartTimeStart(zone, startLocalDateTime, earlyOffset).DateTime;
+                    inclusive = true;
                 }
 
                 // Skip late ambiguous interval.
@@ -236,7 +232,7 @@ namespace Cronos
 
                 var abmiguousTimeLastInstant = ambiguousTimeEnd.DateTime.AddTicks(-1);
 
-                var foundInLateInterval = FindOccurence(startLocalDateTime, abmiguousTimeLastInstant);
+                var foundInLateInterval = FindOccurence(startLocalDateTime, abmiguousTimeLastInstant, inclusive);
 
                 if (foundInLateInterval.HasValue && HasFlag(CronExpressionFlag.Interval))
                     return new DateTimeOffset(foundInLateInterval.Value, lateOffset);
@@ -244,7 +240,7 @@ namespace Cronos
                 startLocalDateTime = ambiguousTimeEnd.DateTime;
             }
 
-            var occurrence = FindOccurence(startLocalDateTime, MaxDateTime);
+            var occurrence = FindOccurence(startLocalDateTime, MaxDateTime, inclusive);
             if (occurrence == null) return null;
 
             if (zone.IsInvalidTime(occurrence.Value))
@@ -262,8 +258,10 @@ namespace Cronos
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
         }
 
-        private DateTime? FindOccurence(DateTime startTime, DateTime endTime)
-        { 
+        private DateTime? FindOccurence(DateTime startTime, DateTime endTime, bool startInclusive)
+        {
+            if (!startInclusive) startTime = CalendarHelper.AddMillisecond(startTime);
+
             var endSecond = 0;
             var endMinute = 0;
             var endHour = 0;
@@ -539,6 +537,7 @@ namespace Cronos
         private static unsafe CronExpression ParseMacro(ref char* pointer)
         {
             pointer++;
+
             switch (ToUpper(*pointer))
             {
                 case 'A':
