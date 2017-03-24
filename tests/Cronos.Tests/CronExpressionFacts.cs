@@ -360,6 +360,11 @@ namespace Cronos.Tests
         [InlineData("@yevery_second  ", CronFormat.Standard, "")]
         [InlineData("@yevery_minute  ", CronFormat.Standard, "")]
         [InlineData("@every_minsecond", CronFormat.Standard, "")]
+        [InlineData("@annuall        ", CronFormat.Standard, "")]
+        [InlineData("@dail           ", CronFormat.Standard, "")]
+        [InlineData("@hour           ", CronFormat.Standard, "")]
+        [InlineData("@midn           ", CronFormat.Standard, "")]
+        [InlineData("@week           ", CronFormat.Standard, "")]
 
         [InlineData("@", CronFormat.IncludeSeconds, "")]
 
@@ -367,6 +372,8 @@ namespace Cronos.Tests
         [InlineData("          @yearl", CronFormat.IncludeSeconds, "")]
         [InlineData("@yearl          ", CronFormat.IncludeSeconds, "")]
         [InlineData("@yearly !       ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@dai            ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@a              ", CronFormat.IncludeSeconds, "")]
         [InlineData("@every_hour     ", CronFormat.IncludeSeconds, "")]
         [InlineData("@@daily         ", CronFormat.IncludeSeconds, "")]
         [InlineData("@yeannually     ", CronFormat.IncludeSeconds, "")]
@@ -378,6 +385,11 @@ namespace Cronos.Tests
         [InlineData("@yevery_second  ", CronFormat.IncludeSeconds, "")]
         [InlineData("@yevery_minute  ", CronFormat.IncludeSeconds, "")]
         [InlineData("@every_minsecond", CronFormat.IncludeSeconds, "")]
+        [InlineData("@annuall        ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@dail           ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@hour           ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@midn           ", CronFormat.IncludeSeconds, "")]
+        [InlineData("@week           ", CronFormat.IncludeSeconds, "")]
         public void Parse_ThrowsCronFormatException_WhenCronExpressionIsInvalid(string cronExpression, CronFormat format, string invalidField)
         {
             var exception = Assert.Throws<CronFormatException>(() => CronExpression.Parse(cronExpression, format));
@@ -913,6 +925,9 @@ namespace Cronos.Tests
         [InlineData("* * * * * ?", "2016-12-09 16:09", "2016-12-09 16:09")]
         [InlineData("* * * ? * *", "2099-12-09 16:46", "2099-12-09 16:46")]
 
+        // Day of 100-year and not 400-year.
+        [InlineData("* * * * * *", "1900-01-20 16:46", "1900-01-20 16:46")]
+
         // Last day of 400-year.
         [InlineData("* * * * * *", "2000-12-31 16:46", "2000-12-31 16:46")]
         public void GetNextOccurrence_ReturnsCorrectDate(string cronExpression, string fromString, string expectedString)
@@ -1061,13 +1076,15 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.Offset, occurrence?.Offset);
         }
 
-        [Fact]
-        public void GetNextOccurrence_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue()
+        [Theory]
+        [InlineData("* * * * 4 *", "2099-12-13 00:00:00")]
+        [InlineData("* * * * * *", "2100-01-01 00:00:01")]
+        public void GetNextOccurrence_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue(string cronExpression, string fromString)
         {
-            var expression = CronExpression.Parse("* * * 4 *");
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
-            var fromUtc = new DateTime(2099, 12, 13, 0, 0, 0, DateTimeKind.Utc);
-            var fromWithOffset = (DateTimeOffset)fromUtc;
+            var fromWithOffset = GetInstantFromLocalTime(fromString, TimeZoneInfo.Utc); ;
+            var fromUtc = fromWithOffset.UtcDateTime;
 
             var occurrenceDateTime = expression.GetNextOccurrence(fromUtc, TimeZoneInfo.Utc, inclusive: true);
             Assert.Equal(null, occurrenceDateTime);
@@ -1238,6 +1255,20 @@ namespace Cronos.Tests
             var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
 
             var occurrence = expression.GetNextOccurrence(fromInstant, EasternTimeZone, inclusive: true);
+
+            Assert.Null(occurrence);
+        }
+
+        [Theory]
+        [InlineData("* * 30   2  *", "2080-01-01")]
+        [InlineData("* * L-30 11 *", "2080-01-01")]
+        public void GetNextOccurrence_ReturnsNull_WhenCronExpressionIsUnreachableAndFromIsDateTime(string cronExpression, string fromString)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var fromInstant = GetInstantFromLocalTime(fromString, TimeZoneInfo.Utc);
+
+            var occurrence = expression.GetNextOccurrence(fromInstant.UtcDateTime);
 
             Assert.Null(occurrence);
         }
