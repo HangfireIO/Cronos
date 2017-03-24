@@ -47,14 +47,6 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static DateTimeOffset AddMillisecond(DateTimeOffset dateTimeOffset)
-        {
-            return dateTimeOffset.AddTicks(TicksPerMillisecond);
-        }
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static long DateTimeToTicks(int year, int month, int day, int hour, int minute, int second)
         {
             int[] days = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? DaysToMonth366 : DaysToMonth365;
