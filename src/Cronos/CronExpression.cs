@@ -154,9 +154,6 @@ namespace Cronos
 
             if (from.Kind == DateTimeKind.Local)
             {
-                var localTimeZone = TimeZoneInfo.Local;
-                if (localTimeZone.IsInvalidTime(from)) ThrowInvalidLocalTimeExpception(nameof(from));
-
                 return GetOccurenceByZonedTimes(from, TimeZoneInfo.Local, inclusive)?.LocalDateTime;
             }
 
@@ -966,12 +963,6 @@ namespace Cronos
         private static void ThrowDateTimeKindIsUnspecifiedException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc or Local", paramName);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidLocalTimeExpception(string paramName)
-        {
-            throw new ArgumentException("The supplied DateTime is invalid in Local time zone", paramName);
         }
 
 #if !NET40
