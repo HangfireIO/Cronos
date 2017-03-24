@@ -643,10 +643,7 @@ namespace Cronos
             {
                 pointer++;
 
-                if (field == CronField.Seconds || field == CronField.Minutes || field == CronField.Hours)
-                {
-                    expression._flags |= CronExpressionFlag.Interval;
-                }
+                if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
 
                 if (*pointer != '/')
                 {
@@ -808,6 +805,8 @@ namespace Cronos
 
                 if (*pointer == '-')
                 {
+                    if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
+
                     // Eat the dash.
                     pointer++;
 
@@ -824,6 +823,8 @@ namespace Cronos
                 }
                 else if (*pointer == '/')
                 {
+                    if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
+
                     // If case of slash upper bound is high. E.g. '10/2` means 'every value from 10 to high with step size = 2'.
                     num2 = high;
                 }
