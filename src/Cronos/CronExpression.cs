@@ -43,6 +43,8 @@ namespace Cronos
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
+        internal TimeZoneInfo TestLocalZone;
+
         private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _hour;       // 24 bits -> from 0 bit to 23 bit in Int64
@@ -154,7 +156,12 @@ namespace Cronos
 
             if (from.Kind == DateTimeKind.Local)
             {
-                return GetOccurenceByZonedTimes(from, TimeZoneInfo.Local, inclusive)?.LocalDateTime;
+                var localZone = GetLocalTimeZone();
+
+                var localOccurrence = GetOccurenceByZonedTimes(from, localZone, inclusive);
+                if (localOccurrence == null) return null;
+
+                return DateTime.SpecifyKind(localOccurrence.Value.DateTime, DateTimeKind.Local);
             }
 
             var found = FindOccurence(from, MaxDateTime, inclusive);
@@ -521,6 +528,14 @@ namespace Cronos
         private bool HasFlag(CronExpressionFlag value)
         {
             return (_flags & value) != 0;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private TimeZoneInfo GetLocalTimeZone()
+        {
+            return TestLocalZone ?? TimeZoneInfo.Local;
         }
 
 #if !NET40
