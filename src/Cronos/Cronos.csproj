@@ -10,8 +10,8 @@
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
     <Owners>aidmsu, odinserj</Owners>
-    <Summary>Cronos is free, open source .NET library to calculate occurrences of periodical jobs based on cron expressions. Use UTC, Local or custom time zone. Cronos deals with daylight saving time. Support non-standard characters such as L, W, #, ?.</Summary>
-    <Description>Cronos is free, open source .NET library to calculate occurrences of periodical jobs based on cron expressions. Use UTC, Local or custom time zone. Cronos deals with daylight saving time. Support non-standard characters such as L, W, #, ?.</Description>
+    <Summary>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Summary>
+    <Description>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Description>
     <ProjectUrl>https://github.com/HangfireIO/Cronos</ProjectUrl>
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
