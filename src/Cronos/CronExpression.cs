@@ -23,13 +23,13 @@ namespace Cronos
         private static readonly DateTime MaxDateTime = new DateTime(MaxYear, MaxMonth, MaxDay);
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
-        private static readonly CronExpression Yearly = CronExpression.Parse("0 0 1 1 * ");
-        private static readonly CronExpression Weekly = CronExpression.Parse("0 0 * * 0 ");
-        private static readonly CronExpression Monthly = CronExpression.Parse("0 0 1 * * ");
-        private static readonly CronExpression Daily = CronExpression.Parse("0 0 * * * ");
-        private static readonly CronExpression Hourly = CronExpression.Parse("0 * * * * ");
-        private static readonly CronExpression Minutely = CronExpression.Parse("* * * * * ");
-        private static readonly CronExpression Secondly = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+        private static readonly CronExpression Yearly = Parse("0 0 1 1 * ");
+        private static readonly CronExpression Weekly = Parse("0 0 * * 0 ");
+        private static readonly CronExpression Monthly = Parse("0 0 1 * * ");
+        private static readonly CronExpression Daily = Parse("0 0 * * * ");
+        private static readonly CronExpression Hourly = Parse("0 * * * * ");
+        private static readonly CronExpression Minutely = Parse("* * * * * ");
+        private static readonly CronExpression Secondly = Parse("* * * * * *", CronFormat.IncludeSeconds);
 
         private static readonly int[] DeBruijnPositions =
         {

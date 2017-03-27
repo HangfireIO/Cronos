@@ -54,7 +54,7 @@ namespace Cronos
             int n = y * 365 + y / 4 - y / 100 + y / 400 + days[month - 1] + day - 1;
             var dateTicks = n * TicksPerDay;
 
-            long totalSeconds = (long)hour * 3600 + (long)minute * 60 + (long)second;
+            long totalSeconds = hour * 3600L + minute * 60L + second;
             return dateTicks + totalSeconds * TicksPerSecond;
         }
 
