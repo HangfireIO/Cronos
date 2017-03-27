@@ -368,6 +368,23 @@ namespace Cronos
                     year, month, day, hour, minute, second);
             }
 
+            if (HasFlag(CronExpressionFlag.NearestWeekday))
+            {
+                // If start day is Sunday or Saturday we must search from saturday 00:00 am.
+                // Next occurrence can be before startTime but not week day.
+                // So we'll shift occurrence to Monday and result will be after startTime.
+                if (startDay >= minDay && startDay <= minDay + 2)
+                {
+                    var dayOfWeek = CalendarHelper.GetDayOfWeek(startYear, startMonth, minDay);
+
+                    if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+                    {
+                        day = minDay;
+                        Rollover(CronField.Hours, false);
+                    }
+                }
+            }
+
             MoveToNextValue(CronField.Seconds, _second, ref second);
             MoveToNextValue(CronField.Minutes, _minute, ref minute);
             MoveToNextValue(CronField.Hours, _hour, ref hour);
@@ -438,22 +455,22 @@ namespace Cronos
                         Rollover(CronField.DaysOfMonth);
                         goto RetryMonth;
                     }
+                }
 
-                    if (year == startYear && month == startMonth && day == startDay)
+                if (year == startYear && month == startMonth && day == startDay)
+                {
+                    hour = startHour;
+                    minute = startMinute;
+                    second = startSecond;
+
+                    MoveToNextValue(CronField.Seconds, _second, ref second);
+                    MoveToNextValue(CronField.Minutes, _minute, ref minute);
+                    MoveToNextValue(CronField.Hours, _hour, ref hour);
+
+                    if (day == -1 || day != startDay)
                     {
-                        hour = startHour;
-                        minute = startMinute;
-                        second = startSecond;
-
-                        MoveToNextValue(CronField.Seconds, _second, ref second);
-                        MoveToNextValue(CronField.Minutes, _minute, ref minute);
-                        MoveToNextValue(CronField.Hours, _hour, ref hour);
-
-                        if (day == -1 || day != startDay)
-                        {
-                            Rollover(CronField.DaysOfMonth);
-                            goto RetryMonth;
-                        }
+                        Rollover(CronField.DaysOfMonth);
+                        goto RetryMonth;
                     }
                 }
 
