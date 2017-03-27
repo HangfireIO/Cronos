@@ -1,6 +1,6 @@
 # AppVeyor CI build file, https://ci.appveyor.com/project/odinserj/cronos
 
-os: Visual Studio 2017 RC
+os: Visual Studio 2017
 
 version: 0.4.0-build-0{build}
 
