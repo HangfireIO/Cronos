@@ -442,8 +442,6 @@ namespace Cronos
                 var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
                 var shift = CalendarHelper.MoveToNearestWeekDay(ref day, ref dayOfWeek, lastDayOfMonth);
 
-                if (IsBeyondEndDate()) return null;
-
                 if (shift > 0)
                 {
                     Rollover(CronField.Hours, false);
