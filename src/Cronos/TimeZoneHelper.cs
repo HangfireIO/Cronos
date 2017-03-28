@@ -107,6 +107,9 @@ namespace Cronos
 
             if (transitionTime.IsFixedDateRule)
             {
+                // Actually IsFixedDateRule is used when a transition doesn't happen. Since the transition doesn't happen 
+                // there is not ambiguous or invalid time. Thus this code is unreachable.
+
                 // create a DateTime from the passed in year and the properties on the transitionTime
 
                 // if the day is out of range for the month then use the last day of the month
