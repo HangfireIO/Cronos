@@ -19,22 +19,14 @@ namespace Cronos
             return zone.IsAmbiguousTime(ambiguousTime.AddTicks(1));
         }
 
-        public static TimeSpan[] GetAmbiguousOffsets(TimeZoneInfo zone, DateTime ambiguousTime)
-        {
-            return zone.GetAmbiguousTimeOffsets(ambiguousTime.AddTicks(1));
-        }
-
         public static TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
         {
             var offsets = GetAmbiguousOffsets(zone, ambiguousDateTime);
             var baseOffset = zone.BaseUtcOffset;
 
-            for (var i = 0; i < offsets.Length; i++)
-            {
-                if (offsets[i] != baseOffset) return offsets[i];
-            }
+            if (offsets[0] != baseOffset) return offsets[0];
 
-            throw new InvalidOperationException();
+            return offsets[1];
         }
 
         public static DateTimeOffset GetDstStart(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
@@ -81,19 +73,34 @@ namespace Cronos
             return new DateTimeOffset(dstTransitionEnd.AddTicks(-1), dstOffset);
         }
 
-#if !NETSTANDARD1_0
-        public static TimeZoneInfo.AdjustmentRule GetAdjustmentRuleForTime(TimeZoneInfo zone, DateTime dateTime)
+        private static TimeSpan[] GetAmbiguousOffsets(TimeZoneInfo zone, DateTime ambiguousTime)
         {
-            var date = dateTime.Date;
+            return zone.GetAmbiguousTimeOffsets(ambiguousTime.AddTicks(1));
+        }
+
+#if !NETSTANDARD1_0
+        private static TimeZoneInfo.AdjustmentRule GetAdjustmentRuleForTime(TimeZoneInfo zone, DateTime dateTime)
+        {
             var rules = zone.GetAdjustmentRules();
+
+            // Only check the whole-date portion of the dateTime -
+            // This is because the AdjustmentRule DateStart & DateEnd are stored as
+            // Date-only values {4/2/2006 - 10/28/2006} but actually represent the
+            // time span {4/2/2006@00:00:00.00000 - 10/28/2006@23:59:59.99999}
+            var date = dateTime.Date;
+
             for (var i = 0; i < rules.Length; i++)
             {
                 if (rules[i].DateStart <= date && rules[i].DateEnd >= date) return rules[i];
             }
-            return null;
+
+            // This code is unreachable because rules returned by TimeZoneInfo.GetAdjustmentRules have to cover all time
+            // from DateTime.MinValue to DateTime.MaxValue. Actually they cover. 
+            // But we admit that in theory a rule might be not found in the future. In that case we'll throw exception.
+            throw new InvalidOperationException($"Adjustment rule is not found for time zone {zone.DisplayName} and date: {date} ");
         }
 
-        public static DateTime TransitionTimeToDateTime(Int32 year, TimeZoneInfo.TransitionTime transitionTime)
+        private static DateTime TransitionTimeToDateTime(Int32 year, TimeZoneInfo.TransitionTime transitionTime)
         {
             DateTime value;
             DateTime timeOfDay = transitionTime.TimeOfDay;
