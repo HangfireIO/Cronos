@@ -15,9 +15,11 @@ namespace Cronos.Tests
 #endif
         private static readonly string EasternTimeZoneId = IsUnix ? "America/New_York" : "Eastern Standard Time";
         private static readonly string JordanTimeZoneId = IsUnix ? "Asia/Amman" : "Jordan Standard Time";
+        private static readonly string LordHoweTimeZoneId = IsUnix ? "Australia/Lord_Howe" : "Lord Howe Standard Time";
 
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById(EasternTimeZoneId);
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(JordanTimeZoneId);
+        private static readonly TimeZoneInfo LordHoweTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LordHoweTimeZoneId);
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
@@ -1000,6 +1002,42 @@ namespace Cronos.Tests
 
         [Theory]
 
+        // 2017-10-01 is date when the clock jumps forward from 1:59 am +10:30 standard time (ST) to 2:30 am +11:00 DST on Lord Howe.
+        // ________1:59 ST///invalid///2:30 DST________
+
+        // Run missed.
+
+        [InlineData("0 */30 *      *  *  *    ", "2017-10-01 01:45 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 */30 */2    *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 1-58 */2    *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 0,30 0-23/2 *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 */30 2      *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 0,30 2      *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 */30 2      01 10 *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 0,30 02     01 10 *    ", "2017-10-01 01:45 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 30   2      *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 0,30 */2    *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        [InlineData("0 30   0-23/2 *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+
+        [InlineData("0 0,30,59 *      *  *  *    ", "2017-10-01 01:59 +10:30", "2017-10-01 01:59 +10:30")]
+        [InlineData("0 0,30,59 *      *  *  *    ", "2017-10-01 02:30 +11:00", "2017-10-01 02:30 +11:00")]
+
+        [InlineData("0 30   *      *  10 SUN#1", "2017-10-01 01:59 +10:30", "2017-10-01 02:30 +11:00")]
+        public void GetNextOccurrence_HandleDST_WhenTheClockTurnForwardHalfHour(string cronExpression, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+
+            var fromInstant = GetInstant(fromString);
+            var expectedInstant = GetInstant(expectedString);
+
+            var executed = expression.GetNextOccurrence(fromInstant, LordHoweTimeZone, inclusive: true);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Theory]
+
         // 2016-03-13 is date when the clock jumps forward from 1:59 am -05:00 standard time (ST) to 3:00 am -04:00 DST in Eastern Time Zone.
         // ________1:59 ST///invalid///3:00 DST________
 
@@ -1147,6 +1185,91 @@ namespace Cronos.Tests
         }
 
         [Theory]
+
+        // 2017-04-02 is date when the clock jumps backward from 2:00 am -+11:00 DST to 1:30 am +10:30 ST on Lord Howe.
+        // _______1:30 DST____1:59 DST -> 1:30 ST____2:00 ST_______
+
+        // Run at 2:00 ST because 2:00 DST is invalid.
+        [InlineData("0 */30 */2 * * *", "2017-04-02 01:30 +11:00", "2017-04-02 02:00 +10:30")]
+        [InlineData("0 0    */2 * * *", "2017-04-02 00:30 +11:00", "2017-04-02 02:00 +10:30")]
+        [InlineData("0 0    0/2 * * *", "2017-04-02 00:30 +11:00", "2017-04-02 02:00 +10:30")]
+        [InlineData("0 0    2-3 * * *", "2017-04-02 00:30 +11:00", "2017-04-02 02:00 +10:30")]
+
+        // Run twice due to intervals.
+        [InlineData("0 */30 *   * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 */30 *   * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+        [InlineData("0 */30 *   * * *", "2017-04-02 01:15 +10:30", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 30   *   * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 30   *   * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 30   */1 * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 30   */1 * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+        [InlineData("0 30   0/1 * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 30   0/1 * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 30   1-9 * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 30   1-9 * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 */30 1   * * *", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 */30 1   * * *", "2017-04-02 01:20 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 */30 1   * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 0/30 1   * * *", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 0/30 1   * * *", "2017-04-02 01:20 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 0/30 1   * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("0 0-30 1   * * *", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 0-30 1   * * *", "2017-04-02 01:20 +11:00", "2017-04-02 01:20 +11:00")]
+        [InlineData("0 0-30 1   * * *", "2017-04-02 01:59 +11:00", "2017-04-02 01:30 +10:30")]
+
+        [InlineData("*/30 30 1 * * *", "2017-04-02 00:30:00 +11:00", "2017-04-02 01:30:00 +11:00")]
+        [InlineData("*/30 30 1 * * *", "2017-04-02 01:30:01 +11:00", "2017-04-02 01:30:30 +11:00")]
+        [InlineData("*/30 30 1 * * *", "2017-04-02 01:30:31 +11:00", "2017-04-02 01:30:00 +10:30")]
+        [InlineData("*/30 30 1 * * *", "2017-04-02 01:30:01 +10:30", "2017-04-02 01:30:30 +10:30")]
+        [InlineData("*/30 30 1 * * *", "2017-04-02 01:30:31 +10:30", "2017-04-03 01:30:00 +10:30")]
+
+        [InlineData("0/30 30 1 * * *", "2017-04-02 00:30:00 +11:00", "2017-04-02 01:30:00 +11:00")]
+        [InlineData("0/30 30 1 * * *", "2017-04-02 01:30:01 +11:00", "2017-04-02 01:30:30 +11:00")]
+        [InlineData("0/30 30 1 * * *", "2017-04-02 01:30:31 +11:00", "2017-04-02 01:30:00 +10:30")]
+        [InlineData("0/30 30 1 * * *", "2017-04-02 01:30:01 +10:30", "2017-04-02 01:30:30 +10:30")]
+        [InlineData("0/30 30 1 * * *", "2017-04-02 01:30:31 +10:30", "2017-04-03 01:30:00 +10:30")]
+
+        [InlineData("0-30 30 1 * * *", "2017-04-02 00:30:00 +11:00", "2017-04-02 01:30:00 +11:00")]
+        [InlineData("0-30 30 1 * * *", "2017-04-02 01:30:01 +11:00", "2017-04-02 01:30:01 +11:00")]
+        [InlineData("0-30 30 1 * * *", "2017-04-02 01:30:31 +11:00", "2017-04-02 01:30:00 +10:30")]
+        [InlineData("0-30 30 1 * * *", "2017-04-02 01:30:01 +10:30", "2017-04-02 01:30:01 +10:30")]
+        [InlineData("0-30 30 1 * * *", "2017-04-02 01:30:31 +10:30", "2017-04-03 01:30:00 +10:30")]
+
+        // Duplicates skipped due to certain time.
+        [InlineData("0 0,30 1   * * *", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 0,30 1   * * *", "2017-04-02 01:20 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 0,30 1   * * *", "2017-04-02 01:30 +10:30", "2017-04-03 01:00 +10:30")]
+
+        [InlineData("0 0,30 1   * 2/2 *", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 0,30 1   * 2/2 *", "2017-04-02 01:20 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 0,30 1   * 2/2 *", "2017-04-02 01:30 +10:30", "2017-04-03 01:00 +10:30")]
+
+        [InlineData("0 0,30 1   2/1 1-12 0/1", "2017-04-02 01:00 +11:00", "2017-04-02 01:00 +11:00")]
+        [InlineData("0 0,30 1   2/1 1-12 0/1", "2017-04-02 01:20 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 0,30 1   2/1 1-12 0/1", "2017-04-02 01:30 +10:30", "2017-04-03 01:00 +10:30")]
+
+        [InlineData("0 30    1   * * *", "2017-04-02 01:30 +11:00", "2017-04-02 01:30 +11:00")]
+        [InlineData("0 30    1   * * *", "2017-04-02 01:30 +10:30", "2017-04-03 01:30 +10:30")]
+        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsBackwardAndDeltaIsNotHour(string cronExpression, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+
+            var fromInstant = GetInstant(fromString);
+            var expectedInstant = GetInstant(expectedString);
+
+            var executed = expression.GetNextOccurrence(fromInstant, LordHoweTimeZone, inclusive: true);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Theory]
         [InlineData("* * * * * *", "15:30", "15:30")]
         [InlineData("0 5 * * * *", "00:00", "00:05")]
 
@@ -1192,7 +1315,7 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
 
-            var fromWithOffset = GetInstantFromLocalTime(fromString, TimeZoneInfo.Utc); ;
+            var fromWithOffset = GetInstantFromLocalTime(fromString, TimeZoneInfo.Utc);
             var fromUtc = fromWithOffset.UtcDateTime;
 
             var occurrenceDateTime = expression.GetNextOccurrence(fromUtc, TimeZoneInfo.Utc, inclusive: true);
