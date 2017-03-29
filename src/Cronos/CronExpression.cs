@@ -148,7 +148,7 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence starting with <param name="from"/> (optionally <param name="inclusive"/>).
+        /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>).
         /// </summary>
         public DateTime? GetNextOccurrence(DateTime from, bool inclusive = false)
         {
@@ -171,7 +171,7 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence starting with <param name="fromUtc"/> (optionally <param name="inclusive"/>) in given <param name="zone"/>
+        /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
         {
@@ -192,7 +192,7 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence starting with <param name="from"/> (optionally <param name="inclusive"/>) in given <param name="zone"/>
+        /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
