@@ -440,22 +440,27 @@ namespace Cronos
             if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
                 var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
-                day = CalendarHelper.MoveToNearestWeekDay(day, dayOfWeek, lastDayOfMonth);
+                var adjustedDay = CalendarHelper.MoveToNearestWeekDay(day, dayOfWeek, lastDayOfMonth);
 
-                if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, startYear, startMonth, startDay, 0, 0, 0))
+                if (adjustedDay != day)
                 {
-                    SetNextValue(CronField.Months);
-                    goto RetryMonth;
-                }
+                    SetNextValue(CronField.DaysOfMonth, adjustedDay);
 
-                if (year == startYear && month == startMonth && day == startDay)
-                {
-                    hour = startHour;
-                    minute = startMinute;
-                    second = startSecond;
-                }
+                    if (CalendarHelper.IsLessThan(year, month, day, 0, 0, 0, startYear, startMonth, startDay, 0, 0, 0))
+                    {
+                        SetNextValue(CronField.Months);
+                        goto RetryMonth;
+                    }
 
-                adjustedToNearestWeekday = true;
+                    if (year == startYear && month == startMonth && day == startDay)
+                    {
+                        hour = startHour;
+                        minute = startMinute;
+                        second = startSecond;
+                    }
+
+                    adjustedToNearestWeekday = true;
+                }
             }
 
             // L and # characters in day of week.
