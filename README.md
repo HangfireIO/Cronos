@@ -85,16 +85,16 @@ DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
 
 ## Cron format
 
-**Cronos** uses a cron expression comprising five or six fields separated by white space that represents a set of times.
+**Cronos** supports expressions made of second (optional), minute, hour, day of month, month, day of week fields:
 
-                                             Allowed values     Allowed special characters     Comment
-												                                           
-    ┌───────────── second (optional)         0-59               * , - /                    
-    │ ┌───────────── minute                  0-59               * , - /                    
-    │ │ ┌───────────── hour                  0-23               * , - /                    
-    │ │ │ ┌───────────── day of month        1-31               * , - / L W ?              
-    │ │ │ │ ┌───────────── month             1-12 or JAN-DEC    * , - /                    
-    │ │ │ │ │ ┌───────────── day of week     0-7  or MON-SUN    * , - / # L ?                  0 and 7 means SUN
+                                           Allowed values    Allowed special characters   Comment
+
+    ┌───────────── second (optional)       0-59              * , - /                      
+    │ ┌───────────── minute                0-59              * , - /                      
+    │ │ ┌───────────── hour                0-23              * , - /                      
+    │ │ │ ┌───────────── day of month      1-31              * , - / L W ?                
+    │ │ │ │ ┌───────────── month           1-12 or JAN-DEC   * , - /                      
+    │ │ │ │ │ ┌───────────── day of week   0-7  or MON-SUN   * , - / # L ?                0 and 7 means SUN
     │ │ │ │ │ │
     │ │ │ │ │ │
     │ │ │ │ │ │
@@ -144,7 +144,7 @@ Hyphens define ranges.
 
 **W character**
 
-`W` character is allowed for the day-of-month field. This character is used to specify the weekday (Monday-Friday) nearest the given day. As an example, if you were to specify `15W` as the value for the day-of-month field, the meaning is: "the nearest weekday to the 15th of the month." So, if the 15th is a Saturday, occurrence is Friday the 14th. If the 15th is a Sunday, occurrence is Monday the 16th. If the 15th is a Tuesday, then occurrence is Tuesday the 15th. However, if you specify "1W" as the value for day-of-month, and the 1st is a Saturday, occurrence will be the 3rd, as it does not 'jump' over the boundary of a month's days. The 'W' character can be specified only when the day-of-month is a single day, not a range or list of days.
+You can specify *the nearest weekday* using `W` in the day-of-month field. There are two base rules to determine occurrence: we should shift to **the nearest weekday** and **can't shift to different month**. Thus if given day is Saturday we shift to Friday, if it is Sunday we shift to Monday. **But** if we have `0 0 1W * *` and the 1th is Saturday we shift to the 3th Monday. And if we have `0 0 LW * *` and last day of month is Sunday we shift to that Friday.
 
 | Expression        | Description                                              |
 |-------------------|----------------------------------------------------------|
@@ -154,13 +154,13 @@ Hyphens define ranges.
 
 **Hash `#`**
 
-`#` is allowed for the day-of-week field, and must be followed by a number between one and five. It allows you to specify constructs such as "the second Friday" of a given month. 
+Sometimes you need to specify *first Friday* or *second Saturday*. It's possible using `#` character:
 
 | Expression        | Description                                              |
 |-------------------|----------------------------------------------------------|
-| `0 0 * * 6#3`     | At 00:00 AM on the third Friday of the month             |
+| `0 0 * * 6#3`     | At 00:00 AM on the third Saturday of the month           |
 | `0 0 * * 1#1`     | At 00:00 AM on the first Monday of the month             |
-| `0 0 * 1 1#1`     | At 00:00 AM on the first Monday of the January           |
+| `0 0 * 1 MON#1`   | At 00:00 AM on the first Monday of the January           |
 
 **Question mark `?`**
 
@@ -199,7 +199,7 @@ You can specify both Day of month and Day of week, it allows you to specify cons
 
 ## Daylight Saving Time
 
-**Cronos** handles the transition from standard time (ST) to Daylight saving time (DST). 
+**Cronos** correctly handles the transition from standard time (ST) to Daylight saving time (DST). 
 
 ### Setting the clocks forward
 
