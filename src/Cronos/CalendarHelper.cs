@@ -155,33 +155,28 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static int MoveToNearestWeekDay(ref int day, ref DayOfWeek dayOfWeek, int lastDayOfMonth)
+        public static int MoveToNearestWeekDay(int day, DayOfWeek dayOfWeek, int lastDayOfMonth)
         {
             if (dayOfWeek == DayOfWeek.Sunday)
             {
                 if (day == lastDayOfMonth)
                 {
-                    day = day - 2;
-                    dayOfWeek = DayOfWeek.Friday;
-                    return -2;
+                    return day - 2; // Sunday to Friday
                 }
-                day++;
-                dayOfWeek = DayOfWeek.Monday;
-                return 1;
+
+                return day + 1; // Sunday to Monday
             }
             if (dayOfWeek == DayOfWeek.Saturday)
             {
                 if (day == CronField.DaysOfMonth.First)
                 {
-                    day = day + 2;
-                    dayOfWeek = DayOfWeek.Monday;
-                    return 2;
+                    return day + 2; // Saturday to Monday
                 }
-                day--;
-                dayOfWeek = DayOfWeek.Friday;
-                return -1;
+
+                return day - 1; // Saturday to Friday
             }
-            return 0;
+
+            return day;
         }
 
 #if !NET40
