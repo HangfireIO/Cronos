@@ -75,6 +75,20 @@ namespace Cronos
             return false;
         }
 
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static bool IsLessThan(
+            int year1, int month1, int day1,
+            int year2, int month2, int day2)
+        {
+            if (year1 != year2) return year1 < year2;
+            if (month1 != month2) return month1 < month2;
+            if (day1 != day2) return day1 < day2;
+
+            return false;
+        }
+
         // Returns a given date part of this DateTime. This method is used
         // to compute the year, day-of-year, month, or day part.
 #if !NET40
@@ -159,6 +173,36 @@ namespace Cronos
         {
             if (dayOfWeek == DayOfWeek.Sunday)
             {
+                if (day == lastDayOfMonth)
+                {
+                    return day - 2; // Sunday to Friday
+                }
+
+                return day + 1; // Sunday to Monday
+            }
+            if (dayOfWeek == DayOfWeek.Saturday)
+            {
+                if (day == CronField.DaysOfMonth.First)
+                {
+                    return day + 2; // Saturday to Monday
+                }
+
+                return day - 1; // Saturday to Friday
+            }
+
+            return day;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static int MoveToNearestWeekDay(int year, int month, int day)
+        {
+            var dayOfWeek = GetDayOfWeek(year, month, day);
+           
+            if (dayOfWeek == DayOfWeek.Sunday)
+            {
+                var lastDayOfMonth = GetDaysInMonth(year, month);
                 if (day == lastDayOfMonth)
                 {
                     return day - 2; // Sunday to Friday
