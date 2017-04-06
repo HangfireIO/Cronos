@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 namespace Cronos
@@ -264,207 +263,11 @@ namespace Cronos
             return new DateTimeOffset(occurrence.Value, zone.GetUtcOffset(occurrence.Value));
         }
 
-        private DateTime? FindOccurenceOld(DateTime startTime, DateTime endTime, bool startInclusive)
-        {
-            if (!startInclusive) startTime = CalendarHelper.AddMillisecond(startTime);
-
-            var endSecond = 0;
-            var endMinute = 0;
-            var endHour = 0;
-            var endDay = MaxDay;
-            var endMonth = MaxMonth;
-            var endYear = MaxYear;
-
-            if (endTime < MaxDateTime)
-            {
-                CalendarHelper.FillDateTimeParts(
-                    endTime,
-                    out endSecond,
-                    out endMinute,
-                    out endHour,
-                    out endDay,
-                    out endMonth,
-                    out endYear);
-            }
-
-            CalendarHelper.FillDateTimeParts(
-                startTime,
-                out int startSecond,
-                out int startMinute,
-                out int startHour,
-                out int startDay,
-                out int startMonth,
-                out int startYear);
-
-            var minSecond = FindFirstSet(_second, CronField.Seconds.First, CronField.Seconds.Last);
-            var minMinute = FindFirstSet(_minute, CronField.Minutes.First, CronField.Minutes.Last);
-            var minHour = FindFirstSet(_hour, CronField.Hours.First, CronField.Hours.Last);
-            var minDay = FindFirstSet(_dayOfMonth, CronField.DaysOfMonth.First, CronField.DaysOfMonth.Last);
-            var minMonth = FindFirstSet(_month, CronField.Months.First, CronField.Months.Last);
-
-            var second = startSecond;
-            var minute = startMinute;
-            var hour = startHour;
-            var day = startDay;
-            var month = startMonth;
-            var year = startYear;
-
-            var dayBits = _dayOfMonth;
-
-            // Move startTime to matched time.
-
-            if (!GetBit(_second, second)) MoveToNextValue(CronField.Seconds, _second, ref second, ref minute);
-            if (minute > CronField.Minutes.Last || !GetBit(_minute, minute)) MoveToNextValue(CronField.Minutes, _minute, ref minute, ref hour);
-            if (hour > CronField.Hours.Last || !GetBit(_hour, hour)) MoveToNextValue(CronField.Hours, _hour, ref hour, ref day);
-
-            if (HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                // If start day is Sunday or Saturday we must search from saturday 00:00 am.
-                // Next occurrence can be before startTime but not week day.
-                // So we'll shift occurrence to Monday and result will be after startTime.
-                if (day >= minDay && day <= minDay + 2 && IsWeekend(startYear, startMonth, minDay))
-                {
-                    MoveToDay(minDay);
-                }
-            }
-
-            if (day > CronField.DaysOfMonth.Last || !GetBit(_dayOfMonth, day)) MoveToNextValue(CronField.DaysOfMonth, _dayOfMonth, ref day, ref month);
-            if (month > CronField.Months.Last || !GetBit(_month, month)) MoveToNextValue(CronField.Months, _month, ref month, ref year);
-
-            void MoveToDay(int value)
-            {
-                day = value;
-                Rollover(CronField.DaysOfMonth);
-            }
-
-            void Rollover(CronField field)
-            {
-                if (field == null) { goto RolloverYear; }
-                if (field == CronField.Months) { goto RolloverMonth; }
-                if (field == CronField.DaysOfMonth) {  goto RolloverDay; }
-                if (field == CronField.Hours) {  goto RolloverHour; }
-                if (field == CronField.Minutes) {  goto RolloverMinute; }
-                return;
-
-                RolloverYear: month = minMonth;
-                RolloverMonth: day = minDay;
-                RolloverDay: hour = minHour;
-                RolloverHour: minute = minMinute;
-                RolloverMinute: second = minSecond;
-            }
-
-            bool MoveToNextValue(CronField field, long fieldBits, ref int fieldValue, ref int nextFieldValue)
-            {
-                if (TryFindFirstSet(fieldBits, fieldValue + 1, field.Last, out fieldValue))
-                {
-                    Rollover(field);
-                    return true;
-                }
-
-                nextFieldValue++;
-                Rollover(field.Next);
-                return false;
-            }
-
-            bool IsBeyondEndDate()
-            {
-                return CalendarHelper.IsLessThan(
-                    endYear, endMonth, endDay, endHour, endMinute, endSecond, 
-                    year, month, day, hour, minute, second);
-            }
-
-            Retry:
-
-            var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
-
-            if (day > lastDayOfMonth) goto RetryMonth;
-
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
-            {
-                var lastDayMonthWithOffset = lastDayOfMonth - _lastMonthOffset;
-
-                if (lastDayMonthWithOffset > day) MoveToDay(lastDayMonthWithOffset);
-                else if (lastDayMonthWithOffset < day) goto RetryMonth;
-            }
-
-            // W character.
-
-            var nonAdjustedDay = day;
-
-            if (HasFlag(CronExpressionFlag.NearestWeekday))
-            {
-                var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
-                day = CalendarHelper.MoveToNearestWeekDay(day, dayOfWeek, lastDayOfMonth);
-
-                if (day != nonAdjustedDay)
-                {
-                    if (CalendarHelper.IsLessThan(year, month, day, startYear, startMonth, startDay)) goto RetryMonth;
-
-                    Rollover(CronField.DaysOfMonth);
-
-                    if (year == startYear && month == startMonth && day == startDay)
-                    {
-                        hour = startHour;
-                        minute = startMinute;
-                        second = startSecond;
-                    }
-                }
-            }
-
-            // L and # characters in day of week.
-            if (!IsDayOfWeekMatch(year, month, day) ||
-                HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
-                HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
-            {
-                goto RetryDayOfMonth;
-            }
-
-            if (IsBeyondEndDate()) return null;
-            return new DateTime(CalendarHelper.DateTimeToTicks(year, month, day, hour, minute, second));
-
-            RetryMonth:
-
-            if (MoveToNextValue(CronField.Months, _month, ref month, ref year)) goto Retry;
-            if (year >= MaxYear) return null;
-            goto Retry;
-
-            RetryDayOfMonth:
-
-            day = nonAdjustedDay;
-
-            if (MoveToNextValue(CronField.DaysOfMonth, _dayOfMonth, ref day, ref month))
-            {
-                if (day > CronField.DaysOfMonth.Last || !GetBit(_dayOfMonth, day)) goto RetryDayOfMonth;
-                goto Retry;
-            }
-
-            if (month > CronField.Months.Last || !GetBit(_month, month)) goto RetryMonth;
-
-            goto Retry;
-        }
-
         private DateTime? FindOccurence(DateTime startTime, DateTime endTime, bool startInclusive)
         {
             if (!startInclusive) startTime = CalendarHelper.AddMillisecond(startTime);
 
-            var endSecond = 0;
-            var endMinute = 0;
-            var endHour = 0;
-            var endDay = MaxDay;
-            var endMonth = MaxMonth;
-            var endYear = MaxYear;
-
-            if (endTime < MaxDateTime)
-            {
-                CalendarHelper.FillDateTimeParts(
-                    endTime,
-                    out endSecond,
-                    out endMinute,
-                    out endHour,
-                    out endDay,
-                    out endMonth,
-                    out endYear);
-            }
+            var endYear = endTime.Year;
 
             CalendarHelper.FillDateTimeParts(
                 startTime,
@@ -488,178 +291,107 @@ namespace Cronos
             var month = startMonth;
             var year = startYear;
 
-            var prevMinute = minute;
-            var prevHour = hour;
-            var nextDay = day;
             var nextMonth = month;
 
-            void MoveSecond()
+            var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
+            DayOfWeek dayOfWeek = DayOfWeek.Monday;
+
+            bool Move(CronField field, long fieldBits, ref int fieldValue)
             {
-                second = FindFirstSet(_second, second, CronField.Seconds.Last);
-                if (second == -1) prevMinute++;
-            }
-
-            void MoveMinute()
-            {
-                if (prevMinute > minute) Rollover(CronField.Minutes);
-                minute = FindFirstSet(_minute, prevMinute, CronField.Minutes.Last);
-
-                if (minute == -1) prevHour++;
-            }
-
-            void MoveHour()
-            {
-                if (prevHour > hour) Rollover(CronField.Hours);
-                hour = FindFirstSet(_hour, prevHour, CronField.Hours.Last);
-
-                if (hour == -1) nextDay++;
-            }
-
-            bool MoveToNearestDay(int prevDay, int? adjustingDay = null)
-            {
-                adjustingDay = adjustingDay ?? minDay;
-                var adjustedDay = CalendarHelper.MoveToNearestWeekDay(year, month, adjustingDay.Value);
-                if (adjustedDay < prevDay) return false;
-                if (adjustedDay > day) Rollover(CronField.DaysOfMonth);
-                day = adjustedDay;
-                return true;
-            }
-
-            bool MoveToLastDay(int lastDay)
-            {
-                var lastDayMonthWithOffset = lastDay - _lastMonthOffset;
-
-                if (lastDayMonthWithOffset < day) return false;
-
-                if (lastDayMonthWithOffset > day)
-                {
-                    day = lastDayMonthWithOffset;
-                    Rollover(CronField.DaysOfMonth);
-                }
-                return true;
-            }
-
-            void MoveDay()
-            {
-                if (nextDay > day) Rollover(CronField.DaysOfMonth);
-                day = FindFirstSet(_dayOfMonth, nextDay, CronField.DaysOfMonth.Last);
-
-                var lastDayOfMonth1 = CalendarHelper.GetDaysInMonth(year, month);
-
-                if (day == -1)
-                {
-                    day = nextDay;
-                    if (day > lastDayOfMonth1) goto IncreaseMonth1;
-                    if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !MoveToLastDay(lastDayOfMonth1)) goto IncreaseMonth1;
-                    if (!HasFlag(CronExpressionFlag.NearestWeekday) || !MoveToNearestDay(nextDay)) goto IncreaseMonth1;
-                }
-
-                return;
-                IncreaseMonth1:
-                Rollover(CronField.Months);
-                nextMonth++;
+                return (fieldValue = FindFirstSet(fieldBits, fieldValue, field.Last)) != -1;
             }
 
             void MoveMonth()
             {
-                if (nextMonth > month) Rollover(CronField.Months);
-                month = FindFirstSet(_month, nextMonth, CronField.Months.Last);
-                if (month > nextMonth)
+                nextMonth = FindFirstSet(_month, nextMonth, CronField.Months.Last);
+                if (nextMonth == month) return;
+
+                // Rollover month.
+                day = minDay;
+
+                if (nextMonth == -1)
                 {
-                    nextMonth = month;
-                    Rollover(CronField.Months);
+                    // Rollover year.
+                    year++;
+                    nextMonth = minMonth;
                 }
 
-                if (month == -1)
-                {
-                    year++;
-                    Rollover(null);
-                }
+                month = nextMonth;
             }
 
-            MoveSecond();
-            MoveMinute();
-            MoveHour();
+            bool MoveToLastDay(int from)
+            {
+                day = lastDayOfMonth - _lastMonthOffset;
+                return day >= from;
+            }
 
-            if (nextDay > day) Rollover(CronField.DaysOfMonth);
-            if (hour > prevHour) Rollover(CronField.Hours);
-            else if(minute > prevMinute) Rollover(CronField.Minutes);
+            bool IsDayOfWeekMatch()
+            {
+                if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
+                    HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
+                {
+                    return false;
+                }
+
+                if (_dayOfWeek == -1L) return true;
+
+                dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
+
+                return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
+            }
+
+            if (!Move(CronField.Seconds, _second, ref second)) minute++;
+            if (!Move(CronField.Minutes, _minute, ref minute)) hour++;
+            if (!Move(CronField.Hours, _hour, ref hour)) day++;
+
+            // If NearestWeekday flag is set it's possible forward shift.
+            if (HasFlag(CronExpressionFlag.NearestWeekday)) day = CronField.DaysOfMonth.First;
+            if (!Move(CronField.DaysOfMonth, _dayOfMonth, ref day)) nextMonth++;
+
+            RetryMonth:
+
+            MoveMonth();
+            nextMonth++;
+            lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
 
             Retry:
 
-            MoveDay();
+            if (year > endYear) return null;
+            if (day > lastDayOfMonth) goto RetryMonth;
 
-            Retry2:
-            MoveMonth();
-            if (year > MaxYear) return null;
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !MoveToLastDay(day)) goto RetryMonth;
 
-            var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
-
-            if (day > lastDayOfMonth) goto IncreaseMonth;
-
-            var nonAdjustedDay = day;
-            if (HasFlag(CronExpressionFlag.DayOfMonthLast) && !MoveToLastDay(lastDayOfMonth)) goto IncreaseMonth;
-            if (HasFlag(CronExpressionFlag.NearestWeekday) && !MoveToNearestDay(nextDay, day)) goto IncreaseMonth;
-
-            if (day > nextDay) Rollover(CronField.DaysOfMonth);
-
-            if (!IsDayOfWeekMatch(year, month, day) ||
-                HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
-                HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
+            if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
-                nextDay = nonAdjustedDay + 1;
-                goto Retry;
+                day = CalendarHelper.MoveToNearestWeekDay(year, month, day, lastDayOfMonth);
+                if(!IsDayOfWeekMatch()) goto RetryMonth;
             }
+            else if (!IsDayOfWeekMatch()) goto RetryDay;
 
-            if (IsBeyondEndDate()) return null;
-            return new DateTime(CalendarHelper.DateTimeToTicks(year, month, day, hour, minute, second));
+            var dayTicks = CalendarHelper.DateToTicks(year, month, day);
 
-            IncreaseMonth:
-            nextMonth++;
-            goto Retry2;
+            if (dayTicks > startTime.Ticks || hour == -1) goto  RolloverDay;
+            if (hour > startHour) goto  RolloverHour;
+            if (minute > startMinute) goto RolloverMinute;
+            goto ReturnResult;
 
-            void Rollover(CronField field)
-            {
-                if (field == null) { goto RolloverYear; }
-                if (field == CronField.Months) { goto RolloverMonth; }
-                if (field == CronField.DaysOfMonth) { goto RolloverDay; }
-                if (field == CronField.Hours) { goto RolloverHour; }
-                if (field == CronField.Minutes) { goto RolloverMinute; }
-                return;
+            RolloverDay: hour = minHour;
+            RolloverHour: minute = minMinute;
+            RolloverMinute: second = minSecond;
 
-                RolloverYear: nextMonth = month = minMonth;
-                RolloverMonth: day = minDay; nextDay = 1;
-                RolloverDay: hour = minHour;
-                RolloverHour: minute = minMinute;
-                RolloverMinute: second = minSecond;
-            }
+            ReturnResult:
 
-            bool IsBeyondEndDate()
-            {
-                return CalendarHelper.IsLessThan(
-                    endYear, endMonth, endDay, endHour, endMinute, endSecond,
-                    year, month, day, hour, minute, second);
-            }
-        }
+            var found = new DateTime(dayTicks + CalendarHelper.TimeToTicks(hour, minute, second));
+            if (found < startTime) goto RetryMonth;
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private bool IsDayOfWeekMatch(int year, int month, int day)
-        {
-            if (_dayOfWeek == -1L) return true;
+            return found <= endTime ? found : (DateTime?)null;
 
-            var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
-            return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
-        }
+            RetryDay:
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private bool IsWeekend(int year, int month, int day)
-        {
-            var dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
-            return dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday;
+            day++;
+            if (!Move(CronField.DaysOfMonth, _dayOfMonth, ref day)) goto RetryMonth;
+
+            goto Retry;
         }
 
 #if !NET40
@@ -667,27 +399,18 @@ namespace Cronos
 #endif
         private static int FindFirstSet(long value, int startBit, int endBit)
         {
-            if(!TryFindFirstSet(value, startBit, endBit, out int nextSetBit)) return -1;
-            return nextSetBit;
-        }
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        private static bool TryFindFirstSet(long value, int startBit, int endBit, out int nextSetBit)
-        {
-            nextSetBit = startBit;
-            if (startBit <= endBit && GetBit(value, startBit)) return true;
+            if (startBit <= endBit && GetBit(value, startBit)) return startBit;
 
             // TODO: Add description and source
 
             value = value >> startBit;
-            if (value == 0) return false;
+            if (value == 0) return -1;
 
             ulong res = unchecked((ulong)(value & -value) * 0x022fdd63cc95386d) >> 58;
 
-            nextSetBit = DeBruijnPositions[res] + startBit;
-            return nextSetBit <= endBit;
+            var result = DeBruijnPositions[res] + startBit;
+            if (result <= endBit) return result;
+            return -1;
         }
 
 #if !NET40
