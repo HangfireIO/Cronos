@@ -1424,7 +1424,8 @@ namespace Cronos.Tests
         [InlineData("* * 21    *    SUN#4", "1970-01-01")]
         [InlineData("* * 1     *    SUN#5", "1970-01-01")]
         [InlineData("* * 28    *    SUN#5", "1970-01-01")]
-                                    
+        [InlineData("* * 1-28  *    SUN#5", "1970-01-01")]
+
         [InlineData("* * 8     *    MON#1", "1970-01-01")]
         [InlineData("* * 31    *    MON#1", "1970-01-01")]
         [InlineData("* * 15    *    TUE#2", "1970-01-01")]

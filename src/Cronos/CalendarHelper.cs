@@ -163,7 +163,6 @@ namespace Cronos
                     : day - 1;
         }
 
-
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif

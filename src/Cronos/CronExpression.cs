@@ -327,17 +327,20 @@ namespace Cronos
 
             bool IsDayOfWeekMatch()
             {
-                if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
-                    HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
-                {
-                    return false;
-                }
-
                 if (_dayOfWeek == -1L) return true;
 
                 dayOfWeek = CalendarHelper.GetDayOfWeek(year, month, day);
 
-                return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
+                if(((_dayOfWeek >> (int)dayOfWeek) & 1) == 0) return false;
+
+                if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(day, lastDayOfMonth) ||
+                    HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
+                {
+                    day += 6;
+                    return false;
+                }
+
+                return true;
             }
 
             if (!Move(CronField.Seconds, _second, ref second)) minute++;
@@ -370,8 +373,8 @@ namespace Cronos
 
             var dayTicks = CalendarHelper.DateToTicks(year, month, day);
 
-            if (dayTicks > startTime.Ticks || hour == -1) goto  RolloverDay;
-            if (hour > startHour) goto  RolloverHour;
+            if (dayTicks > startTime.Ticks || hour == -1) goto RolloverDay;
+            if (hour > startHour) goto RolloverHour;
             if (minute > startMinute) goto RolloverMinute;
             goto ReturnResult;
 
