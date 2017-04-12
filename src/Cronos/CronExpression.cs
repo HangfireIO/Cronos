@@ -517,9 +517,9 @@ namespace Cronos
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NthDayOfWeek;
-                    pointer = GetNumber(out expression._nthdayOfWeek, MinNthDayOfWeek, null, pointer);
+                    expression._nthdayOfWeek = GetNumber(ref pointer, MinNthDayOfWeek, null);
 
-                    if (pointer == null || expression._nthdayOfWeek < MinNthDayOfWeek || expression._nthdayOfWeek > MaxNthDayOfWeek)
+                    if (expression._nthdayOfWeek == -1 || expression._nthdayOfWeek < MinNthDayOfWeek || expression._nthdayOfWeek > MaxNthDayOfWeek)
                     {
                         ThrowFormatException(field, "'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
                     }
@@ -593,8 +593,9 @@ namespace Cronos
                     // Eat the dash.
                     pointer++;
 
+                    int lastMonthOffset;
                     // Get the number following the dash.
-                    if ((pointer = GetNumber(out int lastMonthOffset, 0, null, pointer)) == null || lastMonthOffset < 0 || lastMonthOffset >= high)
+                    if ((lastMonthOffset = GetNumber(ref pointer, 0, null)) == -1 || lastMonthOffset < 0 || lastMonthOffset >= high)
                     {
                         ThrowFormatException(field, "Last month offset must be a number between {0} and {1} (all inclusive).", low, high);
                     }
@@ -608,7 +609,7 @@ namespace Cronos
             {
                 var names = field.Names;
 
-                if ((pointer = GetNumber(out num1, low, names, pointer)) == null || num1 < low || num1 > high)
+                if ((num1 = GetNumber(ref pointer, low, names)) == -1 || num1 < low || num1 > high)
                 {
                     ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
                 }
@@ -621,7 +622,7 @@ namespace Cronos
                     pointer++;
 
                     // Get the number following the dash.
-                    if ((pointer = GetNumber(out num2, low, names, pointer)) == null || num2 < low || num2 > high)
+                    if ((num2 = GetNumber(ref pointer, low, names)) == -1 || num2 < low || num2 > high)
                     {
                         ThrowFormatException(field, "Range must contain numbers between {0} and {1} (all inclusive).", low, high);
                     }
@@ -655,7 +656,7 @@ namespace Cronos
                 // names here, because the number is not an
                 // element id, it's a step size.  'low' is
                 // sent as a 0 since there is no offset either.
-                if ((pointer = GetNumber(out num3, 0, null, pointer)) == null || num3 <= 0 || num3 > high)
+                if ((num3 = GetNumber(ref pointer, 0, null)) == -1 || num3 <= 0 || num3 > high)
                 {
                     ThrowFormatException(field, "Step must be a number between 1 and {0} (all inclusive).", high);
                 }
@@ -704,38 +705,32 @@ namespace Cronos
                 : bits >> shift | bits << (high - low - shift + 1);
         }
 
-        private static unsafe char* GetNumber(
-            out int num, /* where does the result go? */
-            int low, /* offset applied to result if symbolic enum used */
-            int[] names, /* symbolic names, if any, for enums */
-            char* pointer)
+        private static unsafe int GetNumber(ref char* pointer, int low, int[] names)
         {
-            num = 0;
-
             if (IsDigit(*pointer))
             {
-                num = GetNumeric(*pointer++);
+                var num = GetNumeric(*pointer++);
 
-                if (!IsDigit(*pointer)) return pointer;
+                if (!IsDigit(*pointer)) return num;
 
                 num = num * 10 + GetNumeric(*pointer++);
 
-                if (!IsDigit(*pointer)) return pointer;
-                return null;
+                if (!IsDigit(*pointer)) return num;
+                return -1;
             }
 
-            if (names == null) return null;
+            if (names == null) return -1;
 
-            if (!IsLetter(*pointer)) return null;
+            if (!IsLetter(*pointer)) return -1;
             var buffer = ToUpper(*pointer++);
 
-            if (!IsLetter(*pointer)) return null;
+            if (!IsLetter(*pointer)) return -1;
             buffer |= ToUpper(*pointer++) << 8;
 
-            if (!IsLetter(*pointer)) return null;
+            if (!IsLetter(*pointer)) return -1;
             buffer |= ToUpper(*pointer++) << 16;
 
-            if (IsLetter(*pointer)) return null;
+            if (IsLetter(*pointer)) return -1;
 
             var length = names.Length;
 
@@ -743,12 +738,11 @@ namespace Cronos
             {
                 if (buffer == names[i])
                 {
-                    num = i + low;
-                    return pointer;
+                    return i + low;
                 }
             }
 
-            return null;
+            return -1;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
