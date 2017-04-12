@@ -14,10 +14,6 @@ namespace Cronos
         private const int MaxNthDayOfWeek = 5;
         private const int SundayBits = 0b1000_0001;
 
-        // All possible last days of month: the 28th, the 29th, the 30th, the 31th.
-        private const int MinDaysInMonth = 28;
-        private const long LastDaysOfMonths = 0b1111L << MinDaysInMonth;
-
         private const int MaxYear = 2099;
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
@@ -580,7 +576,6 @@ namespace Cronos
 
                 pointer++;
 
-                bits = LastDaysOfMonths;
                 expression._flags |= CronExpressionFlag.DayOfMonthLast;
 
                 if (*pointer == '-')
@@ -595,10 +590,9 @@ namespace Cronos
                         ThrowFormatException(field, "Last month offset must be a number between {0} and {1} (all inclusive).", low, high);
                     }
 
-                    bits = bits >> (lastMonthOffset + 1) << 1;
                     expression._lastMonthOffset = (byte)lastMonthOffset;
                 }
-                return bits;
+                return field.AllBits;
             }
             else
             {
