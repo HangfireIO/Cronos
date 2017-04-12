@@ -42,8 +42,6 @@ namespace Cronos
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-        internal TimeZoneInfo TestLocalZone;
-
         private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
         private long _hour;       // 24 bits -> from 0 bit to 23 bit in Int64
@@ -147,23 +145,13 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>).
+        /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in UTC time zone.
         /// </summary>
-        public DateTime? GetNextOccurrence(DateTime from, bool inclusive = false)
+        public DateTime? GetNextOccurrence(DateTime fromUtc, bool inclusive = false)
         {
-            if (from.Kind == DateTimeKind.Unspecified) ThrowDateTimeKindIsUnspecifiedException(nameof(from));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            if (from.Kind == DateTimeKind.Local)
-            {
-                var localZone = GetLocalTimeZone();
-
-                var localOccurrence = GetOccurenceByZonedTimes(from, localZone, inclusive);
-                if (localOccurrence == null) return null;
-
-                return DateTime.SpecifyKind(localOccurrence.Value.DateTime, DateTimeKind.Local);
-            }
-
-            var found = FindOccurence(from.Ticks, inclusive);
+            var found = FindOccurence(fromUtc.Ticks, inclusive);
             if (found == NotFound) return null;
 
             return new DateTime(found, DateTimeKind.Utc);
@@ -383,11 +371,6 @@ namespace Cronos
         private bool HasFlag(CronExpressionFlag value)
         {
             return (_flags & value) != 0;
-        }
-
-        private TimeZoneInfo GetLocalTimeZone()
-        {
-            return TestLocalZone ?? TimeZoneInfo.Local;
         }
 
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
@@ -822,12 +805,6 @@ namespace Cronos
         private static void ThrowWrongDateTimeKindException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowDateTimeKindIsUnspecifiedException(string paramName)
-        {
-            throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc or Local", paramName);
         }
 
 #if !NET40

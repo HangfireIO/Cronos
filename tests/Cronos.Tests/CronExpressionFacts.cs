@@ -440,25 +440,25 @@ namespace Cronos.Tests
         [Theory]
         [InlineData(DateTimeKind.Unspecified, false)]
         [InlineData(DateTimeKind.Unspecified, true)]
-        public void GetNextOccurrence_ThrowsAnException_WhenFromIsUnspecified(DateTimeKind kind, bool inclusive)
+        [InlineData(DateTimeKind.Local, false)]
+        [InlineData(DateTimeKind.Local, true)]
+        public void GetNextOccurrence_ThrowsAnException_WhenFromDoesNotHaveUtcKind(DateTimeKind kind, bool inclusive)
         {
             var from = new DateTime(2017, 03, 15, 0, 0, 0, kind);
             var exception = Assert.Throws<ArgumentException>(() => MinutelyExpression.GetNextOccurrence(from, inclusive));
 
-            Assert.Equal("from", exception.ParamName);
+            Assert.Equal("fromUtc", exception.ParamName);
         }
 
         [Theory]
-        [InlineData(DateTimeKind.Utc,   false)]
-        [InlineData(DateTimeKind.Utc,   true)]
-        [InlineData(DateTimeKind.Local, false)]
-        [InlineData(DateTimeKind.Local, true)]
-        public void GetNextOccurrence_ReturnsDateTimeWithCorrectKind(DateTimeKind kind, bool inclusive)
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GetNextOccurrence_ReturnsDateTimeWithUtcKind(bool inclusive)
         {
-            var from = new DateTime(2017, 03, 22, 9, 32, 0, kind);
+            var from = new DateTime(2017, 03, 22, 9, 32, 0, DateTimeKind.Utc);
             var occurrence = MinutelyExpression.GetNextOccurrence(from, inclusive);
 
-            Assert.Equal(kind, occurrence?.Kind);
+            Assert.Equal(DateTimeKind.Utc, occurrence?.Kind);
         }
 
         [Theory]
@@ -1038,48 +1038,6 @@ namespace Cronos.Tests
 
         [Theory]
 
-        // 2016-03-13 is date when the clock jumps forward from 1:59 am -05:00 standard time (ST) to 3:00 am -04:00 DST in Eastern Time Zone.
-        // ________1:59 ST///invalid///3:00 DST________
-
-        // Run missed.
-
-        [InlineData("0 */30 *      *  *  *    ", "2016-03-13 01:45", "2016-03-13 03:00")]
-        [InlineData("0 */30 */2    *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 1-58 */2    *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 0,30 0-23/2 *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 */30 2      *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 0,30 2      *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 */30 2      13 03 *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 0,30 02     13 03 *    ", "2016-03-13 01:45", "2016-03-13 03:00")]
-        [InlineData("0 30   2      *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 0    */2    *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-        [InlineData("0 30   0-23/2 *  *  *    ", "2016-03-13 01:59", "2016-03-13 03:00")]
-
-        [InlineData("0 0,59 *      *  *  *    ", "2016-03-13 01:59", "2016-03-13 01:59")]
-        [InlineData("0 0,59 *      *  *  *    ", "2016-03-13 03:00", "2016-03-13 03:00")]
-
-        [InlineData("0 30   *      *  3  SUN#2", "2016-03-13 01:59", "2016-03-13 03:00")]
-
-        // From is invalid time.
-
-        [InlineData("0 30   2      *  *  *    ", "2016-03-13 02:01", "2016-03-13 03:00")]
-        [InlineData("0 30   2      *  *  *    ", "2016-03-13 02:30", "2016-03-13 03:00")]
-        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForward_And_FromHasLocalKind(string cronExpression, string fromString, string expectedString)
-        {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
-            expression.TestLocalZone = EasternTimeZone;
-
-            var fromLocal = GetLocalDateTime(fromString);
-            var expectedLocal = GetLocalDateTime(expectedString);
-
-            var executed = expression.GetNextOccurrence(fromLocal, inclusive: true);
-
-            Assert.Equal(expectedLocal, executed);
-            Assert.Equal(DateTimeKind.Local, executed?.Kind);
-        }
-
-        [Theory]
-
         // 2016-11-06 is date when the clock jumps backward from 2:00 am -04:00 DST to 1:00 am -05:00 ST in Eastern Time Zone.
         // _______1:00 DST____1:59 DST -> 1:00 ST____2:00 ST_______
 
@@ -1510,21 +1468,6 @@ namespace Cronos.Tests
             var fromInstant = GetInstantFromLocalTime(fromString, TimeZoneInfo.Utc);
 
             var occurrence = expression.GetNextOccurrence(fromInstant.UtcDateTime);
-
-            Assert.Null(occurrence);
-        }
-
-        [Theory]
-        [InlineData("* * 30   2  *", "2080-01-01")]
-        [InlineData("* * L-30 11 *", "2080-01-01")]
-        public void GetNextOccurrence_ReturnsNull_WhenCronExpressionIsUnreachableAndFromIsLocalDateTime(string cronExpression, string fromString)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-            expression.TestLocalZone = EasternTimeZone;
-
-            var fromLocal = GetLocalDateTime(fromString);
-
-            var occurrence = expression.GetNextOccurrence(fromLocal);
 
             Assert.Null(occurrence);
         }
@@ -2057,31 +2000,6 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("* * * * *", "2017-03-16 16:00", "2017-03-16 16:01")]
-        [InlineData("5 * * * *", "2017-03-16 16:05", "2017-03-16 17:05")]
-        [InlineData("* 5 * * *", "2017-03-16 05:00", "2017-03-16 05:01")]
-        [InlineData("* * 5 * *", "2017-03-05 16:00", "2017-03-05 16:01")]
-        [InlineData("* * * 5 *", "2017-05-16 16:00", "2017-05-16 16:01")]
-        [InlineData("* * * * 5", "2017-03-17 16:00", "2017-03-17 16:01")]
-        [InlineData("5 5 * * *", "2017-03-16 05:05", "2017-03-17 05:05")]
-        [InlineData("5 5 5 * *", "2017-03-05 05:05", "2017-04-05 05:05")]
-        [InlineData("5 5 5 5 *", "2017-05-05 05:05", "2018-05-05 05:05")]
-        [InlineData("5 5 5 5 5", "2017-05-05 05:05", "2023-05-05 05:05")]
-        public void GetNextOccurrence_ReturnsCorrectDate_WhenFromIsLocalDateTimeAndInclusiveIsFalse(string expression, string fromString, string expectedString)
-        {
-            var cronExpression = CronExpression.Parse(expression);
-            cronExpression.TestLocalZone = EasternTimeZone;
-
-            var fromLocal = GetLocalDateTime(fromString);
-            var expectedLocal = GetLocalDateTime(expectedString);
-
-            var nextOccurrence = cronExpression.GetNextOccurrence(fromLocal);
-
-            Assert.Equal(expectedLocal, nextOccurrence);
-            Assert.Equal(DateTimeKind.Local, nextOccurrence?.Kind);
-        }
-
-        [Theory]
         [InlineData("* * * * * *", "2017-03-16 16:00:00", "2017-03-16 16:00:01")]
         [InlineData("5 * * * * *", "2017-03-16 16:00:05", "2017-03-16 16:01:05")]
         [InlineData("* 5 * * * *", "2017-03-16 16:05:00", "2017-03-16 16:05:01")]
@@ -2155,24 +2073,6 @@ namespace Cronos.Tests
                 DateTimeStyles.None);
 
             return dateTime;
-        }
-
-        private static DateTime GetLocalDateTime(string dateTimeString)
-        {
-            dateTimeString = dateTimeString.Trim();
-
-            var dateTime = DateTime.ParseExact(
-                dateTimeString,
-                new[]
-                {
-                    "yyyy-MM-dd HH:mm:ss",
-                    "yyyy-MM-dd HH:mm",
-                    "yyyy-MM-dd",
-                },
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None);
-
-            return DateTime.SpecifyKind(dateTime, DateTimeKind.Local);
         }
     }
 }
