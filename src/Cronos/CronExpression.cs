@@ -510,7 +510,7 @@ namespace Cronos
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NthDayOfWeek;
-                    var nthdayOfWeek = GetNumber(ref pointer, MinNthDayOfWeek, null);
+                    var nthdayOfWeek = GetNumber(ref pointer, null);
 
                     if (nthdayOfWeek == -1 || nthdayOfWeek < MinNthDayOfWeek || nthdayOfWeek > MaxNthDayOfWeek)
                     {
@@ -585,7 +585,7 @@ namespace Cronos
 
                     int lastMonthOffset;
                     // Get the number following the dash.
-                    if ((lastMonthOffset = GetNumber(ref pointer, 0, null)) == -1 || lastMonthOffset < 0 || lastMonthOffset >= high)
+                    if ((lastMonthOffset = GetNumber(ref pointer, null)) == -1 || lastMonthOffset < 0 || lastMonthOffset >= high)
                     {
                         ThrowFormatException(field, "Last month offset must be a number between {0} and {1} (all inclusive).", low, high);
                     }
@@ -598,7 +598,7 @@ namespace Cronos
             {
                 var names = field.Names;
 
-                if ((num1 = GetNumber(ref pointer, low, names)) == -1 || num1 < low || num1 > high)
+                if ((num1 = GetNumber(ref pointer, names)) == -1 || num1 < low || num1 > high)
                 {
                     ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
                 }
@@ -611,7 +611,7 @@ namespace Cronos
                     pointer++;
 
                     // Get the number following the dash.
-                    if ((num2 = GetNumber(ref pointer, low, names)) == -1 || num2 < low || num2 > high)
+                    if ((num2 = GetNumber(ref pointer, names)) == -1 || num2 < low || num2 > high)
                     {
                         ThrowFormatException(field, "Range must contain numbers between {0} and {1} (all inclusive).", low, high);
                     }
@@ -644,7 +644,7 @@ namespace Cronos
                 // names here, because the number is not an
                 // element id, it's a step size.  'low' is
                 // sent as a 0 since there is no offset either.
-                if ((num3 = GetNumber(ref pointer, 0, null)) == -1 || num3 <= 0 || num3 > high)
+                if ((num3 = GetNumber(ref pointer, null)) == -1 || num3 <= 0 || num3 > high)
                 {
                     ThrowFormatException(field, "Step must be a number between 1 and {0} (all inclusive).", high);
                 }
@@ -695,7 +695,7 @@ namespace Cronos
             return bits;
         }
 
-        private static unsafe int GetNumber(ref char* pointer, int low, int[] names)
+        private static unsafe int GetNumber(ref char* pointer, int[] names)
         {
             if (IsDigit(*pointer))
             {
@@ -728,7 +728,7 @@ namespace Cronos
             {
                 if (buffer == names[i])
                 {
-                    return i + low;
+                    return i;
                 }
             }
 

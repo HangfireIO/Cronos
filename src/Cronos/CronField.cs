@@ -4,7 +4,7 @@
     {
         private static readonly string[] MonthNames =
         {
-            "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            null, "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
         };
 
         private static readonly string[] DayOfWeekNames =
@@ -26,7 +26,7 @@
 
         static CronField()
         {
-            for (var i = 0; i < MonthNames.Length; i++)
+            for (var i = 1; i < MonthNames.Length; i++)
             {
                 var name = MonthNames[i].ToUpperInvariant();
                 var array = new char[3];
