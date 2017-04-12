@@ -150,7 +150,7 @@ namespace Cronos
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            if (zone == UtcTimeZone)
+            if (ReferenceEquals(zone, UtcTimeZone))
             {
                 var found = FindOccurence(fromUtc.Ticks, inclusive);
                 if (found == NotFound) return null;
@@ -169,7 +169,7 @@ namespace Cronos
         /// </summary>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
-            if (zone == UtcTimeZone)
+            if (ReferenceEquals(zone, UtcTimeZone))
             {
                 var found = FindOccurence(from.UtcTicks, inclusive);
                 if (found == NotFound) return null;
