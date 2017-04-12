@@ -206,8 +206,8 @@ namespace Cronos
                     var daylightTimeLocalEnd = TimeZoneHelper.GetDaylightTimeEnd(zone, fromLocal, daylightOffset).DateTime;
 
                     // Early period, try to find anything here.
-                    var found = FindOccurence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
-                    if (found != NotFound) return new DateTimeOffset(found, daylightOffset);
+                    var foundInDaylightOffset = FindOccurence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
+                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
 
                     fromLocal = TimeZoneHelper.GetStandartTimeStart(zone, fromLocal, daylightOffset).DateTime;
                     inclusive = true;
@@ -218,8 +218,8 @@ namespace Cronos
 
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
-                    var foundInLateInterval = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
-                    if (foundInLateInterval != NotFound) return new DateTimeOffset(foundInLateInterval, standardOffset);
+                    var foundInStandardOffset = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
+                    if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
                 }
 
                 fromLocal = ambiguousIntervalLocalEnd;
