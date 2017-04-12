@@ -98,7 +98,6 @@ namespace Cronos
                         SkipWhiteSpaces(ref pointer);
 
                         if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected.", *pointer, pointer - value);
-
                         return macroExpression;
                     }
 
@@ -114,11 +113,8 @@ namespace Cronos
                     }
 
                     ParseField(CronField.Minutes, ref pointer, cronExpression, ref cronExpression._minute);
-
                     ParseField(CronField.Hours, ref pointer, cronExpression, ref cronExpression._hour);
-
                     ParseField(CronField.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
-
                     ParseField(CronField.Months, ref pointer, cronExpression, ref cronExpression._month);
 
                     if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
@@ -173,8 +169,8 @@ namespace Cronos
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
-
             var occurrence = GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
+
             return occurrence?.UtcDateTime;
         }
 
@@ -192,7 +188,6 @@ namespace Cronos
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
-
             return GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
         }
 
@@ -224,7 +219,6 @@ namespace Cronos
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
                     var foundInLateInterval = FindOccurence(startLocalDateTime.Ticks, ambiguousTimeEnd.Ticks - 1, inclusive);
-
                     if (foundInLateInterval != NotFound) return new DateTimeOffset(foundInLateInterval, lateOffset);
                 }
 
@@ -499,7 +493,6 @@ namespace Cronos
                     if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '*'.", *pointer);
 
                     SkipWhiteSpaces(ref pointer);
-
                     return;
                 }
 
@@ -609,7 +602,6 @@ namespace Cronos
                 }
 
                 bits = field.AllBits;
-
                 return;
             }
             else if(*pointer == 'L')
@@ -622,7 +614,6 @@ namespace Cronos
                 pointer++;
 
                 bits = LastDaysOfMonths;
-
                 expression._flags |= CronExpressionFlag.DayOfMonthLast;
 
                 if (*pointer == '-')
@@ -758,7 +749,6 @@ namespace Cronos
                 num = num * 10 + GetNumeric(*pointer++);
 
                 if (!IsDigit(*pointer)) return pointer;
-
                 return null;
             }
 
