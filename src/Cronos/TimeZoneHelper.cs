@@ -19,7 +19,7 @@ namespace Cronos
             return zone.IsAmbiguousTime(ambiguousTime.AddTicks(1));
         }
 
-        public static TimeSpan GetDstOffset(DateTime ambiguousDateTime, TimeZoneInfo zone)
+        public static TimeSpan GetDaylightOffset(TimeZoneInfo zone, DateTime ambiguousDateTime)
         {
             var offsets = GetAmbiguousOffsets(zone, ambiguousDateTime);
             var baseOffset = zone.BaseUtcOffset;
@@ -29,7 +29,7 @@ namespace Cronos
             return offsets[1];
         }
 
-        public static DateTimeOffset GetDstStart(TimeZoneInfo zone, DateTime invalidDateTime, TimeSpan baseOffset)
+        public static DateTimeOffset GetDaylightTimeStart(TimeZoneInfo zone, DateTime invalidDateTime)
         {
 #if NETSTANDARD1_0
             var dstTransitionDateTime = new DateTime(invalidDateTime.Year, invalidDateTime.Month, invalidDateTime.Day,
@@ -46,31 +46,32 @@ namespace Cronos
 #else
             var adjustmentRule = GetAdjustmentRuleForTime(zone, invalidDateTime);
             var dstTransitionDateTime = TransitionTimeToDateTime(invalidDateTime.Year, adjustmentRule.DaylightTransitionStart);
+            var baseOffset = zone.BaseUtcOffset;
             var dstOffset = baseOffset.Add(adjustmentRule.DaylightDelta);
 
             return new DateTimeOffset(dstTransitionDateTime, baseOffset).ToOffset(dstOffset);
 #endif
         }
 
-        public static DateTimeOffset GetStandartTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan dstOffset)
+        public static DateTimeOffset GetStandartTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan daylightOffset)
         {
             var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
 
-            return new DateTimeOffset(dstTransitionEnd, dstOffset).ToOffset(zone.BaseUtcOffset);
+            return new DateTimeOffset(dstTransitionEnd, daylightOffset).ToOffset(zone.BaseUtcOffset);
         }
 
-        public static DateTimeOffset GetAmbiguousTimeEnd(TimeZoneInfo zone, DateTime ambiguousTime)
+        public static DateTimeOffset GetAmbiguousIntervalEnd(TimeZoneInfo zone, DateTime ambiguousTime)
         {
             var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
 
             return new DateTimeOffset(dstTransitionEnd, zone.BaseUtcOffset);
         }
 
-        public static DateTimeOffset GetDstEnd(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan dstOffset)
+        public static DateTimeOffset GetDaylightTimeEnd(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan daylightOffset)
         {
-            var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
+            var daylightTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
 
-            return new DateTimeOffset(dstTransitionEnd.AddTicks(-1), dstOffset);
+            return new DateTimeOffset(daylightTransitionEnd.AddTicks(-1), daylightOffset);
         }
 
         private static TimeSpan[] GetAmbiguousOffsets(TimeZoneInfo zone, DateTime ambiguousTime)

@@ -15,14 +15,14 @@
         private static readonly int[] MonthNamesArray = new int[MonthNames.Length];
         private static readonly int[] DayOfWeekNamesArray = new int[DayOfWeekNames.Length];
 
-        public static readonly CronField Seconds = new CronField("Seconds", 0, 59, null, null, true);
-        public static readonly CronField Minutes = new CronField("Minutes", 0, 59, null, Seconds, true);
-        public static readonly CronField Hours = new CronField("Hours", 0, 23, null, Minutes, true);
-        public static readonly CronField DaysOfMonth = new CronField("Days of month", 1, 31, null, Hours, false);
-        public static readonly CronField Months = new CronField("Months", 1, 12, MonthNamesArray, DaysOfMonth, false);
-
         // 0 and 7 are both Sunday, for compatibility reasons.
-        public static readonly CronField DaysOfWeek = new CronField("Days of week", 0, 7, DayOfWeekNamesArray, Months, false);
+        public static readonly CronField DaysOfWeek = new CronField("Days of week", 0, 7, DayOfWeekNamesArray, false);
+
+        public static readonly CronField Months = new CronField("Months", 1, 12, MonthNamesArray, false);
+        public static readonly CronField DaysOfMonth = new CronField("Days of month", 1, 31, null, false);
+        public static readonly CronField Hours = new CronField("Hours", 0, 23, null, true);
+        public static readonly CronField Minutes = new CronField("Minutes", 0, 59, null, true);
+        public static readonly CronField Seconds = new CronField("Seconds", 0, 59, null, true);
 
         static CronField()
         {
@@ -57,17 +57,20 @@
         public readonly int First;
         public readonly int Last;
         public readonly int[] Names;
-        public readonly CronField Previous;
         public readonly bool CanDefineInterval;
+        public readonly long AllBits;
 
-        private CronField(string name, int first, int last, int[] names, CronField previous, bool canDefineInterval)
+        private CronField(string name, int first, int last, int[] names, bool canDefineInterval)
         {
             Name = name;
             First = first;
             Last = last;
             Names = names;
-            Previous = previous;
             CanDefineInterval = canDefineInterval;
+            for (int i = First; i <= Last; i++)
+            {
+                AllBits = AllBits | (1L << i);
+            }
         }
 
         public override string ToString()
