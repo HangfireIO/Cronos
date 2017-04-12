@@ -8,26 +8,41 @@ namespace Cronos.Benchmarks
     [RyuJitX64Job]
     public class CronBenchmarks
     {
-        private static readonly CronExpression SimpleExpression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+        private static readonly CronExpression SimpleExpression =
+            CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
         private static readonly CronExpression ComplexExpression = CronExpression.Parse("*/10 12-20 * DEC 3");
 
         private static readonly CronExpression SimpleUnreachableExpression = CronExpression.Parse("* * 30 02 *");
         private static readonly CronExpression ComplexUnreachableExpression = CronExpression.Parse("* * LW * 1#1");
 
+        private static readonly CronExpression LastDayOfWeekUnreachableExpression =
+            CronExpression.Parse("* * 1-21 * 0L");
+
+        private static readonly CronExpression NthDayOfWeekUnreachableExpression =
+            CronExpression.Parse("* * 1-28 * SUN#5");
+
         private static readonly CrontabSchedule SimpleExpressionNCrontab = CrontabSchedule.Parse("* * * * *");
         private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
 
         private static readonly Quartz.CronExpression SimpleExpressionQuartz = new Quartz.CronExpression("* * * * * ?");
-        private static readonly Quartz.CronExpression ComplexExpressionQuartz = new Quartz.CronExpression("* */10 12-20 ? DEC 3");
 
-        private static readonly NCrontab.Advanced.CrontabSchedule SimpleExpressionNCrontabAdvanced = NCrontab.Advanced.CrontabSchedule.Parse("* * * * *");
-        private static readonly NCrontab.Advanced.CrontabSchedule ComplexExpressionNCrontabAdvanced = NCrontab.Advanced.CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+        private static readonly Quartz.CronExpression ComplexExpressionQuartz =
+            new Quartz.CronExpression("* */10 12-20 ? DEC 3");
 
-        private static readonly DateTime DateTimeNow = DateTime.UtcNow;
-        private static readonly DateTimeOffset DateTimeOffsetNow = DateTimeOffset.UtcNow;
+        private static readonly NCrontab.Advanced.CrontabSchedule SimpleExpressionNCrontabAdvanced =
+            NCrontab.Advanced.CrontabSchedule.Parse("* * * * *");
+
+        private static readonly NCrontab.Advanced.CrontabSchedule ComplexExpressionNCrontabAdvanced =
+            NCrontab.Advanced.CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+
+        private static readonly DateTime DateTimeNow = new DateTime(2017, 04, 05, 07, 46, 24, DateTimeKind.Utc);
+        private static readonly DateTimeOffset DateTimeOffsetNow = new DateTimeOffset(DateTimeNow, TimeSpan.Zero);
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
-        private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+        private static readonly TimeZoneInfo PacificTimeZone =
+            TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
 
         [Benchmark]
         public unsafe string ParseBaseline()
@@ -41,47 +56,47 @@ namespace Cronos.Benchmarks
             }
         }
 
-        //[Benchmark]
-        //public CronExpression ParseStars()
-        //{
-        //    return CronExpression.Parse("* * * * *");
-        //}
+        [Benchmark]
+        public CronExpression ParseStars()
+        {
+            return CronExpression.Parse("* * * * *");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseNumber()
-        //{
-        //    return CronExpression.Parse("20 * * * *");
-        //}
+        [Benchmark]
+        public CronExpression ParseNumber()
+        {
+            return CronExpression.Parse("20 * * * *");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseRange()
-        //{
-        //    return CronExpression.Parse("20-40 * * * *");
-        //}
+        [Benchmark]
+        public CronExpression ParseRange()
+        {
+            return CronExpression.Parse("20-40 * * * *");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseList()
-        //{
-        //    return CronExpression.Parse("20,30,40,50 * * * *");
-        //}
+        [Benchmark]
+        public CronExpression ParseList()
+        {
+            return CronExpression.Parse("20,30,40,50 * * * *");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseComplex()
-        //{
-        //    return CronExpression.Parse("*/10 12-20 ? DEC 3");
-        //}
+        [Benchmark]
+        public CronExpression ParseComplex()
+        {
+            return CronExpression.Parse("*/10 12-20 ? DEC 3");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseMacroEverySecond()
-        //{
-        //    return CronExpression.Parse("@every_second");
-        //}
+        [Benchmark]
+        public CronExpression ParseMacroEverySecond()
+        {
+            return CronExpression.Parse("@every_second");
+        }
 
-        //[Benchmark]
-        //public CronExpression ParseMacroDaily()
-        //{
-        //    return CronExpression.Parse("@daily");
-        //}
+        [Benchmark]
+        public CronExpression ParseMacroDaily()
+        {
+            return CronExpression.Parse("@daily");
+        }
 
         [Benchmark]
         public DateTime? NextSimpleDateTime()
@@ -133,76 +148,90 @@ namespace Cronos.Benchmarks
             if (result != null) throw new InvalidOperationException();
         }
 
-        //[Benchmark]
-        //public CrontabSchedule ParseStarsNCrontab()
-        //{
-        //    return CrontabSchedule.Parse("* * * * *");
-        //}
+        [Benchmark]
+        public void NextUnreachableLastDayOfWeek()
+        {
+            var result = LastDayOfWeekUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
 
-        //[Benchmark]
-        //public CrontabSchedule ParseComplexNCrontab()
-        //{
-        //    return CrontabSchedule.Parse("*/10 12-20 * DEC 3");
-        //}
+        [Benchmark]
+        public void NextUnreachableNthDayOfWeek()
+        {
+            var result = NthDayOfWeekUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
 
-        //[Benchmark]
-        //public DateTime NextSimpleNCrontab()
-        //{
-        //    return SimpleExpressionNCrontab.GetNextOccurrence(DateTimeNow);
-        //}
+        [Benchmark]
+        public CrontabSchedule ParseStarsNCrontab()
+        {
+            return CrontabSchedule.Parse("* * * * *");
+        }
 
-        //[Benchmark]
-        //public DateTime NextComplexNCrontab()
-        //{
-        //    return ComplexExpressionNCrontab.GetNextOccurrence(DateTimeNow);
-        //}
+        [Benchmark]
+        public CrontabSchedule ParseComplexNCrontab()
+        {
+            return CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+        }
 
-        //[Benchmark]
-        //public Quartz.CronExpression ParseStarsQuartz()
-        //{
-        //    return new Quartz.CronExpression("* * * * * ?");
-        //}
+        [Benchmark]
+        public DateTime NextSimpleNCrontab()
+        {
+            return SimpleExpressionNCrontab.GetNextOccurrence(DateTimeNow);
+        }
 
-        //[Benchmark]
-        //public Quartz.CronExpression ParseComplexQuartz()
-        //{
-        //    return new Quartz.CronExpression("* */10 12-20 ? DEC 3");
-        //}
+        [Benchmark]
+        public DateTime NextComplexNCrontab()
+        {
+            return ComplexExpressionNCrontab.GetNextOccurrence(DateTimeNow);
+        }
 
-        //[Benchmark]
-        //public DateTimeOffset? NextSimpleQuartz()
-        //{
-        //    return SimpleExpressionQuartz.GetTimeAfter(DateTimeOffsetNow);
-        //}
+        [Benchmark]
+        public Quartz.CronExpression ParseStarsQuartz()
+        {
+            return new Quartz.CronExpression("* * * * * ?");
+        }
 
-        //[Benchmark]
-        //public DateTimeOffset? NextComplexQuartz()
-        //{
-        //    return ComplexExpressionQuartz.GetTimeAfter(DateTimeOffsetNow);
-        //}
+        [Benchmark]
+        public Quartz.CronExpression ParseComplexQuartz()
+        {
+            return new Quartz.CronExpression("* */10 12-20 ? DEC 3");
+        }
 
-        //[Benchmark]
-        //public NCrontab.Advanced.CrontabSchedule ParseStarsNCrontabAdvanced()
-        //{
-        //    return NCrontab.Advanced.CrontabSchedule.Parse("* * * * *");
-        //}
+        [Benchmark]
+        public DateTimeOffset? NextSimpleQuartz()
+        {
+            return SimpleExpressionQuartz.GetTimeAfter(DateTimeOffsetNow);
+        }
 
-        //[Benchmark]
-        //public NCrontab.Advanced.CrontabSchedule ParseComplexNCrontabAdvanced()
-        //{
-        //    return NCrontab.Advanced.CrontabSchedule.Parse("*/10 12-20 * DEC 3");
-        //}
+        [Benchmark]
+        public DateTimeOffset? NextComplexQuartz()
+        {
+            return ComplexExpressionQuartz.GetTimeAfter(DateTimeOffsetNow);
+        }
 
-        //[Benchmark]
-        //public DateTime NextSimpleNCrontabAdvanced()
-        //{
-        //    return SimpleExpressionNCrontabAdvanced.GetNextOccurrence(DateTimeNow);
-        //}
+        [Benchmark]
+        public NCrontab.Advanced.CrontabSchedule ParseStarsNCrontabAdvanced()
+        {
+            return NCrontab.Advanced.CrontabSchedule.Parse("* * * * *");
+        }
 
-        //[Benchmark]
-        //public DateTime NextComplexNCrontabAdvanced()
-        //{
-        //    return ComplexExpressionNCrontabAdvanced.GetNextOccurrence(DateTimeNow);
-        //}
+        [Benchmark]
+        public NCrontab.Advanced.CrontabSchedule ParseComplexNCrontabAdvanced()
+        {
+            return NCrontab.Advanced.CrontabSchedule.Parse("*/10 12-20 * DEC 3");
+        }
+
+        [Benchmark]
+        public DateTime NextSimpleNCrontabAdvanced()
+        {
+            return SimpleExpressionNCrontabAdvanced.GetNextOccurrence(DateTimeNow);
+        }
+
+        [Benchmark]
+        public DateTime NextComplexNCrontabAdvanced()
+        {
+            return ComplexExpressionNCrontabAdvanced.GetNextOccurrence(DateTimeNow);
+        }
     }
 }
