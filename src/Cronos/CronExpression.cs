@@ -492,7 +492,7 @@ namespace Cronos
 
             if (field == CronField.DaysOfMonth)
             {
-                if (*pointer == 'W')
+                if (ToUpper(*pointer) == 'W')
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NearestWeekday;
@@ -500,13 +500,12 @@ namespace Cronos
             }
             else if (field == CronField.DaysOfWeek)
             {
-                if (*pointer == 'L')
+                if (ToUpper(*pointer) == 'L')
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.DayOfWeekLast;
                 }
-
-                if (*pointer == '#')
+                else if (*pointer == '#')
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NthDayOfWeek;
@@ -546,7 +545,7 @@ namespace Cronos
                 }
             }
 
-            if (*pointer == 'W' && !singleValue)
+            if (ToUpper(*pointer) == 'W' && !singleValue)
             {
                 ThrowFormatException(field, "Using some numbers with 'W' is not supported.");
             }
@@ -567,7 +566,7 @@ namespace Cronos
                 num1 = low;
                 num2 = high;
             }
-            else if(*pointer == 'L')
+            else if(ToUpper(*pointer) == 'L')
             {
                 if (field != CronField.DaysOfMonth)
                 {
@@ -616,7 +615,7 @@ namespace Cronos
                         ThrowFormatException(field, "Range must contain numbers between {0} and {1} (all inclusive).", low, high);
                     }
 
-                    if (*pointer == 'W')
+                    if (ToUpper(*pointer) == 'W')
                     {
                         ThrowFormatException(field, "'W' is not allowed after '-'.");
                     }
@@ -648,7 +647,7 @@ namespace Cronos
                 {
                     ThrowFormatException(field, "Step must be a number between 1 and {0} (all inclusive).", high);
                 }
-                if (*pointer == 'W')
+                if (ToUpper(*pointer) == 'W')
                 {
                     ThrowFormatException(field, "'W' is not allowed after '/'.");
                 }
