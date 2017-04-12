@@ -42,15 +42,15 @@ namespace Cronos
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-        private long _second;     // 60 bits -> from 0 bit to 59 bit in Int64
-        private long _minute;     // 60 bits -> from 0 bit to 59 bit in Int64
-        private long _hour;       // 24 bits -> from 0 bit to 23 bit in Int64
-        private long _dayOfMonth; // 31 bits -> from 1 bit to 31 bit in Int64
-        private long _month;      // 12 bits -> from 1 bit to 12 bit in Int64
-        private long _dayOfWeek;  // 8 bits  -> from 0 bit to 7  bit in Int64
+        private long  _second;     // 60 bits -> from 0 bit to 59 bit
+        private long  _minute;     // 60 bits -> from 0 bit to 59 bit
+        private int   _hour;       // 24 bits -> from 0 bit to 23 bit
+        private int   _dayOfMonth; // 31 bits -> from 1 bit to 31 bit
+        private short _month;      // 12 bits -> from 1 bit to 12 bit
+        private byte  _dayOfWeek;  // 8 bits  -> from 0 bit to 7 bit
 
-        private int _nthdayOfWeek;
-        private int _lastMonthOffset;
+        private byte  _nthdayOfWeek;
+        private byte  _lastMonthOffset;
 
         private CronExpressionFlag _flags;
 
@@ -105,18 +105,18 @@ namespace Cronos
 
                     if ((format & CronFormat.IncludeSeconds) != 0)
                     {
-                        ParseField(CronField.Seconds, ref pointer, cronExpression, ref cronExpression._second);
+                        cronExpression._second = ParseField(CronField.Seconds, ref pointer, cronExpression);
                     }
                     else
                     {
                         SetBit(ref cronExpression._second, 0);
                     }
 
-                    ParseField(CronField.Minutes, ref pointer, cronExpression, ref cronExpression._minute);
-                    ParseField(CronField.Hours, ref pointer, cronExpression, ref cronExpression._hour);
-                    ParseField(CronField.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
-                    ParseField(CronField.Months, ref pointer, cronExpression, ref cronExpression._month);
-                    ParseField(CronField.DaysOfWeek, ref pointer, cronExpression, ref cronExpression._dayOfWeek);
+                    cronExpression._minute = ParseField(CronField.Minutes, ref pointer, cronExpression);
+                    cronExpression._hour = (int)ParseField(CronField.Hours, ref pointer, cronExpression);
+                    cronExpression._dayOfMonth = (int)ParseField(CronField.DaysOfMonth, ref pointer, cronExpression);
+                    cronExpression._month = (short)ParseField(CronField.Months, ref pointer, cronExpression);
+                    cronExpression._dayOfWeek = (byte)ParseField(CronField.DaysOfWeek, ref pointer, cronExpression);
 
                     if (!IsEndOfString(*pointer))
                     {
@@ -468,12 +468,9 @@ namespace Cronos
             }
         }
 
-        private static unsafe void ParseField(
-            CronField field,
-            ref char* pointer, 
-            CronExpression expression, 
-            ref long bits)
+        private static unsafe long ParseField(CronField field, ref char* pointer, CronExpression expression)
         {
+            var bits = 0L;
             if (*pointer == '*' || *pointer == '?')
             {
                 pointer++;
@@ -487,14 +484,14 @@ namespace Cronos
                     if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '{1}'.", *pointer, *(pointer - 1));
 
                     SkipWhiteSpaces(ref pointer);
-                    return;
+                    return bits;
                 }
 
-                ParseRange(field, ref pointer, expression, ref bits, true);
+                bits |= ParseRange(field, ref pointer, expression, true);
             }
             else
             {
-                ParseList(field, ref pointer, expression, ref bits);
+                bits |= ParseList(field, ref pointer, expression);
             }
 
             if (field == CronField.DaysOfMonth)
@@ -517,30 +514,30 @@ namespace Cronos
                 {
                     pointer++;
                     expression._flags |= CronExpressionFlag.NthDayOfWeek;
-                    expression._nthdayOfWeek = GetNumber(ref pointer, MinNthDayOfWeek, null);
+                    var nthdayOfWeek = GetNumber(ref pointer, MinNthDayOfWeek, null);
 
-                    if (expression._nthdayOfWeek == -1 || expression._nthdayOfWeek < MinNthDayOfWeek || expression._nthdayOfWeek > MaxNthDayOfWeek)
+                    if (nthdayOfWeek == -1 || nthdayOfWeek < MinNthDayOfWeek || nthdayOfWeek > MaxNthDayOfWeek)
                     {
                         ThrowFormatException(field, "'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
                     }
+
+                    expression._nthdayOfWeek = (byte)nthdayOfWeek;
                 }
             }
 
             if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "Unexpected character '{0}'.", *pointer);
 
             SkipWhiteSpaces(ref pointer);
+            return bits;
         }
 
-        private static unsafe void ParseList(
-            CronField field, 
-            ref char* pointer, 
-            CronExpression expression, 
-            ref long bits)
+        private static unsafe long ParseList(CronField field, ref char* pointer, CronExpression expression)
         {
+            var bits = 0L;
             var singleValue = true;
             while (true)
             {
-                ParseRange(field, ref pointer, expression, ref bits, false);
+                bits |= ParseRange(field, ref pointer, expression, false);
 
                 if (*pointer == ',')
                 {
@@ -557,15 +554,13 @@ namespace Cronos
             {
                 ThrowFormatException(field, "Using some numbers with 'W' is not supported.");
             }
+
+            return bits;
         }
 
-        private static unsafe void ParseRange(
-            CronField field, 
-            ref char* pointer, 
-            CronExpression expression, 
-            ref long bits,
-            bool star)
+        private static unsafe long ParseRange(CronField field, ref char* pointer, CronExpression expression, bool star)
         {
+            var bits = 0L;
             int num1, num2, num3;
 
             var low = field.First;
@@ -601,9 +596,9 @@ namespace Cronos
                     }
 
                     bits = bits >> (lastMonthOffset + 1) << 1;
-                    expression._lastMonthOffset = lastMonthOffset;
+                    expression._lastMonthOffset = (byte)lastMonthOffset;
                 }
-                return;
+                return bits;
             }
             else
             {
@@ -641,8 +636,7 @@ namespace Cronos
                 }
                 else
                 {
-                    SetBit(ref bits, num1);
-                    return;
+                    return 1L << num1;
                 }
             }
 
@@ -703,6 +697,8 @@ namespace Cronos
             bits = shift == 0 
                 ? bits 
                 : bits >> shift | bits << (high - low - shift + 1);
+
+            return bits;
         }
 
         private static unsafe int GetNumber(ref char* pointer, int low, int[] names)

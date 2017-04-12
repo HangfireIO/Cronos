@@ -3,7 +3,7 @@
 namespace Cronos
 {
     [Flags]
-    internal enum CronExpressionFlag
+    internal enum CronExpressionFlag : byte
     {
         None = 0b0,
         DayOfMonthLast = 0b1,
