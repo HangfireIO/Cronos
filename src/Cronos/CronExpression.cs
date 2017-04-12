@@ -116,12 +116,6 @@ namespace Cronos
                     ParseField(CronField.Hours, ref pointer, cronExpression, ref cronExpression._hour);
                     ParseField(CronField.DaysOfMonth, ref pointer, cronExpression, ref cronExpression._dayOfMonth);
                     ParseField(CronField.Months, ref pointer, cronExpression, ref cronExpression._month);
-
-                    if (*pointer == '?' && cronExpression.HasFlag(CronExpressionFlag.DayOfMonthQuestion))
-                    {
-                        ThrowFormatException(CronField.DaysOfWeek, "'?' is not supported.");
-                    }
-
                     ParseField(CronField.DaysOfWeek, ref pointer, cronExpression, ref cronExpression._dayOfWeek);
 
                     if (!IsEndOfString(*pointer))
@@ -480,7 +474,7 @@ namespace Cronos
             CronExpression expression, 
             ref long bits)
         {
-            if (*pointer == '*')
+            if (*pointer == '*' || *pointer == '?')
             {
                 pointer++;
 
@@ -490,7 +484,7 @@ namespace Cronos
                 {
                     bits = field.AllBits;
 
-                    if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '*'.", *pointer);
+                    if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '{1}'.", *pointer, *(pointer - 1));
 
                     SkipWhiteSpaces(ref pointer);
                     return;
@@ -581,28 +575,6 @@ namespace Cronos
             {
                 num1 = low;
                 num2 = high;
-            }
-            else if(*pointer == '?')
-            {
-                if (field != CronField.DaysOfMonth && field != CronField.DaysOfWeek)
-                {
-                    ThrowFormatException(field, "'?' is not supported.");
-                }
-
-                pointer++;
-
-                if (field == CronField.DaysOfMonth)
-                {
-                    expression._flags |= CronExpressionFlag.DayOfMonthQuestion;
-                }
-
-                if (*pointer == '/')
-                {
-                    ThrowFormatException(field, "'/' is not allowed after '?'.");
-                }
-
-                bits = field.AllBits;
-                return;
             }
             else if(*pointer == 'L')
             {

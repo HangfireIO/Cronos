@@ -84,7 +84,6 @@ namespace Cronos.Tests
         [InlineData("L    * * * * *", CronFormat.IncludeSeconds, "Seconds")]
         [InlineData("W    * * * * *", CronFormat.IncludeSeconds, "Seconds")]
         [InlineData("LW   * * * * *", CronFormat.IncludeSeconds, "Seconds")]
-        [InlineData("?    * * * * *", CronFormat.IncludeSeconds, "Seconds")]
 
         // 2147483648 = Int32.MaxValue + 1
 
@@ -110,7 +109,6 @@ namespace Cronos.Tests
         [InlineData("L     * * * *", CronFormat.Standard, "Minutes")]
         [InlineData("W     * * * *", CronFormat.Standard, "Minutes")]
         [InlineData("LW    * * * *", CronFormat.Standard, "Minutes")]
-        [InlineData("?     * * * *", CronFormat.Standard, "Minutes")]
 
         [InlineData("* 60    * * * *", CronFormat.IncludeSeconds, "Minutes")]
         [InlineData("* -1    * * * *", CronFormat.IncludeSeconds, "Minutes")]
@@ -131,7 +129,6 @@ namespace Cronos.Tests
         [InlineData("* L     * * * *", CronFormat.IncludeSeconds, "Minutes")]
         [InlineData("* W     * * * *", CronFormat.IncludeSeconds, "Minutes")]
         [InlineData("* LW    * * * *", CronFormat.IncludeSeconds, "Minutes")]
-        [InlineData("* ?     * * * *", CronFormat.IncludeSeconds, "Minutes")]
 
         // Hour field is invalid.
         [InlineData("* 25   * * *", CronFormat.Standard, "Hours")]
@@ -152,7 +149,6 @@ namespace Cronos.Tests
         [InlineData("* L    * * *", CronFormat.Standard, "Hours")]
         [InlineData("* W    * * *", CronFormat.Standard, "Hours")]
         [InlineData("* LW   * * *", CronFormat.Standard, "Hours")]
-        [InlineData("* ?    * * *", CronFormat.Standard, "Hours")]
 
         [InlineData("* * 25   * * *", CronFormat.IncludeSeconds, "Hours")]
         [InlineData("* * -1   * * *", CronFormat.IncludeSeconds, "Hours")]
@@ -172,7 +168,6 @@ namespace Cronos.Tests
         [InlineData("* * L    * * *", CronFormat.IncludeSeconds, "Hours")]
         [InlineData("* * W    * * *", CronFormat.IncludeSeconds, "Hours")]
         [InlineData("* * LW   * * *", CronFormat.IncludeSeconds, "Hours")]
-        [InlineData("* * ?    * * *", CronFormat.IncludeSeconds, "Hours")]
 
         // Day of month field is invalid.
         [InlineData("* * 32     *  *", CronFormat.Standard, "Days of month")]
@@ -201,7 +196,6 @@ namespace Cronos.Tests
         [InlineData("* * 1-2/2W *  *", CronFormat.Standard, "Days of month")]
         [InlineData("* * 1LW    *  *", CronFormat.Standard, "Days of month")]
         [InlineData("* * L-31   *  *", CronFormat.Standard, "Days of month")]
-        [InlineData("* * ?/2    *  *", CronFormat.Standard, "Days of month")]
 
         [InlineData("* * * 32     *  *", CronFormat.IncludeSeconds, "Days of month")]
         [InlineData("* * * 10-32  *  *", CronFormat.IncludeSeconds, "Days of month")]
@@ -229,7 +223,6 @@ namespace Cronos.Tests
         [InlineData("* * * 1-2/2W *  *", CronFormat.IncludeSeconds, "Days of month")]
         [InlineData("* * * 1LW    *  *", CronFormat.IncludeSeconds, "Days of month")]
         [InlineData("* * * L-31   *  *", CronFormat.IncludeSeconds, "Days of month")]
-        [InlineData("* * * ?/2    *  *", CronFormat.IncludeSeconds, "Days of month")]
 
         // Month field is invalid.
         [InlineData("* * * 13   *", CronFormat.Standard, "Months")]
@@ -252,7 +245,6 @@ namespace Cronos.Tests
         [InlineData("* * * L    *", CronFormat.Standard, "Months")]
         [InlineData("* * * W    *", CronFormat.Standard, "Months")]
         [InlineData("* * * LW   *", CronFormat.Standard, "Months")]
-        [InlineData("* * * ?    *", CronFormat.Standard, "Months")]
 
         [InlineData("* * * * 13   *", CronFormat.IncludeSeconds, "Months")]
         [InlineData("* * * * -1   *", CronFormat.IncludeSeconds, "Months")]
@@ -274,7 +266,6 @@ namespace Cronos.Tests
         [InlineData("* * * * L    *", CronFormat.IncludeSeconds, "Months")]
         [InlineData("* * * * W    *", CronFormat.IncludeSeconds, "Months")]
         [InlineData("* * * * LW   *", CronFormat.IncludeSeconds, "Months")]
-        [InlineData("* * * * ?    *", CronFormat.IncludeSeconds, "Months")]
 
         // Day of week field is invalid.
         [InlineData("* * * * 8      ", CronFormat.Standard, "Days of week")]
@@ -324,18 +315,6 @@ namespace Cronos.Tests
         [InlineData("* * * * * L      ", CronFormat.IncludeSeconds, "Days of week")]
         [InlineData("* * * * * W      ", CronFormat.IncludeSeconds, "Days of week")]
         [InlineData("* * * * * LW     ", CronFormat.IncludeSeconds, "Days of week")]
-
-        // '?' can be specfied only for day of month or day of week.
-        [InlineData("? * * * *", CronFormat.Standard, "Minutes")]
-        [InlineData("* ? * * *", CronFormat.Standard, "Hours")]
-        [InlineData("* * * ? *", CronFormat.Standard, "Months")]
-        [InlineData("* * ? * ?", CronFormat.Standard, "Days of week")]
-
-        [InlineData("? * * * * *", CronFormat.IncludeSeconds, "Seconds")]
-        [InlineData("* ? * * * *", CronFormat.IncludeSeconds, "Minutes")]
-        [InlineData("* * ? * * *", CronFormat.IncludeSeconds, "Hours")]
-        [InlineData("* * * * ? *", CronFormat.IncludeSeconds, "Months")]
-        [InlineData("* * * ? * ?", CronFormat.IncludeSeconds, "Days of week")]
 
         // Fields count is invalid.
         [InlineData("* * *        ", CronFormat.Standard, "Months")]
@@ -941,6 +920,7 @@ namespace Cronos.Tests
 
         [InlineData("* * * ? 11 *", "2016-10-09", "2016-11-01")]
 
+        [InlineData("? ? ? ? ? ?", "2016-12-09 16:46", "2016-12-09 16:46")]
         [InlineData("* * * * * ?", "2016-12-09 16:46", "2016-12-09 16:46")]
         [InlineData("* * * ? * *", "2016-03-09 16:46", "2016-03-09 16:46")]
         [InlineData("* * * * * ?", "2016-12-30 16:46", "2016-12-30 16:46")]
@@ -1892,6 +1872,7 @@ namespace Cronos.Tests
 
         [InlineData("* * ? 11 *", "2016-10-09", "2016-11-01")]
 
+        [InlineData("? ? ? ? ?", "2016-12-09 16:46", "2016-12-09 16:46")]
         [InlineData("* * * * ?", "2016-12-09 16:46", "2016-12-09 16:46")]
         [InlineData("* * ? * *", "2016-03-09 16:46", "2016-03-09 16:46")]
         [InlineData("* * * * ?", "2016-12-30 16:46", "2016-12-30 16:46")]

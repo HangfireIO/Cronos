@@ -6,11 +6,10 @@ namespace Cronos
     internal enum CronExpressionFlag
     {
         None = 0b0,
-        DayOfMonthQuestion = 0b1,
-        DayOfMonthLast = 0b10,
-        DayOfWeekLast = 0b100,
-        Interval = 0b1000,
-        NearestWeekday = 0b10000,
-        NthDayOfWeek = 0b100000
+        DayOfMonthLast = 0b1,
+        DayOfWeekLast = 0b10,
+        Interval = 0b100,
+        NearestWeekday = 0b1000,
+        NthDayOfWeek = 0b10000
     }
 }
