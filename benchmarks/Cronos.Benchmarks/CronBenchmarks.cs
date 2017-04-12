@@ -22,6 +22,8 @@ namespace Cronos.Benchmarks
         private static readonly CronExpression NthDayOfWeekUnreachableExpression =
             CronExpression.Parse("* * 1-28 * SUN#5");
 
+        private static readonly CronExpression AbmiguousExpression = CronExpression.Parse("30 1 4 11 *");
+
         private static readonly CrontabSchedule SimpleExpressionNCrontab = CrontabSchedule.Parse("* * * * *");
         private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
 
@@ -43,6 +45,9 @@ namespace Cronos.Benchmarks
 
         private static readonly TimeZoneInfo PacificTimeZone =
             TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+        private static readonly DateTimeOffset SecondBeforeInvalidTime = new DateTimeOffset(2017, 03, 12, 01, 59, 59, 999, PacificTimeZone.BaseUtcOffset);
+        private static readonly DateTimeOffset AmbiguousDaylightTime = new DateTimeOffset(2017, 11, 05, 00, 30, 59, 999, PacificTimeZone.BaseUtcOffset);
 
         [Benchmark]
         public unsafe string ParseBaseline()
@@ -160,6 +165,21 @@ namespace Cronos.Benchmarks
         {
             var result = NthDayOfWeekUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
+        public DateTimeOffset? NextHandlesInvalidTime()
+        {
+            var result = SimpleExpression.GetNextOccurrence(SecondBeforeInvalidTime, PacificTimeZone);
+            if (result.Value.Hour != 3) throw new InvalidOperationException();
+
+            return result;
+        }
+
+        [Benchmark]
+        public DateTimeOffset? NextHandlesAmbiguousDaylight()
+        {
+            return AbmiguousExpression.GetNextOccurrence(AmbiguousDaylightTime, PacificTimeZone);
         }
 
         [Benchmark]

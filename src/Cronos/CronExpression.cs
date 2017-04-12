@@ -191,55 +191,55 @@ namespace Cronos
             return GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
         }
 
-        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset zonedStartInclusive, TimeZoneInfo zone, bool inclusive)
+        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
         {
-            var startLocalDateTime = zonedStartInclusive.DateTime;
+            var fromLocal = from.DateTime;
 
-            if (TimeZoneHelper.IsAmbiguousTime(zone, startLocalDateTime))
+            if (TimeZoneHelper.IsAmbiguousTime(zone, fromLocal))
             {
-                var currentOffset = zonedStartInclusive.Offset;
-                var lateOffset = zone.BaseUtcOffset;
+                var currentOffset = from.Offset;
+                var standardOffset = zone.BaseUtcOffset;
                
-                if (lateOffset != currentOffset)
+                if (standardOffset != currentOffset)
                 {
-                    var earlyOffset = TimeZoneHelper.GetDstOffset(startLocalDateTime, zone);
-                    var earlyIntervalLocalEnd = TimeZoneHelper.GetDstEnd(zone, startLocalDateTime, earlyOffset);
+                    var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, fromLocal);
+                    var daylightTimeLocalEnd = TimeZoneHelper.GetDaylightTimeEnd(zone, fromLocal, daylightOffset).DateTime;
 
                     // Early period, try to find anything here.
-                    var found = FindOccurence(startLocalDateTime.Ticks, earlyIntervalLocalEnd.Ticks, inclusive);
-                    if (found != NotFound) return new DateTimeOffset(found, earlyOffset);
+                    var found = FindOccurence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
+                    if (found != NotFound) return new DateTimeOffset(found, daylightOffset);
 
-                    startLocalDateTime = TimeZoneHelper.GetStandartTimeStart(zone, startLocalDateTime, earlyOffset).DateTime;
+                    fromLocal = TimeZoneHelper.GetStandartTimeStart(zone, fromLocal, daylightOffset).DateTime;
                     inclusive = true;
                 }
 
                 // Skip late ambiguous interval.
-                var ambiguousTimeEnd = TimeZoneHelper.GetAmbiguousTimeEnd(zone, startLocalDateTime);
+                var ambiguousIntervalLocalEnd = TimeZoneHelper.GetAmbiguousIntervalEnd(zone, fromLocal).DateTime;
 
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
-                    var foundInLateInterval = FindOccurence(startLocalDateTime.Ticks, ambiguousTimeEnd.Ticks - 1, inclusive);
-                    if (foundInLateInterval != NotFound) return new DateTimeOffset(foundInLateInterval, lateOffset);
+                    var foundInLateInterval = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
+                    if (foundInLateInterval != NotFound) return new DateTimeOffset(foundInLateInterval, standardOffset);
                 }
 
-                startLocalDateTime = ambiguousTimeEnd.DateTime;
+                fromLocal = ambiguousIntervalLocalEnd;
             }
 
-            var occurrenceTicks = FindOccurence(startLocalDateTime.Ticks, inclusive);
+            var occurrenceTicks = FindOccurence(fromLocal.Ticks, inclusive);
             if (occurrenceTicks == NotFound) return null;
 
             var occurrence = new DateTime(occurrenceTicks);
 
             if (zone.IsInvalidTime(occurrence))
             {
-                var nextValidTime = TimeZoneHelper.GetDstStart(zone, occurrence, zone.BaseUtcOffset);
+                var nextValidTime = TimeZoneHelper.GetDaylightTimeStart(zone, occurrence);
                 return nextValidTime;
             }
 
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
             {
-                var earlyOffset = TimeZoneHelper.GetDstOffset(occurrence, zone);
-                return new DateTimeOffset(occurrence, earlyOffset);
+                var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
+                return new DateTimeOffset(occurrence, daylightOffset);
             }
 
             return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
