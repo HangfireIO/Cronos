@@ -1310,7 +1310,6 @@ namespace Cronos.Tests
 
         [Theory]
         [InlineData("* * * * 4 *", "2099-12-13 00:00:00")]
-        [InlineData("* * * * * *", "2100-01-01 00:00:01")]
         public void GetNextOccurrence_ReturnsNull_When_NextOccurrenceIsBeyondMaxValue(string cronExpression, string fromString)
         {
             var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);

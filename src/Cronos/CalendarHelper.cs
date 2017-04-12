@@ -44,28 +44,30 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static DateTime AddMillisecond(DateTime dateTime)
+        public static long AddMillisecond(long ticks)
         {
-            return dateTime.AddTicks(TicksPerMillisecond);
+            return ticks + TicksPerMillisecond;
         }
 
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static long DateToTicks(int year, int month, int day)
+        public static bool IsGreaterThan(int year1, int month1, int day1, int year2, int month2, int day2)
+        {
+            if (year1 != year2) return year1 > year2;
+            if (month1 != month2) return month1 > month2;
+            if (day2 != day1) return day1 > day2;
+            return false;
+        }
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static long DateTimeToTicks(int year, int month, int day, int hour, int minute, int second)
         {
             int[] days = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? DaysToMonth366 : DaysToMonth365;
             int y = year - 1;
             int n = y * 365 + y / 4 - y / 100 + y / 400 + days[month - 1] + day - 1;
-            return n * TicksPerDay;
-        }
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static long TimeToTicks(int hour, int minute, int second)
-        {
-            return  (hour * 3600L + minute * 60L + second) * TicksPerSecond;
+            return n * TicksPerDay + (hour * 3600L + minute * 60L + second) * TicksPerSecond;
         }
 
         // Returns a given date part of this DateTime. This method is used
@@ -73,11 +75,9 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static void FillDateTimeParts(DateTime dateTime, out int second, out int minute, out int hour,
+        public static void FillDateTimeParts(long ticks, out int second, out int minute, out int hour,
             out int day, out int month, out int year)
         {
-            var ticks = dateTime.Ticks;
-
             var millisecond = (int) (ticks / TicksPerMillisecond % 1000);
             second = (int) (ticks / TicksPerSecond % 60);
             if (millisecond != 0) second++;
@@ -149,13 +149,14 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static int MoveToNearestWeekDay(int year, int month, int day, int lastDayOfMonth)
+        public static int MoveToNearestWeekDay(int year, int month, int day)
         {
             var dayOfWeek = GetDayOfWeek(year, month, day);
+
             if (dayOfWeek != DayOfWeek.Saturday && dayOfWeek != DayOfWeek.Sunday) return day;
 
             return dayOfWeek == DayOfWeek.Sunday
-                ? day == lastDayOfMonth
+                ? day == GetDaysInMonth(year, month)
                     ? day - 2
                     : day + 1
                 : day == CronField.DaysOfMonth.First
@@ -175,9 +176,9 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static bool IsLastDayOfWeek(int day, int lastDayOfMonth)
+        public static bool IsLastDayOfWeek(int year, int month, int day)
         {
-            return day + DaysPerWeekCount > lastDayOfMonth;
+            return day + DaysPerWeekCount > GetDaysInMonth(year, month);
         }
     }
 }
