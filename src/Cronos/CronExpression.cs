@@ -265,6 +265,8 @@ namespace Cronos
             var month = startMonth;
             var year = startYear;
 
+            int lastCheckedDay;
+
             if (!GetBit(_second, second) && !Move(_second, ref second)) minute++;
             if (!GetBit(_minute, minute) && !Move(_minute, ref minute)) hour++;
             if (!GetBit(_hour, hour) && !Move(_hour, ref hour)) day++;
@@ -280,6 +282,8 @@ namespace Cronos
             if (day > GetLastDayOfMonth(year, month)) goto RetryMonth;
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast)) day = GetLastDayOfMonth(year, month);
+            lastCheckedDay = day;
+
             if (HasFlag(CronExpressionFlag.NearestWeekday)) day = CalendarHelper.MoveToNearestWeekDay(year, month, day);
 
             if (IsDayOfWeekMatch(year, month, day))
@@ -299,7 +303,7 @@ namespace Cronos
                 if (found >= ticks) return found;
             }
 
-            if (HasFlag(CronExpressionFlag.NearestWeekday)) goto RetryMonth;
+            day = lastCheckedDay;
             if (Move(_dayOfMonth, ref day)) goto Retry;
 
             RetryMonth:
