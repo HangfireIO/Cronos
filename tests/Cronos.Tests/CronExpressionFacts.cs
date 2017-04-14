@@ -368,7 +368,7 @@ namespace Cronos.Tests
         [InlineData("* * *        ", CronFormat.Standard, "Months")]
         [InlineData("* * * * * * *", CronFormat.Standard, "")]
 
-        [InlineData("* * * *", CronFormat.IncludeSeconds, "Months")]
+        [InlineData("* * * *", CronFormat.IncludeSeconds, "Days of month")]
         [InlineData("* * * * * * *", CronFormat.IncludeSeconds, "")]
 
         // Macro is invalid.

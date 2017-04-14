@@ -72,61 +72,65 @@ namespace Cronos
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, CronFormat format)
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        public static unsafe CronExpression Parse(string expression, CronFormat format)
         {
             if (string.IsNullOrEmpty(expression)) throw new ArgumentNullException(nameof(expression));
 
-            unsafe
+            fixed (char* value = expression)
             {
-                fixed (char* value = expression)
+                var pointer = value;
+
+                SkipWhiteSpaces(ref pointer);
+
+                CronExpression cronExpression;
+
+                if (Accept(ref pointer, '@'))
                 {
-                    var pointer = value;
-
-                    SkipWhiteSpaces(ref pointer);
-
-                    if (*pointer == '@')
+                    cronExpression = ParseMacro(ref pointer);
+                    if (cronExpression == null) ThrowFormatException("Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
+                    pointer++;
+                }
+                else
+                {
+                    cronExpression = new CronExpression();
+                    if (format == CronFormat.IncludeSeconds)
                     {
-                        var macroExpression = ParseMacro(ref pointer);
-                        if (macroExpression == null) ThrowFormatException("Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
-
-                        pointer++;
-
-                        SkipWhiteSpaces(ref pointer);
-
-                        if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected.", *pointer, pointer - value);
-                        return macroExpression;
-                    }
-
-                    var cronExpression = new CronExpression();
-
-                    if ((format & CronFormat.IncludeSeconds) != 0)
-                    {
-                        cronExpression._second = ParseField(CronField.Seconds, ref pointer, cronExpression);
+                        cronExpression._second = ParseField(CronField.Seconds, ref pointer, ref cronExpression._flags);
+                        ParseWhiteSpace(CronField.Seconds, ref pointer);
                     }
                     else
                     {
-                        SetBit(ref cronExpression._second, 0);
+                        SetBit(ref cronExpression._second, CronField.Seconds.First);
                     }
 
-                    cronExpression._minute = ParseField(CronField.Minutes, ref pointer, cronExpression);
-                    cronExpression._hour = (int)ParseField(CronField.Hours, ref pointer, cronExpression);
-                    cronExpression._dayOfMonth = (int)ParseField(CronField.DaysOfMonth, ref pointer, cronExpression);
-                    cronExpression._month = (short)ParseField(CronField.Months, ref pointer, cronExpression);
-                    cronExpression._dayOfWeek = (byte)ParseField(CronField.DaysOfWeek, ref pointer, cronExpression);
+                    cronExpression._minute = ParseField(CronField.Minutes, ref pointer, ref cronExpression._flags);
+                    ParseWhiteSpace(CronField.Minutes, ref pointer);
 
-                    if (!IsEndOfString(*pointer))
-                    {
-                        ThrowFormatException("Unexpected character '{0}' on position {1}, end of string expected. Please use the '{2}' argument to specify non-standard CRON fields.", *pointer, pointer - value, nameof(format));
-                    }
-                    
+                    cronExpression._hour = (int)ParseField(CronField.Hours, ref pointer, ref cronExpression._flags);
+                    ParseWhiteSpace(CronField.Hours, ref pointer);
+
+                    cronExpression._dayOfMonth = (int)ParseDayOfMonth(ref pointer, ref cronExpression._flags, ref cronExpression._lastMonthOffset);
+                    ParseWhiteSpace(CronField.DaysOfMonth, ref pointer);
+
+                    cronExpression._month = (short)ParseField(CronField.Months, ref pointer, ref cronExpression._flags);
+                    ParseWhiteSpace(CronField.Months, ref pointer);
+
+                    cronExpression._dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref cronExpression._flags, ref cronExpression._nthdayOfWeek);
+
                     // Make sundays equivalent.
                     if ((cronExpression._dayOfWeek & SundayBits) != 0)
                     {
                         cronExpression._dayOfWeek |= SundayBits;
                     }
-
-                    return cronExpression;
                 }
+
+                SkipWhiteSpaces(ref pointer);
+                ParseEndOfString(pointer);
+
+                return cronExpression;
             }
         }
 
@@ -361,15 +365,33 @@ namespace Cronos
             return (_flags & value) != 0;
         }
 
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
-            while (IsWhiteSpace(*pointer)) pointer++; 
+            while (IsWhiteSpace(*pointer)) { pointer++; }
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe void ParseWhiteSpace(CronField prevField, ref char* pointer)
+        {
+            if (!IsWhiteSpace(*pointer)) ThrowFormatException(prevField, "Unexpected character '{0}'.", *pointer);
+            SkipWhiteSpaces(ref pointer);
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe void ParseEndOfString(char* pointer)
+        {
+            if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}'.", *pointer);
         }
 
         private static unsafe CronExpression ParseMacro(ref char* pointer)
         {
-            pointer++;
-
             switch (ToUpper(*pointer))
             {
                 case 'A':
@@ -468,203 +490,209 @@ namespace Cronos
             }
         }
 
-        private static unsafe long ParseField(CronField field, ref char* pointer, CronExpression expression)
+        private static unsafe long ParseField(CronField field, ref char* pointer, ref CronExpressionFlag flags)
         {
-            var bits = 0L;
-            if (*pointer == '*' || *pointer == '?')
+            if (Accept(ref pointer, '*') || Accept(ref pointer, '?'))
             {
-                pointer++;
-
-                if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
-
-                if (*pointer != '/')
-                {
-                    bits = field.AllBits;
-
-                    if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "'{0}' is not supported after '{1}'.", *pointer, *(pointer - 1));
-
-                    SkipWhiteSpaces(ref pointer);
-                    return bits;
-                }
-
-                bits |= ParseRange(field, ref pointer, expression, true);
-            }
-            else
-            {
-                bits |= ParseList(field, ref pointer, expression);
+                if (field.CanDefineInterval) flags |= CronExpressionFlag.Interval;
+                return ParseStar(field, ref pointer);
             }
 
-            if (field == CronField.DaysOfMonth)
-            {
-                if (ToUpper(*pointer) == 'W')
-                {
-                    pointer++;
-                    expression._flags |= CronExpressionFlag.NearestWeekday;
-                }
-            }
-            else if (field == CronField.DaysOfWeek)
-            {
-                if (ToUpper(*pointer) == 'L')
-                {
-                    pointer++;
-                    expression._flags |= CronExpressionFlag.DayOfWeekLast;
-                }
-                else if (*pointer == '#')
-                {
-                    pointer++;
-                    expression._flags |= CronExpressionFlag.NthDayOfWeek;
-                    var nthdayOfWeek = GetNumber(ref pointer, null);
+            var num = ParseValue(field, ref pointer);
 
-                    if (nthdayOfWeek == -1 || nthdayOfWeek < MinNthDayOfWeek || nthdayOfWeek > MaxNthDayOfWeek)
-                    {
-                        ThrowFormatException(field, "'#' must be followed by a number between {0} and {1}.", MinNthDayOfWeek, MaxNthDayOfWeek);
-                    }
-
-                    expression._nthdayOfWeek = (byte)nthdayOfWeek;
-                }
-            }
-
-            if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(field, "Unexpected character '{0}'.", *pointer);
-
-            SkipWhiteSpaces(ref pointer);
-            return bits;
-        }
-
-        private static unsafe long ParseList(CronField field, ref char* pointer, CronExpression expression)
-        {
-            var bits = 0L;
-            var singleValue = true;
-            while (true)
-            {
-                bits |= ParseRange(field, ref pointer, expression, false);
-
-                if (*pointer == ',')
-                {
-                    singleValue = false;
-                    pointer++;
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (ToUpper(*pointer) == 'W' && !singleValue)
-            {
-                ThrowFormatException(field, "Using some numbers with 'W' is not supported.");
-            }
+            var bits = ParseRange(field, ref pointer, num, ref flags);
+            if (Accept(ref pointer, ',')) bits |= ParseList(field, ref pointer, ref flags);
 
             return bits;
         }
 
-        private static unsafe long ParseRange(CronField field, ref char* pointer, CronExpression expression, bool star)
+        private static unsafe long ParseDayOfMonth(ref char* pointer, ref CronExpressionFlag flags, ref byte lastDayOffset)
         {
-            var bits = 0L;
-            int num1, num2, num3;
+            var field = CronField.DaysOfMonth;
 
-            var low = field.First;
-            var high = field.Last;
+            if (Accept(ref pointer, '*') || Accept(ref pointer, '?')) return ParseStar(field, ref pointer);
 
-            if (star)
+            if (AcceptCharacter(ref pointer, 'L')) return ParseLastDayOfMonth(field, ref pointer, ref flags, ref lastDayOffset);
+
+            var dayOfMonth = ParseValue(field, ref pointer);
+
+            if (AcceptCharacter(ref pointer, 'W'))
             {
-                num1 = low;
-                num2 = high;
+                flags |= CronExpressionFlag.NearestWeekday;
+                return GetBit(dayOfMonth);
             }
-            else if(ToUpper(*pointer) == 'L')
-            {
-                if (field != CronField.DaysOfMonth)
-                {
-                    ThrowFormatException(field, "'L' is not supported.");
-                }
 
+            var bits = ParseRange(field, ref pointer, dayOfMonth, ref flags);
+            if (Accept(ref pointer, ',')) bits |= ParseList(field, ref pointer, ref flags);
+
+            return bits;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe long ParseDayOfWeek(ref char* pointer, ref CronExpressionFlag flags, ref byte nthWeekDay)
+        {
+            var field = CronField.DaysOfWeek;
+            if (Accept(ref pointer, '*') || Accept(ref pointer, '?')) return ParseStar(field, ref pointer);
+
+            var dayOfWeek = ParseValue(field, ref pointer);
+
+            if (AcceptCharacter(ref pointer, 'L')) return ParseLastWeekDay(dayOfWeek, ref flags);
+            if (Accept(ref pointer, '#')) return ParseNthWeekDay(field, ref pointer, dayOfWeek, ref flags, out nthWeekDay);
+
+            var bits = ParseRange(field, ref pointer, dayOfWeek, ref flags);
+            if (Accept(ref pointer, ',')) bits |= ParseList(field, ref pointer, ref flags);
+
+            return bits;
+        }
+
+#if !NET40
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe long ParseStar(CronField field, ref char* pointer)
+        {
+            return Accept(ref pointer, '/')
+                ? ParseStep(field, ref pointer, field.First, field.Last)
+                : field.AllBits;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe long ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
+        {
+            var num = ParseValue(field, ref pointer);
+            var bits = ParseRange(field, ref pointer, num, ref flags);
+
+            do
+            {
+                if (!Accept(ref pointer, ',')) return bits;
+
+                bits |= ParseList(field, ref pointer, ref flags);
+            } while (true);
+        }
+
+        private static unsafe long ParseRange(CronField field, ref char* pointer, int low, ref CronExpressionFlag flags)
+        {
+            if (!Accept(ref pointer, '-'))
+            {
+                if (!Accept(ref pointer, '/')) return GetBit(low);
+
+                if (field.CanDefineInterval) flags |= CronExpressionFlag.Interval;
+                return ParseStep(field, ref pointer, low, field.Last);
+            }
+
+            if (field.CanDefineInterval) flags |= CronExpressionFlag.Interval;
+
+            var high = ParseValue(field, ref pointer);
+            if (Accept(ref pointer, '/')) return ParseStep(field, ref pointer, low, high);
+            return GetBits(field, low, high, 1);
+        }
+
+        private static unsafe long ParseStep(CronField field, ref char* pointer, int low, int high)
+        {
+            // Get the step size -- note: we don't pass the
+            // names here, because the number is not an
+            // element id, it's a step size.  'low' is
+            // sent as a 0 since there is no offset either.
+            var step = ParseNumber(field, ref pointer, 1, field.Last);
+            return GetBits(field, low, high, step);
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe long ParseLastDayOfMonth(CronField field, ref char* pointer, ref CronExpressionFlag flags, ref byte lastMonthOffset)
+        {
+            flags |= CronExpressionFlag.DayOfMonthLast;
+
+            if (Accept(ref pointer, '-')) lastMonthOffset = (byte)ParseNumber(field, ref pointer, 0, field.Last - 1);
+            if (AcceptCharacter(ref pointer, 'W')) flags |= CronExpressionFlag.NearestWeekday;
+            return field.AllBits;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe long ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthdayOfWeek)
+        {
+            nthdayOfWeek = (byte)ParseNumber(field, ref pointer, MinNthDayOfWeek, MaxNthDayOfWeek);
+            flags |= CronExpressionFlag.NthDayOfWeek;
+            return GetBit(dayOfWeek);
+        }
+
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static long ParseLastWeekDay(int dayOfWeek, ref CronExpressionFlag flags)
+        {
+            flags |= CronExpressionFlag.DayOfWeekLast;
+            return GetBit(dayOfWeek);
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe bool Accept(ref char* pointer, char character)
+        {
+            if (*pointer == character)
+            {
                 pointer++;
-
-                expression._flags |= CronExpressionFlag.DayOfMonthLast;
-
-                if (*pointer == '-')
-                {
-                    // Eat the dash.
-                    pointer++;
-
-                    int lastMonthOffset;
-                    // Get the number following the dash.
-                    if ((lastMonthOffset = GetNumber(ref pointer, null)) == -1 || lastMonthOffset < 0 || lastMonthOffset >= high)
-                    {
-                        ThrowFormatException(field, "Last month offset must be a number between {0} and {1} (all inclusive).", low, high);
-                    }
-
-                    expression._lastMonthOffset = (byte)lastMonthOffset;
-                }
-                return field.AllBits;
-            }
-            else
-            {
-                var names = field.Names;
-
-                if ((num1 = GetNumber(ref pointer, names)) == -1 || num1 < low || num1 > high)
-                {
-                    ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
-                }
-
-                if (*pointer == '-')
-                {
-                    if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
-
-                    // Eat the dash.
-                    pointer++;
-
-                    // Get the number following the dash.
-                    if ((num2 = GetNumber(ref pointer, names)) == -1 || num2 < low || num2 > high)
-                    {
-                        ThrowFormatException(field, "Range must contain numbers between {0} and {1} (all inclusive).", low, high);
-                    }
-
-                    if (ToUpper(*pointer) == 'W')
-                    {
-                        ThrowFormatException(field, "'W' is not allowed after '-'.");
-                    }
-                }
-                else if (*pointer == '/')
-                {
-                    if (field.CanDefineInterval) expression._flags |= CronExpressionFlag.Interval;
-
-                    // If case of slash upper bound is high. E.g. '10/2` means 'every value from 10 to high with step size = 2'.
-                    num2 = high;
-                }
-                else
-                {
-                    return 1L << num1;
-                }
+                return true;
             }
 
-            // Check for step size.
-            if (*pointer == '/')
+            return false;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe bool AcceptCharacter(ref char* pointer, char character)
+        {
+            if (ToUpper(*pointer) == character)
             {
-                // Eat the slash.
                 pointer++;
-
-                // Get the step size -- note: we don't pass the
-                // names here, because the number is not an
-                // element id, it's a step size.  'low' is
-                // sent as a 0 since there is no offset either.
-                if ((num3 = GetNumber(ref pointer, null)) == -1 || num3 <= 0 || num3 > high)
-                {
-                    ThrowFormatException(field, "Step must be a number between 1 and {0} (all inclusive).", high);
-                }
-                if (ToUpper(*pointer) == 'W')
-                {
-                    ThrowFormatException(field, "'W' is not allowed after '/'.");
-                }
+                return true;
             }
-            else
+
+            return false;
+        }
+
+        private static unsafe int ParseNumber(CronField field, ref char* pointer, int low, int high)
+        {
+            var num = GetNumber(ref pointer, null);
+            if (num == -1 || num < low || num > high)
             {
-                // No step. Default == 1.
-                num3 = 1;
+                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
             }
+            return num;
+        }
 
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static unsafe int ParseValue(CronField field, ref char* pointer)
+        {
+            var num = GetNumber(ref pointer, field.Names);
+            if (num == -1 || num < field.First || num > field.Last)
+            {
+                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, field.First, field.Last);
+            }
+            return num;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static long GetBits(CronField field, int num1, int num2, int step)
+        {
             // If upper bound less than bottom one, e.g. range 55-10 specified
             // we'll set bits from 0 to 15 then we shift it right by 5 bits.
             int shift = 0;
+            int high = field.Last;
             if (num2 < num1)
             {
                 // Skip one of sundays.
@@ -672,30 +700,37 @@ namespace Cronos
 
                 shift = high - num1 + 1;
                 num2 = num2 + shift;
-                num1 = low;
+                num1 = field.First;
             }
 
+            var bits = 0L;
             // Range. set all elements from num1 to num2, stepping
             // by num3.
-            if (num3 == 1 && num1 < num2 + 1)
+            if (step == 1 && num1 < num2 + 1)
             {
                 // Fast path, to set all the required bits at once.
                 bits |= (1L << (num2 + 1)) - (1L << num1);
             }
             else
             {
-                for (var i = num1; i <= num2; i += num3)
+                for (var i = num1; i <= num2; i += step)
                 {
                     SetBit(ref bits, i);
                 }
             }
 
             // If we have range like 55-10 or 11-1, so num2 > num1 we have to shift bits right.
-            bits = shift == 0 
-                ? bits 
-                : bits >> shift | bits << (high - low - shift + 1);
+            return shift == 0
+                ? bits
+                : bits >> shift | bits << (high - num1 - shift + 1);
+        }
 
-            return bits;
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static long GetBit(int num1)
+        {
+            return 1L << num1;
         }
 
         private static unsafe int GetNumber(ref char* pointer, int[] names)
