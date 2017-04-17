@@ -90,45 +90,47 @@ namespace Cronos
                 if (Accept(ref pointer, '@'))
                 {
                     cronExpression = ParseMacro(ref pointer);
-                    if (cronExpression == null) ThrowFormatException("Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
+                    if (cronExpression == null) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
                     pointer++;
+
+                    SkipWhiteSpaces(ref pointer);
+                    if (!IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}'.", *pointer);
+
+                    return cronExpression;
+                }
+
+                cronExpression = new CronExpression();
+
+                if (format == CronFormat.IncludeSeconds)
+                {
+                    cronExpression._second = ParseField(CronField.Seconds, ref pointer, ref cronExpression._flags);
+                    ParseWhiteSpace(CronField.Seconds, ref pointer);
                 }
                 else
                 {
-                    cronExpression = new CronExpression();
-                    if (format == CronFormat.IncludeSeconds)
-                    {
-                        cronExpression._second = ParseField(CronField.Seconds, ref pointer, ref cronExpression._flags);
-                        ParseWhiteSpace(CronField.Seconds, ref pointer);
-                    }
-                    else
-                    {
-                        SetBit(ref cronExpression._second, CronField.Seconds.First);
-                    }
-
-                    cronExpression._minute = ParseField(CronField.Minutes, ref pointer, ref cronExpression._flags);
-                    ParseWhiteSpace(CronField.Minutes, ref pointer);
-
-                    cronExpression._hour = (int)ParseField(CronField.Hours, ref pointer, ref cronExpression._flags);
-                    ParseWhiteSpace(CronField.Hours, ref pointer);
-
-                    cronExpression._dayOfMonth = (int)ParseDayOfMonth(ref pointer, ref cronExpression._flags, ref cronExpression._lastMonthOffset);
-                    ParseWhiteSpace(CronField.DaysOfMonth, ref pointer);
-
-                    cronExpression._month = (short)ParseField(CronField.Months, ref pointer, ref cronExpression._flags);
-                    ParseWhiteSpace(CronField.Months, ref pointer);
-
-                    cronExpression._dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref cronExpression._flags, ref cronExpression._nthdayOfWeek);
-
-                    // Make sundays equivalent.
-                    if ((cronExpression._dayOfWeek & SundayBits) != 0)
-                    {
-                        cronExpression._dayOfWeek |= SundayBits;
-                    }
+                    SetBit(ref cronExpression._second, CronField.Seconds.First);
                 }
 
-                SkipWhiteSpaces(ref pointer);
-                ParseEndOfString(pointer);
+                cronExpression._minute = ParseField(CronField.Minutes, ref pointer, ref cronExpression._flags);
+                ParseWhiteSpace(CronField.Minutes, ref pointer);
+
+                cronExpression._hour = (int)ParseField(CronField.Hours, ref pointer, ref cronExpression._flags);
+                ParseWhiteSpace(CronField.Hours, ref pointer);
+
+                cronExpression._dayOfMonth = (int)ParseDayOfMonth(ref pointer, ref cronExpression._flags, ref cronExpression._lastMonthOffset);
+                ParseWhiteSpace(CronField.DaysOfMonth, ref pointer);
+
+                cronExpression._month = (short)ParseField(CronField.Months, ref pointer, ref cronExpression._flags);
+                ParseWhiteSpace(CronField.Months, ref pointer);
+
+                cronExpression._dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref cronExpression._flags, ref cronExpression._nthdayOfWeek);
+                ParseEndOfString(ref pointer);
+
+                // Make sundays equivalent.
+                if ((cronExpression._dayOfWeek & SundayBits) != 0)
+                {
+                    cronExpression._dayOfWeek |= SundayBits;
+                }
 
                 return cronExpression;
             }
@@ -385,8 +387,11 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private static unsafe void ParseEndOfString(char* pointer)
+        private static unsafe void ParseEndOfString(ref char* pointer)
         {
+            if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(CronField.DaysOfWeek, "Unexpected character '{0}'.", *pointer);
+
+            SkipWhiteSpaces(ref pointer);
             if (!IsEndOfString(*pointer)) ThrowFormatException("Unexpected character '{0}'.", *pointer);
         }
 
@@ -757,8 +762,6 @@ namespace Cronos
 
             if (!IsLetter(*pointer)) return -1;
             buffer |= ToUpper(*pointer++) << 16;
-
-            if (IsLetter(*pointer)) return -1;
 
             var length = names.Length;
 
