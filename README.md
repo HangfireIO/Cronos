@@ -33,28 +33,27 @@ using Cronos;
 
 CronExpression expression = CronExpression.Parse("* * * * *");
 
-DateTime? nextLocal = expression.GetNextOccurrence(DateTime.Now);
-DateTime? nextUtc   = expression.GetNextOccurrence(DateTime.UtcNow);
+DateTime? nextUtc = expression.GetNextOccurrence(DateTime.UtcNow);
 ```
 
-Both the `nextLocal` and `nextUtc` will contain the next occurrence, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
+The `nextUtc` will contain the next occurrence, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
 
-All the time zone handling logic will be done behind the scenes: `nextLocal` will contain an occurrence in the `TimeZoneInfo.Local` time zone with `DateTimeKind.Local` specified, and `nextUtc` will contain an occurrence in the `TimeZoneInfo.Utc` zone with `DateTimeKind.Utc` specified. All Daylight Saving Time transition's corner cases are handled automatically (see below).
+All the time zone handling logic will be done behind the scenes: `nextUtc` will contain an occurrence in the `TimeZoneInfo.Utc` zone with `DateTimeKind.Utc` specified.
 
 When invalid Cron expression is given, an instance of the `CronFormatException` class is thrown.
 
 ### Passing custom DateTime or DateTimeOffset
 
-When dealing with custom `DateTime` instances, always specify its `Kind` property (for example, using the `DateTime.SpecifyKind` method). When a date/time with `DateTimeKind.Unspecified` is given, Cronos will throw the `ArgumentException`, because it's unclear what time zone to use, and the result is prone to errors.
+When dealing with custom `DateTime` instances, always specify its `Kind` property (for example, using the `DateTime.SpecifyKind` method). When a date/time without `DateTimeKind.Utc` is given, Cronos will throw the `ArgumentException`, because it's unclear what time zone to use, and the result is prone to errors.
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
-DateTime from = new DateTime(2017, 03, 21, 18, 23, 00, DateTimeKind.Local); // Or DateTimeKind.Utc
+DateTime from = new DateTime(2017, 03, 21, 18, 23, 00, DateTimeKind.Utc);
 
 DateTime? next = expression.GetNextOccurrence(from);
 ```
 
-If you are using the `DateTimeOffset` class, you either need to convert it to local or UTC first (using `UtcDateTime` or `LocalDateTime` properties), or specify a time zone explicitly (please see the next section).
+If you are using the `DateTimeOffset` class, you either need to convert it UTC first (using `UtcDateTime` property), or specify a time zone explicitly (please see the next section).
 
 ```csharp
 DateTime? next = expression.GetNextOccurrence(DateTimeOffset.Now.UtcDateTime);
@@ -62,7 +61,7 @@ DateTime? next = expression.GetNextOccurrence(DateTimeOffset.Now.UtcDateTime);
 
 ### Working with time zones
 
-It is possible to specify a time zone directly, but in this case you should always pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
+It is possible to specify a time zone directly, in this case you should always pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
