@@ -90,11 +90,9 @@ namespace Cronos
                 if (Accept(ref pointer, '@'))
                 {
                     cronExpression = ParseMacro(ref pointer);
-                    if (cronExpression == null) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
-                    pointer++;
-
                     SkipWhiteSpaces(ref pointer);
-                    if (!IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}'.", *pointer);
+
+                    if (cronExpression == null || !IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
 
                     return cronExpression;
                 }
@@ -397,100 +395,98 @@ namespace Cronos
 
         private static unsafe CronExpression ParseMacro(ref char* pointer)
         {
-            switch (ToUpper(*pointer))
+            switch (ToUpper(*pointer++))
             {
                 case 'A':
-                    if (ToUpper(*++pointer) == 'N' &&
-                        ToUpper(*++pointer) == 'N' &&
-                        ToUpper(*++pointer) == 'U' &&
-                        ToUpper(*++pointer) == 'A' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'N') &&
+                        AcceptCharacter(ref pointer, 'N') &&
+                        AcceptCharacter(ref pointer, 'U') &&
+                        AcceptCharacter(ref pointer, 'A') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Yearly;
                     return null;
                 case 'D':
-                    if (ToUpper(*++pointer) == 'A' &&
-                        ToUpper(*++pointer) == 'I' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'A') &&
+                        AcceptCharacter(ref pointer, 'I') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Daily;
                     return null;
                 case 'E':
-                    if (ToUpper(*++pointer) == 'V' &&
-                        ToUpper(*++pointer) == 'E' &&
-                        ToUpper(*++pointer) == 'R' &&
-                        ToUpper(*++pointer) == 'Y' &&
-                        ToUpper(*++pointer) == '_')
+                    if (AcceptCharacter(ref pointer, 'V') &&
+                        AcceptCharacter(ref pointer, 'E') &&
+                        AcceptCharacter(ref pointer, 'R') &&
+                        AcceptCharacter(ref pointer, 'Y') &&
+                        Accept(ref pointer, '_'))
                     {
-                        pointer++;
-                        if (ToUpper(*pointer) == 'M' &&
-                            ToUpper(*++pointer) == 'I' &&
-                            ToUpper(*++pointer) == 'N' &&
-                            ToUpper(*++pointer) == 'U' &&
-                            ToUpper(*++pointer) == 'T' &&
-                            ToUpper(*++pointer) == 'E')
+                        if (AcceptCharacter(ref pointer, 'M') &&
+                            AcceptCharacter(ref pointer, 'I') &&
+                            AcceptCharacter(ref pointer, 'N') &&
+                            AcceptCharacter(ref pointer, 'U') &&
+                            AcceptCharacter(ref pointer, 'T') &&
+                            AcceptCharacter(ref pointer, 'E'))
                             return Minutely;
 
                         if (*(pointer - 1) != '_') return null;
 
-                        if (*(pointer - 1) == '_' &&
-                            ToUpper(*pointer) == 'S' &&
-                            ToUpper(*++pointer) == 'E' &&
-                            ToUpper(*++pointer) == 'C' &&
-                            ToUpper(*++pointer) == 'O' &&
-                            ToUpper(*++pointer) == 'N' &&
-                            ToUpper(*++pointer) == 'D')
+                        if (AcceptCharacter(ref pointer, 'S') &&
+                            AcceptCharacter(ref pointer, 'E') &&
+                            AcceptCharacter(ref pointer, 'C') &&
+                            AcceptCharacter(ref pointer, 'O') &&
+                            AcceptCharacter(ref pointer, 'N') &&
+                            AcceptCharacter(ref pointer, 'D'))
                             return Secondly;
                     }
 
                     return null;
                 case 'H':
-                    if (ToUpper(*++pointer) == 'O' &&
-                        ToUpper(*++pointer) == 'U' &&
-                        ToUpper(*++pointer) == 'R' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'O') &&
+                        AcceptCharacter(ref pointer, 'U') &&
+                        AcceptCharacter(ref pointer, 'R') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Hourly;
                     return null;
                 case 'M':
-                    pointer++;
-                    if (ToUpper(*pointer) == 'O' &&
-                        ToUpper(*++pointer) == 'N' &&
-                        ToUpper(*++pointer) == 'T' &&
-                        ToUpper(*++pointer) == 'H' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'O') &&
+                        AcceptCharacter(ref pointer, 'N') &&
+                        AcceptCharacter(ref pointer, 'T') &&
+                        AcceptCharacter(ref pointer, 'H') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Monthly;
 
                     if (ToUpper(*(pointer - 1)) == 'M' &&
-                        ToUpper(*pointer) == 'I' &&
-                        ToUpper(*++pointer) == 'D' &&
-                        ToUpper(*++pointer) == 'N' &&
-                        ToUpper(*++pointer) == 'I' &&
-                        ToUpper(*++pointer) == 'G' &&
-                        ToUpper(*++pointer) == 'H' &&
-                        ToUpper(*++pointer) == 'T')
+                        AcceptCharacter(ref pointer, 'I') &&
+                        AcceptCharacter(ref pointer, 'D') &&
+                        AcceptCharacter(ref pointer, 'N') &&
+                        AcceptCharacter(ref pointer, 'I') &&
+                        AcceptCharacter(ref pointer, 'G') &&
+                        AcceptCharacter(ref pointer, 'H') &&
+                        AcceptCharacter(ref pointer, 'T'))
                         return Daily;
 
                     return null;
                 case 'W':
-                    if (ToUpper(*++pointer) == 'E' &&
-                        ToUpper(*++pointer) == 'E' &&
-                        ToUpper(*++pointer) == 'K' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'E') &&
+                        AcceptCharacter(ref pointer, 'E') &&
+                        AcceptCharacter(ref pointer, 'K') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Weekly;
                     return null;
                 case 'Y':
-                    if (ToUpper(*++pointer) == 'E' &&
-                        ToUpper(*++pointer) == 'A' &&
-                        ToUpper(*++pointer) == 'R' &&
-                        ToUpper(*++pointer) == 'L' &&
-                        ToUpper(*++pointer) == 'Y')
+                    if (AcceptCharacter(ref pointer, 'E') &&
+                        AcceptCharacter(ref pointer, 'A') &&
+                        AcceptCharacter(ref pointer, 'R') &&
+                        AcceptCharacter(ref pointer, 'L') &&
+                        AcceptCharacter(ref pointer, 'Y'))
                         return Yearly;
                     return null;
                 default:
+                    pointer--;
                     return null;
             }
         }
