@@ -36,32 +36,13 @@ CronExpression expression = CronExpression.Parse("* * * * *");
 DateTime? nextUtc = expression.GetNextOccurrence(DateTime.UtcNow);
 ```
 
-The `nextUtc` will contain the next occurrence, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
-
-All the time zone handling logic will be done behind the scenes: `nextUtc` will contain an occurrence in the `TimeZoneInfo.Utc` zone with `DateTimeKind.Utc` specified.
+The `nextUtc` will contain the next occurrence in the `TimeZoneInfo.Utc` zone, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
 
 When invalid Cron expression is given, an instance of the `CronFormatException` class is thrown.
 
-### Passing custom DateTime or DateTimeOffset
-
-When dealing with custom `DateTime` instances, always specify its `Kind` property (for example, using the `DateTime.SpecifyKind` method). When a date/time without `DateTimeKind.Utc` is given, Cronos will throw the `ArgumentException`, because it's unclear what time zone to use, and the result is prone to errors.
-
-```csharp
-CronExpression expression = CronExpression.Parse("* * * * *");
-DateTime from = new DateTime(2017, 03, 21, 18, 23, 00, DateTimeKind.Utc);
-
-DateTime? next = expression.GetNextOccurrence(from);
-```
-
-If you are using the `DateTimeOffset` class, you either need to convert it UTC first (using `UtcDateTime` property), or specify a time zone explicitly (please see the next section).
-
-```csharp
-DateTime? next = expression.GetNextOccurrence(DateTimeOffset.Now.UtcDateTime);
-```
-
 ### Working with time zones
 
-It is possible to specify a time zone directly, in this case you should always pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
+It is possible to specify a time zone directly, in this case you should pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
@@ -75,16 +56,16 @@ Resulting time will be in UTC. All Daylight Saving Time transition's corner case
 
 ### Adding seconds to an expression
 
-If you want to specify seconds, use another overload of the `Parse` method and specify the `CronFields` argument as below:
+If you want to specify seconds, use another overload of the `Parse` method and specify the `CronFormat` argument as below:
 
 ```csharp
-CronExpression expression = CronExpression.Parse("*/30 * * * * *", CronFields.IncludeSeconds);
+CronExpression expression = CronExpression.Parse("*/30 * * * * *", CronFormat.IncludeSeconds);
 DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
 ```
 
 ## Cron format
 
-**Cronos** supports expressions made of second (optional), minute, hour, day of month, month, day of week fields:
+Cron expression is a mask to define fixed times, dates and intervals. The mask consists of second (optional), minute, hour, day-of-month, month, day-of-week fields:
 
                                            Allowed values    Allowed special characters   Comment
 
@@ -99,176 +80,150 @@ DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
     │ │ │ │ │ │
     * * * * * *
 
-**Star `*`**
+### Base characters
 
-`*` means any value. Used to select all values within a field. For example, `*` in the hour field means "every hour":
+In all fields you can use number, `*` to mark field as *any value*, `-` to specify ranges of values. Reversed ranges like `22-1`(equivalent to `22,23,0,1,2`) are also supported.
 
-| Expression    | Description                          |
-|---------------|--------------------------------------|
-| `* * * * * *` | Every second                         |
-| `* * * * *`   | Every minute                         |
-| `30 3 * * *`  | At 3:30 AM every day                 |
-| `0  0 1 * *`  | At midnight, on day 1 of every month |
+It's possible to define **step** combining `/` with `*`, numbers and ranges. For example, `*/5` in minute field describes *every 5 minute* and `1-15/3` in day-of-month field – *every 3 days from the 1st to the 15th*. Pay attention that `*/24` is just equivalent to `0,24,48` and `*/24` in minute field doesn't literally mean *every 24 minutes* it means *every 0,24,48 minute*.
 
-**Comma `,`**
+Concatinate values and ranges by `,`. Comma works like `OR` operator. So `3,5-11/3,12` is equivalent to `3,5,8,11,12`.
 
-Commas are used to separate items of a list.
+In month and day-of-week fields, you can use names of months or days of weeks abbreviated to first three letters (`Jan-Dec` or `Mon-Sun`) instead of their numeric values. Full names like `JANUARY` or `MONDAY` **aren't supported**.
 
-| Expression        | Description                           |
-|-------------------|---------------------------------------|
-| `15,45 * * * * *` | Every minute at 15 and 45 seconds     |
-| `* * * * SAT,SUN` | Every minute on saturdays and sundays |
-| `* * * * 6,7`     | Every minute on saturdays and sundays |
-| `* * * * 0,6`     | Every minute on saturdays and sundays |
+| Expression           | Description                                                                           |
+|----------------------|---------------------------------------------------------------------------------------|
+| `* * * * *`          | Every minute                                                                          |
+| `0  0 1 * *`         | At midnight, on day 1 of every month                                                  |
+| `*/5 * * * *`        | Every 5 minutes                                                                       |
+| `30,45-15/2 1 * * *` | Every 2 minute from 1:00 AM to 01:15 AM and from 1:45 AM to 1:59 AM and at 1:30 AM    |
+| `0 0 * * MON-FRI`    | At 00:00, Monday through Friday                                                       |
 
-**Hyphens `-`**
+### Special characters
 
-Hyphens define ranges. 
+Most expressions you can describe using base characters. If you want to deal with more complex cases like *the last day of month* or *the 2nd Saturday* use special characters:
 
-| Expression        | Description                                                       |
-|-------------------|-------------------------------------------------------------------|
-| `0-30 1 * * *`    | Every minute between 01:00 AM and 01:30 AM                        |
-| `45-15 1 * * *`   | Every minute from 1:00 AM to 01:15 AM and from 1:45 AM to 1:59 AM |
-| `0 0 * * MON-FRI` | At 00:00, Monday through Friday                                   |
+**`L`** stands for "last". When used in the day-of-week field, it allows you to specify constructs such as *the last Friday* (`5L`or `FRIL`). In the day-of-month field, it specifies the last day of the month.
 
-**L character**
+**`W`** in day-of-month field is the nearest weekday. Use `W`  with single value (not ranges, steps or `*`) to define *the nearest weekday* to the given day. In this case there are two base rules to determine occurrence: we should shift to **the nearest weekday** and **can't shift to different month**. Thus if given day is Saturday we shift to Friday, if it is Sunday we shift to Monday. **But** if given day is **the 1st day of month** (e.g. `0 0 1W * *`) and it is Saturday we shift to the 3rd Monday, if given day is **last day of month** (`0 0 31W 0 0`) and it is Sunday we shift to that Friday. Mix `L` (optionaly with offset) and `W` characters to specify *last weekday of month* `LW` or more complex like `L-5W`.
 
-`L` stands for "last". When used in the day-of-week field, it allows you to specify constructs such as "the last Friday" (`5L`) of a given month. In the day-of-month field, it specifies the last day of the month.
+**`#`** in day-of-week field allows to specify constructs such as *second Saturday* (`6#2` or `SAT#2`).
 
-| Expression    | Description                                          |
-|---------------|------------------------------------------------------|
-| `0 0 L * *`   | At 00:00 AM on the last day of the month             |
-| `0 0 L-1 * *` | At 00:00 AM the day before the last day of the month |
-| `0 0 * * 1L`  | At 00:00 AM on the last monday of the month          |
-
-**W character**
-
-You can specify *the nearest weekday* using `W` in the day-of-month field. There are two base rules to determine occurrence: we should shift to **the nearest weekday** and **can't shift to different month**. Thus if given day is Saturday we shift to Friday, if it is Sunday we shift to Monday. **But** if we have `0 0 1W * *` and the 1th is Saturday we shift to the 3th Monday. And if we have `0 0 LW * *` and last day of month is Sunday we shift to that Friday.
+**`?`** is synonym of `*`. It's supported but not obligatory, so `0 0 5 * ?` is the same as `0 0 5 * *`.
 
 | Expression        | Description                                              |
 |-------------------|----------------------------------------------------------|
-| `0 0 1W * *`      | At 00:00 AM, on the first weekday of every month         |
-| `0 0 10W * *`     | At 00:00 AM on the weekday nearest day 10 of every month |
-| `0 0 LW * *`      | At 00:00, on the last weekday of the month               |
+| `0 0 L   * *`     | At 00:00 AM on the last day of the month                 |
+| `0 0 L-1 * *`     | At 00:00 AM the day before the last day of the month     |
+| `0 0 3W  * *`     | At 00:00 AM, on the 3rd weekday of every month           |
+| `0 0 LW  * *`     | At 00:00 AM, on the last weekday of the month            |
+| `0 0 *   * 2L`    | At 00:00 AM on the last tuesday of the month             |
+| `0 0 *   * 6#3`   | At 00:00 AM on the third Saturday of the month           |
+| `0 0 ?   1 MON#1` | At 00:00 AM on the first Monday of the January           |
 
-**Hash `#`**
+### Specify Day of month and Day of week
 
-Sometimes you need to specify *first Friday* or *second Saturday*. It's possible using `#` character:
+You can set both **day-of-month** and **day-of-week**, it allows you to specify constructs such as **Friday the thirteenth**. Thus `0 0 13 * 5` means at 00:00, Friday the thirteenth.
 
-| Expression        | Description                                              |
-|-------------------|----------------------------------------------------------|
-| `0 0 * * 6#3`     | At 00:00 AM on the third Saturday of the month           |
-| `0 0 * * 1#1`     | At 00:00 AM on the first Monday of the month             |
-| `0 0 * 1 MON#1`   | At 00:00 AM on the first Monday of the January           |
+It differs from Unix crontab and Quartz cron implementations. Crontab handles it like `OR` operator: occurrence can happen in given day of month or given day of week. So `0 0 13 * 5` means *at 00:00 AM, every friday or every the 13th of a month*. Quartz doesn't allow specify both day-of-month and day-of-week.
 
-**Question mark `?`**
+### Macro
 
-`?` is "no specific value" and a synonym of `*`. It's supported but **non-obligatory**. `0 0 5 * *` is the same as `0 0 5 * ?`. You can specify `?` only in one field. For example, `* * ? * ?` is wrong expression.
+A macro is a string starting with `@` and representing a shortcut for simple cases like *every day* or *every minute*.
 
-| Expression    | Description                          |
-|---------------|--------------------------------------|
-| `* * * * * ?` | Every second                         |
-| `* * * ? * *` | Every second                         |
-| `* * * * ?`   | Every minute                         |
-| `* * ? * *`   | Every minute                         |
-| `0  0 1 * ?`  | At midnight, on day 1 of every month |
-| `0  0 ? * 1`  | At midnight every Monday             |
+| Macro          | Equivalent    |
+|----------------|---------------|
+|`@every_second` | `* * * * * *` |
+|`@every_minute` | `* * * * *`   |
+|`@hourly`       | `0 * * * *`   |
+|`@daily`        | `0 0 * * *`   |
+|`@midnight`     | `0 0 * * *`   |
+|`@weekly`       | `0 0 * * 0`   |
+|`@monthly`      | `0 0 1 * *`   |
+|`@yearly`       | `0 0 1 1 *`   |
+|`@annually`     | `0 0 1 1 *`   |
 
-**Slash `/`**
+### Cron grammar
 
-Slashes can be combined with ranges to specify step values. 
+Cronos parser uses following case-insensitive grammar:
 
-| Expression        | Description                                                                                |
-|-------------------|--------------------------------------------------------------------------------------------|
-| `*/5 * * * * *`   | Every 5 seconds                                                                            |
-| `0 1/5 * * *`     | Every 5 hours, starting at 01:00                                                           |
-| `*/30 */6 * * *`  | Every 30 minutes, every 6 hours: at 00:00, 00:30, 06:00, 06:30, 12:00, 12:30, 18:00, 18:30 |
-| `0 0  15/2 * *`   | At 00:00, every 2 days, starting on day 15 of the month                                    |
-| `0 0 * 2/3 *`     | At 00:00, every 3 months, February through December                                        |
-| `0 0 * * 1/2`     | At 00:00, every 2 days of the week, starting on Monday                                     |
-
-**Specify Day of month and Day of week**
-
-You can specify both Day of month and Day of week, it allows you to specify constructs such as "Friday the thirteenth". 
-
-| Expression        | Description                                                                                |
-|-------------------|--------------------------------------------------------------------------------------------|
-| `0 0 13 * 5`      | At 00:00, Friday the thirteenth                                                            |
-| `0 0 13 2 5`      | At 00:00, Friday the thirteenth, only in February                                          |
+```
+cron :: expression | macro
+expression :: [second space] minute space hour space day-of-month space month space day-of-week
+second :: field
+minute :: field
+hour :: field
+day-of-month :: '*' step | lastday | value [ 'W' | range [list] ] | '?'
+month :: field
+day-of-week :: '*' step | value [ dowspec | range [list] ] | '?'
+macro :: '@every_second' | '@every_minute' | '@hourly' | '@daily' | '@midnight' | '@weekly' | '@monthly' |
+         '@yearly' | '@annually'
+field :: '*' step | value [range] [list] | '?'
+list :: { ',' value [range] }
+range :: '-' value [step] | [step]
+step :: '/' number
+value :: number | name
+name :: month-name | dow-name
+month-name :: 'JAN' | 'FEB' | 'MAR' | 'APR' | 'MAY' | 'JUN' | 'JUL' | 'AUG' | 'SEP' | 'OCT' | 'NOV' | 'DEC'
+dow-name :: 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT'
+dowspec :: 'L' | '#' number
+lastday :: 'L' ['-' number] ['W']
+number :: digit | number digit
+space :: ' ' | '\t'
+```
 
 ## Daylight Saving Time
 
-**Cronos** correctly handles the transition from standard time (ST) to Daylight saving time (DST). 
+Cronos is the only library to handle daylight saving time transitions correctly. 
 
-### Setting the clocks forward
+There aren't skipping occurrences on Standard Time (ST) to Daylight Saving Time (DST) transitions (when the clock jumps forward). Also there are no skipping interval based (whose second, minute or hour field contains `*`, ranges or steps) and no duplicate non-interval based occurrences on DST to ST transitions (backward jump).
 
-If next occurrence falls on invalid time when the clocks jump forward then next occurrence will shift to next valid time. See example:
+### Standard Time to Daylight Saving Time transition
+
+When Standard Time (ST) transit to Daylight Saving Time (DST) the clock jumps forward. So there is non-existing, invalid time and if an occurrence falls on that time we can't just skip it. Instead we shift that occurrence to next valid time. See example:
 
 ```csharp
+// 2016-03-13 is the day when Daylight Saving Time starts in Eastern time zone. 
+// The clocks jump from 01:59 AM -05:00 to 03:00 AM -04:00. 
+// So duration from 02:00 AM to 02:59 AM is invalid.
+var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
 var expression = CronExpression.Parse("0 30 2 * * *");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-// 2016-03-13 - the day when DST starts in Eastern time zone. The clocks jump from 1:59 am ST to 3:00 am DST. 
-// So duration from 2:00 am to 2:59 am is invalid.
+// Moment before transition time.
+var startTime = new DateTimeOffset(2016, 03, 13, 01, 59, 59, TimeSpan.FromHours(-5));
 
-var startTime = new DateTimeOffset(2016, 03, 13, 01, 50, 00, easternTimeZone.BaseUtcOffset);
-
-// Should be scheduled to 2:30 am ST but that time is invalid. Next valid time is 3:00 am DST.
-var next = expression.GetOccurrenceAfter(startTime, easternTimeZone);
-
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-03-13 03:00:00 AM -04:00
+// Due to expression next should equal 2016-03-13 02:30 AM but that time is invalid.
+// Thus next equal to next valid time 03:00 AM -04:00.
+var next = expression.GetOccurrenceAfter(startTime, easternTimeZone));
 ```
 
-### Setting the clocks backward
+### Daylight Saving Time to Standard Time transition
 
-When DST ends you set the clocks backward so you have duration which repeats twice. If you are in USA the duration was e.g. 2016/11/06 from 1:00 am to 1:59 am. If next occurrence falls on this duration behavior depends on kind of cron expression: non-interval or interval.
+When Daylight Saving Time ends you set the clocks backward so there is duration which repeats twice. If next occurrence falls on this duration behavior depends on kind of cron expression: non-interval based or interval based. 
 
-#### Non-interval
+Cron expression is **interval based** whose second, minute or hour field contains `*`, ranges or steps, e.g. `0 30 * * * *`, `0 * 1 * * *`, `0,5 0/10 1 * * *`. In this case there are expectations that occurrences should happen periodically during the day and this rule can't be broken by time transitions. Thus for **interval based** expressions occurrences will be before and after clock shifts.
 
-Cron expression is non-interval if it describes certain time of a day, e.g. `"0 30 1 * * ?"` - 1:30 am every day, or `"0 0,45 1,2 * * ?"` - 1:00 am, 1:45 am, 2:00 am, 2:45 am every day. In this case each cron job will be scheduled only before clock shifts. Reason is when you describe certain time of day you mean that it should be scheduled once a day regardless whether there is clock shifts in that day.
-
-```csharp
-var expression = CronExpression.Parse("0 30 1 * * ?");
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
-
-var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
-var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
-
-var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
-Console.WriteLine("Next occurrence at " + next);
-
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-03-13 01:30:00 AM -04:00
-// Next occurrence at 2016-03-13 02:30:00 AM -05:00
-```
-
-#### Interval
-
-Cron expression is interval if it describes secondly, minutely or hourly job, e.g. `"0 30 * * * ?"`, `"0 * 1 * * ?"`, `"0,5 */10 * * * ?"`. In this case each cron job will be scheduled before and after clock shifts.
+In the case of non-interval based expressions, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`, we expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
 
 ```csharp
-var expression = CronExpression.Parse("0 30 * * * ?");
+// 2016-11-06 is the day when Daylight Saving Time ends in Eastern time zone.
+// The clocks jump from 02:00 AM -04:00 to 01:00 AM -05:00. 
+// So duration from 01:00 AM to 01:59 AM is ambiguous because it exists in two offsets.
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-var startTime = new DateTime(2016, 11, 06, 00, 59, 00);
-var startTimeWithOffset = new DateTimeOffset(startTime, easternTimeZone.GetUtcOffset(startTime));
+var intervalExpression    = CronExpression.Parse("30 * * * *");
+var nonIntervalExpression = CronExpression.Parse("30 1 * * *");
 
-var next = expression.GetOccurrenceAfter(startTimeWithOffset, easternTimeZone);
-Console.WriteLine("Next occurrence at " + next);
+// Moment before ambiguous time.
+var startTime = new DateTimeOffset(2016, 11, 06, 00, 59, 59, TimeSpan.FromHours(-4));
 
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
+// For intervalExpression we expect it will occur every 30 minutes no matter what.
+// Thus next occurrence will be at 01:30 AM -04:00, then at 01:30 AM -05:00, then at 02:30 AM -05:00 on 2016-11-06.
+var next = intervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
 
-next = expression.GetOccurrenceAfter(next.Value);
-Console.WriteLine("Next occurrence at " + next);
-
-// Next occurrence at 2016-11-06 01:30:00 AM -04:00
-// Next occurrence at 2016-11-06 01:30:00 AM -05:00
-// Next occurrence at 2016-11-06 02:30:00 AM -05:00
+// For nonIntervalExpression we expect it will occure once per day no matter what.
+// Thus next occurrence will be at 2016-11-06 01:30 AM -04:00, then at 2016-11-07 01:30 AM -05:00 and so on.
+next = nonIntervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
 ```
 
 ## License
