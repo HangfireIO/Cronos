@@ -211,18 +211,24 @@ In the case of non-interval based expressions, e.g. `0 30 1 * * *` or `0 0,45 1,
 // So duration from 01:00 AM to 01:59 AM is ambiguous because it exists in two offsets.
 var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
+// IntervalExpression should occur every 30 minutes and nonIntervalExpression - once a day no matter what.
 var intervalExpression    = CronExpression.Parse("30 * * * *");
 var nonIntervalExpression = CronExpression.Parse("30 1 * * *");
 
 // Moment before ambiguous time.
 var startTime = new DateTimeOffset(2016, 11, 06, 00, 59, 59, TimeSpan.FromHours(-4));
 
-// For intervalExpression we expect it will occur every 30 minutes no matter what.
-// Thus next occurrence will be at 01:30 AM -04:00, then at 01:30 AM -05:00, then at 02:30 AM -05:00 on 2016-11-06.
+// Next occurrences will be on 2016-11-06 at:
+// 01:30 AM -04:00,
+// 01:30 AM -05:00, 
+// 02:30 AM -05:00,
+// and so on every 30 minutes.
 var next = intervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
 
-// For nonIntervalExpression we expect it will occure once per day no matter what.
-// Thus next occurrence will be at 2016-11-06 01:30 AM -04:00, then at 2016-11-07 01:30 AM -05:00 and so on.
+// Next occurrences will be at:
+// 2016-11-06 01:30 AM -04:00,
+// 2016-11-07 01:30 AM -05:00,
+// and so on at 01:30 AM every day.
 next = nonIntervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
 ```
 
