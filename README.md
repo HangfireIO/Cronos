@@ -236,4 +236,6 @@ next = nonIntervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
 
 Cronos is under the [Apache License 2.0][Apache-2.0].
 
+Copyright © 2016-2017 Sergey Odinokov.
+
 [Apache-2.0]:LICENSE
