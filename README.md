@@ -183,9 +183,13 @@ When Standard Time (ST) transit to Daylight Saving Time (DST) the clock jumps fo
 
 **Example:**
 
-2016-03-13 is the day when Daylight Saving Time starts in Eastern time zone. The clocks jump from 01:59:59 AM -05:00 to 03:00:00 AM -04:00. So duration from 02:00:00 AM to 02:59:59 AM is invalid.
+2016-03-13 is the day when **Daylight Saving Time starts** in Eastern time zone. The clocks jump from `02:00 AM -05:00` to `03:00 AM -04:00`. So **duration from 02:00:00 AM to 02:59:59 AM is invalid**.
 
-`0 30 2 * * *` expression should occur at `2016-03-12 02:30 AM`, `2016-03-13 02:30 AM`, `2016-03-13 02:30 AM`. **But** `2016-03-13 02:30 AM` is invalid and that occurrence shifts to next valid time `2016-03-13 03:00 AM -04:00`. Thus occurrences of given expression will be at `2016-03-12 02:30 AM`, `2016-03-13 03:00 AM`, `2016-03-13 02:30 AM` and so on at 02:30 AM every day.
+`0 30 2 * * *` expression should occur at `02:30 AM` every day. **But** `2016-03-13 02:30 AM` is invalid and that occurrence shifts to next valid time `2016-03-13 03:00 AM -04:00`. Thus occurrences of given expression will be at:
+* `2016-03-12 02:30 AM`,
+* `2016-03-13 03:00 AM`,
+* `2016-03-14 02:30 AM`,
+* so on at `02:30 AM` every day.
 
 ### Daylight Saving Time to Standard Time transition
 
@@ -193,15 +197,27 @@ When Daylight Saving Time ends you set the clocks backward so there is duration 
 
 Cron expression is **interval based** whose second, minute or hour field contains `*`, ranges or steps, e.g. `0 30 * * * *`, `0 * 1 * * *`, `0,5 0/10 1 * * *`. In this case there are expectations that occurrences should happen periodically during the day and this rule can't be broken by time transitions. Thus for **interval based** expressions occurrences will be before and after clock shifts.
 
-In the case of non-interval based expressions, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`, we expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
+In the case of **non-interval based** expressions, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`, we expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
 
 **Example:**
 
-2016-11-06 is the day when Daylight Saving Time ends in Eastern time zone. The clocks jump from 02:00 AM -04:00 to 01:00 AM -05:00. So duration from 01:00 AM to 01:59 AM is ambiguous because it exists in two offsets.
+2016-11-06 is the day when **Daylight Saving Time ends** in Eastern time zone. The clocks jump from `02:00 AM -04:00` to `01:00 AM -05:00`. So **duration from 01:00 AM to 01:59 AM is ambiguous** because it exists in two offsets.
 
-`30 * * * *` is interval expression, so it should occur every 30 minutes no matter what. Thus occurrences will be on 2016-11-06 at `00:00 AM -04:00`, `00:30 AM -04:00`, `01:30 AM -04:00`, `01:30 AM -05:00`, `02:30 AM -05:00` and so on every 30 minutes.
+`30 * * * *` is interval expression, so it should occur **every 30 minutes no matter what**. Thus occurrences will be on 2016-11-06 at:
+* `00:00 AM -04:00`, 
+* `00:30 AM -04:00`, 
+* `01:30 AM -04:00`,
+* `01:30 AM -05:00`,
+* `02:30 AM -05:00`,
+* so on every 30 minutes.
 
-`30 1 * * *` is non-interval expression, so it should occur once a day no matter what. Thus occurrences will be at `2016-11-05 01:30 AM -04:00`, `2016-11-06 01:30 AM -04:00`, `2016-11-07 01:30 AM -05:00` and so on at 01:20 every day.
+`30 1 * * *` is non-interval expression, so it should occur **once a day no matter what**. Thus occurrences will be at:
+* `2016-11-05 01:30 AM -04:00`, 
+* `2016-11-06 01:30 AM -04:00`, 
+* `2016-11-07 01:30 AM -05:00`
+* so on at `01:30` every day.
+
+Pay attention that `2016-11-06 01:30 AM -05:00` was skipped.
 
 ## License
 
