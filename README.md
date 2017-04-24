@@ -179,23 +179,13 @@ There aren't skipping occurrences on Standard Time (ST) to Daylight Saving Time 
 
 ### Standard Time to Daylight Saving Time transition
 
-When Standard Time (ST) transit to Daylight Saving Time (DST) the clock jumps forward. So there is non-existing, invalid time and if an occurrence falls on that time we can't just skip it. Instead we shift that occurrence to next valid time. See example:
+When Standard Time (ST) transit to Daylight Saving Time (DST) the clock jumps forward. So there is non-existing, invalid time and if an occurrence falls on that time we can't just skip it. Instead we shift that occurrence to next valid time. 
 
-```csharp
-// 2016-03-13 is the day when Daylight Saving Time starts in Eastern time zone. 
-// The clocks jump from 01:59 AM -05:00 to 03:00 AM -04:00. 
-// So duration from 02:00 AM to 02:59 AM is invalid.
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+**Example:**
 
-var expression = CronExpression.Parse("0 30 2 * * *");
+2016-03-13 is the day when Daylight Saving Time starts in Eastern time zone. The clocks jump from 01:59:59 AM -05:00 to 03:00:00 AM -04:00. So duration from 02:00:00 AM to 02:59:59 AM is invalid.
 
-// Moment before transition time.
-var startTime = new DateTimeOffset(2016, 03, 13, 01, 59, 59, TimeSpan.FromHours(-5));
-
-// Due to expression next should equal 2016-03-13 02:30 AM but that time is invalid.
-// Thus next equal to next valid time 03:00 AM -04:00.
-var next = expression.GetOccurrenceAfter(startTime, easternTimeZone));
-```
+`0 30 2 * * *` expression should occur at `2016-03-12 02:30 AM`, `2016-03-13 02:30 AM`, `2016-03-13 02:30 AM`. **But** `2016-03-13 02:30 AM` is invalid and that occurrence shifts to next valid time `2016-03-13 03:00 AM -04:00`. Thus occurrences of given expression will be at `2016-03-12 02:30 AM`, `2016-03-13 03:00 AM`, `2016-03-13 02:30 AM` and so on at 02:30 AM every day.
 
 ### Daylight Saving Time to Standard Time transition
 
@@ -205,32 +195,13 @@ Cron expression is **interval based** whose second, minute or hour field contain
 
 In the case of non-interval based expressions, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`, we expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
 
-```csharp
-// 2016-11-06 is the day when Daylight Saving Time ends in Eastern time zone.
-// The clocks jump from 02:00 AM -04:00 to 01:00 AM -05:00. 
-// So duration from 01:00 AM to 01:59 AM is ambiguous because it exists in two offsets.
-var easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+**Example:**
 
-// Moment before ambiguous time.
-var startTime = new DateTimeOffset(2016, 11, 06, 00, 59, 59, TimeSpan.FromHours(-4));
+2016-11-06 is the day when Daylight Saving Time ends in Eastern time zone. The clocks jump from 02:00 AM -04:00 to 01:00 AM -05:00. So duration from 01:00 AM to 01:59 AM is ambiguous because it exists in two offsets.
 
-// IntervalExpression should occur every 30 minutes and nonIntervalExpression - once a day no matter what.
-var intervalExpression    = CronExpression.Parse("30 * * * *");
-var nonIntervalExpression = CronExpression.Parse("30 1 * * *");
+`30 * * * *` is interval expression, so it should occur every 30 minutes no matter what. Thus occurrences will be on 2016-11-06 at `00:00 AM -04:00`, `00:30 AM -04:00`, `01:30 AM -04:00`, `01:30 AM -05:00`, `02:30 AM -05:00` and so on every 30 minutes.
 
-// Next occurrences will be on 2016-11-06 at:
-// 01:30 AM -04:00,
-// 01:30 AM -05:00, 
-// 02:30 AM -05:00,
-// and so on every 30 minutes.
-var next = intervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
-
-// Next occurrences will be at:
-// 2016-11-06 01:30 AM -04:00,
-// 2016-11-07 01:30 AM -05:00,
-// and so on at 01:30 AM every day.
-next = nonIntervalExpression.GetOccurrenceAfter(startTime, easternTimeZone);
-```
+`30 1 * * *` is non-interval expression, so it should occur once a day no matter what. Thus occurrences will be at `2016-11-05 01:30 AM -04:00`, `2016-11-06 01:30 AM -04:00`, `2016-11-07 01:30 AM -05:00` and so on at 01:20 every day.
 
 ## License
 
