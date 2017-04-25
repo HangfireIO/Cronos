@@ -1,24 +1,22 @@
 # Cronos
 [![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos) [![Codecov branch](https://img.shields.io/codecov/c/github/HangfireIO/Cronos/master.svg)](https://codecov.io/gh/HangfireIO/Cronos)
 
-**Cronos** is a .NET library for parsing Cron expressions and calculating next occurrences, that targets .NET Framework and .NET Standard. It was designed with time zones in mind, and correctly handles forward/backward Daylight Saving Time transitions (as in *nix Cron). And it's blazingly fast!
+Cronos is a .NET library for parsing Cron expressions and calculating next occurrences. It was designed with time zones in mind, and correctly handles [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time) (also known as Summer time) transitions (as in *nix Cron).
 
 *Please note this library doesn't include any task/job scheduler, it only works with Cron expressions.*
 
-* Supports **standard Cron format** with optional seconds.
-* Supports **non-standard characters** like `L`, `W`, `#` and their combinations.
-* Supports **reversed ranges**, like `23-01` (equivalent to `23,00,01`) or `DEC-FEB` (equivalent to `DEC,JAN,FEB`).
-* Supports **time zones**, and performs all the date/time conversions for you.
-* **Does not skip** occurrences on Standard Time (ST) to Daylight Saving Time (DST) transitions (when the clock jumps forward).
-* **Does not skip** interval-based occurrences on DST to ST transitions (backward jump).
-* **Does not retry** non-interval based occurrences on DST to ST transitions (backward jump).
-* When both *day of week* and *day of month* specified, *AND* operator will be used (different than in *nix Cron).
-* For day of week field, 0 and 7 stays for Sunday, 1 for Monday.
+* Supports standard Cron format with optional seconds.
+* Supports non-standard characters like `L`, `W`, `#` and their combinations.
+* Supports reversed ranges, like `23-01` (equivalent to `23,00,01`) or `DEC-FEB` (equivalent to `DEC,JAN,FEB`).
+* Supports time zones, and performs all the date/time conversions for you.
+* Does not skip occurrences, when the clock jumps forward to Daylight saving time (knows as Summer time).
+* Does not skip interval-based occurrences, when the clock jumps backward from Summer time.
+* Does not retry non-interval based occurrences, when the clock jumps backward from Summer time.
 * Contains 1000+ unit tests to ensure all is working correctly.
 
 ## Installation
 
-Cronos is distributed as a NuGet package, you can install it from the official NuGet Gallery. Please use the following command to install it using the NuGet Package Manager Console window.
+Cronos is distributed as a [NuGet package](http://www.nuget.org/packages/Cronos/), you can install it from the official NuGet Gallery. Please use the following command to install it using the NuGet Package Manager Console window.
 
 ```
 PM> Install-Package Cronos
@@ -26,7 +24,9 @@ PM> Install-Package Cronos
 
 ## Usage
 
-We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To learn about Cron format, please see the next section.
+We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. So you can only use `DateTime` with `DateTimeKind.Utc` specified (for example, `DateTime.UtcNow`), or `DateTimeOffset` classes to calculate next occurrences. You **can not use** local `DateTime` objects (such as `DateTime.Now`), because this may lead to ambiguity during DST transitions, and an exception will be thrown if you attempt to use them.
+
+To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To learn about Cron format, please refer to the next section.
 
 ```csharp
 using Cronos;
@@ -36,13 +36,11 @@ CronExpression expression = CronExpression.Parse("* * * * *");
 DateTime? nextUtc = expression.GetNextOccurrence(DateTime.UtcNow);
 ```
 
-The `nextUtc` will contain the next occurrence in the `TimeZoneInfo.Utc` zone, *after the given time*, or `null` value when it is unreachable (for example, Feb 30).
-
-When invalid Cron expression is given, an instance of the `CronFormatException` class is thrown.
+The `nextUtc` will contain the next occurrence in UTC, *after the given time*, or `null` value when it is unreachable (for example, Feb 30). If an invalid Cron expression is given, the `CronFormatException` exception is thrown.
 
 ### Working with time zones
 
-It is possible to specify a time zone directly, in this case you should pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class.
+It is possible to specify a time zone directly, in this case you should pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class, that's is smart enough to always point to an exact, non-ambiguous instant.
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
@@ -52,7 +50,18 @@ DateTime?       next = expression.GetNextOccurrence(DateTime.UtcNow, easternTime
 DateTimeOffset? next = expression.GetNextOccurrence(DateTimeOffset.UtcNow, easternTimeZone);
 ```
 
-Resulting time will be in UTC. All Daylight Saving Time transition's corner cases are handled automatically (see below).
+If you passed a `DateTime` object, resulting time will be in UTC. If you used `DateTimeOffset`, resulting object will contain the **correct offset**, so don't forget to use it especially during DST transitions (see below).
+
+### Working with local time
+
+If you just want to make all the calculations using local time, you'll have to use the `DateTimeOffset` class, because as I've said earlier, `DateTime` objects may be ambiguous during Summer time transitions. You can get the resulting local time, using the `DateTimeOffset.DateTime` property.
+
+```csharp
+CronExpression expression = CronExpression.Parse("* * * * *");
+DateTimeOffset? next = expression.GetNextOccurrence(DateTimeOffset.Now, TimeZoneInfo.Local);
+
+var nextLocalTime = next?.DateTime;
+```
 
 ### Adding seconds to an expression
 
@@ -65,7 +74,7 @@ DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
 
 ## Cron format
 
-Cron expression is a mask to define fixed times, dates and intervals. The mask consists of second (optional), minute, hour, day-of-month, month, day-of-week fields:
+Cron expression is a mask to define fixed times, dates and intervals. The mask consists of second (optional), minute, hour, day-of-month, month and day-of-week fields. All of the fields allow you to specify multiple values, and any given date/time will satisfy the specified Cron expression, if all the fields contain a matching value.
 
                                            Allowed values    Allowed special characters   Comment
 
@@ -74,7 +83,7 @@ Cron expression is a mask to define fixed times, dates and intervals. The mask c
     │ │ ┌───────────── hour                0-23              * , - /                      
     │ │ │ ┌───────────── day of month      1-31              * , - / L W ?                
     │ │ │ │ ┌───────────── month           1-12 or JAN-DEC   * , - /                      
-    │ │ │ │ │ ┌───────────── day of week   0-7  or MON-SUN   * , - / # L ?                0 and 7 means SUN
+    │ │ │ │ │ ┌───────────── day of week   0-7  or MON-SUN   * , - / # L ?                Both 0 and 7 means SUN
     │ │ │ │ │ │
     │ │ │ │ │ │
     │ │ │ │ │ │
@@ -89,6 +98,8 @@ It's possible to define **step** combining `/` with `*`, numbers and ranges. For
 Concatinate values and ranges by `,`. Comma works like `OR` operator. So `3,5-11/3,12` is equivalent to `3,5,8,11,12`.
 
 In month and day-of-week fields, you can use names of months or days of weeks abbreviated to first three letters (`Jan-Dec` or `Mon-Sun`) instead of their numeric values. Full names like `JANUARY` or `MONDAY` **aren't supported**.
+
+For day of week field, both `0` and `7` stays for Sunday, 1 for Monday.
 
 | Expression           | Description                                                                           |
 |----------------------|---------------------------------------------------------------------------------------|
