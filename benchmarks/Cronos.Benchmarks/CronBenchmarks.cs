@@ -106,13 +106,13 @@ namespace Cronos.Benchmarks
         [Benchmark]
         public DateTime? NextSimpleDateTime()
         {
-            return SimpleExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            return SimpleExpression.GetNextOccurrence(DateTimeNow);
         }
 
         [Benchmark]
         public DateTime? NextComplexDateTime()
         {
-            return ComplexExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            return ComplexExpression.GetNextOccurrence(DateTimeNow);
         }
 
         [Benchmark]
