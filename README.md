@@ -230,9 +230,32 @@ It should occur every 30 minutes no matter what. Thus occurrences Eastern time z
 * `02:30 AM -05:00`,
 * so on every 30 minutes.
 
+## Benchmarks
 
+Since [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet) project appeared, it's hard to ignore the performance. We tried hard to make Cronos not only feature-rich, but also really fast when parsing expressions and calculating next occurrences. As a result, Cronos is faster more than in an order of magnitude than alternative libraries, here is a small comparison:
 
+```
+Cronos Method                               |           Mean |        StdDev
+------------------------------------------- | -------------- | -------------
+CronExpression.Parse("* * * * *")           |     30.8473 ns |     0.0515 ns
+CronExpression.Parse("*/10 12-20 ? DEC 3")  |     81.5010 ns |     0.0924 ns
+Simple.GetNextOccurrence(DateTime.UtcNow)   |    123.4712 ns |     0.5928 ns
+Complex.GetNextOccurrence(DateTime.UtcNow)  |    212.0422 ns |     0.3997 ns
 
+NCrontab Method                             |           Mean |        StdDev
+------------------------------------------- | -------------- | -------------
+CrontabSchedule.Parse("* * * * *")          |  1,813.7313 ns |     3.3718 ns
+CrontabSchedule.Parse("*/10 12-20 * DEC 3") |  3,174.3625 ns |     6.8522 ns
+Simple.GetNextOccurrence(DateTime.UtcNow)   |    147.7866 ns |     0.1689 ns
+Complex.GetNextOccurrence(DateTime.UtcNow)  |  1,001.3253 ns |     1.6205 ns
+
+Quartz Method                               |           Mean |        StdDev
+------------------------------------------- | -------------- | -------------
+new CronExpression("* * * * * ?")           | 48,157.7744 ns | 1,417.3101 ns
+new CronExpression("* */10 12-20 ? DEC 3")  | 33,731.9992 ns |    38.3192 ns
+Simple.GetTimeAfter(DateTimeOffset.Now)     |  1,416.9867 ns |     1.2784 ns
+Complex.GetTimeAfter(DateTimeOffset.Now)    |  6,573.0269 ns |     7.9192 ns
+```
 
 ## License
 
