@@ -149,15 +149,15 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Returns the list of next occurrences within the given date/time range.
-        /// By default, <paramref name="fromUtc"/> and <paramref name="toUtc"/> values 
-        /// are excluded from the list. When none of the occurrences found, an empty 
-        /// list is returned.
+        /// Returns the list of next occurrences within the given date/time range,
+        /// including <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/>
+        /// by default, and UTC time zone. When none of the occurrences found, an 
+        /// empty list is returned.
         /// </summary>
-        public IEnumerable<DateTime> GetNextOccurrences(
+        public IEnumerable<DateTime> GetOccurrences(
             DateTime fromUtc,
             DateTime toUtc,
-            bool fromInclusive = false,
+            bool fromInclusive = true,
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
@@ -194,16 +194,15 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Returns the list of next occurrences within the given date/time range and specified time zone.
-        /// By default, <paramref name="fromUtc"/> and <paramref name="toUtc"/> values 
-        /// are excluded from the list. When none of the occurrences found, an empty 
-        /// list is returned.
+        /// Returns the list of next occurrences within the given date/time range, including
+        /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and 
+        /// specified time zone. When none of the occurrences found, an empty list is returned.
         /// </summary>
-        public IEnumerable<DateTime> GetNextOccurrences(
+        public IEnumerable<DateTime> GetOccurrences(
             DateTime fromUtc,
             DateTime toUtc,
             TimeZoneInfo zone,
-            bool fromInclusive = false,
+            bool fromInclusive = true,
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
@@ -236,16 +235,15 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Returns the list of next occurrences within the given date/time offset range 
-        /// and specified time zone. By default, <paramref name="from"/> and 
-        /// <paramref name="to"/> values are excluded from the list. When none of the 
-        /// occurrences found, an empty list is returned.
+        /// Returns the list of occurrences within the given date/time offset range,
+        /// including <paramref name="from"/> and excluding <paramref name="to"/> by
+        /// default. When none of the occurrences found, an empty list is returned.
         /// </summary>
-        public IEnumerable<DateTimeOffset> GetNextOccurrences(
+        public IEnumerable<DateTimeOffset> GetOccurrences(
             DateTimeOffset from,
             DateTimeOffset to,
             TimeZoneInfo zone,
-            bool fromInclusive = false,
+            bool fromInclusive = true,
             bool toInclusive = false)
         {
             if (from > to) ThrowFromShouldBeLessThanToException(nameof(from), nameof(to));
