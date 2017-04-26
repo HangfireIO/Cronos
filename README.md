@@ -14,6 +14,17 @@ Cronos is a .NET library for parsing Cron expressions and calculating next occur
 * Does not retry non-interval based occurrences, when the clock jumps backward from Summer time.
 * Contains 1000+ unit tests to ensure all is working correctly.
 
+## Compatibility
+
+This section explains how Cron expressions should be converted, when moving to Cronos.
+
+Library | Comments
+--- | ---
+Vixie Cron | When both day-of-month and day-of-week are specified, Cronos uses AND operator for matching (Vixie Cron uses OR operator).
+Quartz.NET | Cronos uses different, but more intuitive Daylight saving time handling logic (as in Vixie Cron). Full month names such as `september` aren't supported. Day-of-week field has different values, `0` and `7` stand for Sunday, `1` for Monday, etc. (as in Vixie Cron). 
+NCrontab | Compatible
+CronNET | Compatible
+
 ## Installation
 
 Cronos is distributed as a [NuGet package](http://www.nuget.org/packages/Cronos/), you can install it from the official NuGet Gallery. Please use the following command to install it using the NuGet Package Manager Console window.
