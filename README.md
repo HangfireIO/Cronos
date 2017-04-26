@@ -1,7 +1,7 @@
 # Cronos
 [![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![AppVeyor](https://img.shields.io/appveyor/ci/odinserj/cronos/master.svg?label=appveyor)](https://ci.appveyor.com/project/odinserj/cronos/branch/master) [![Travis](https://img.shields.io/travis/HangfireIO/Cronos/master.svg?label=travis)](https://travis-ci.org/HangfireIO/Cronos) [![Codecov branch](https://img.shields.io/codecov/c/github/HangfireIO/Cronos/master.svg)](https://codecov.io/gh/HangfireIO/Cronos)
 
-Cronos is a .NET library for parsing Cron expressions and calculating next occurrences. It was designed with time zones in mind, and intuitively handles [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time) (also known as Summer time) transitions (as in *nix Cron).
+Cronos is a .NET library for parsing Cron expressions and calculating next occurrences. It was designed with time zones in mind, and intuitively handles [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time) (also known as Summer time) transitions as in *nix Cron.
 
 *Please note this library doesn't include any task/job scheduler, it only works with Cron expressions.*
 
@@ -217,7 +217,7 @@ When Daylight Saving Time ends you set the clocks backward so there is duration 
 
 We don't want to have multiple occurrences of daily expressions during this transition, but at the same time we want to schedule interval expressions as usually, without skipping them. So we have different behavior for different Cron expressions.
 
-#### Interval based expression
+#### Interval expression
 
 Cron expression is **interval based** whose second, minute or hour field contains `*`, ranges or steps, e.g. `30 * * * *` (hour field), `* 1 * * *` (minute field), `0,5 0/10 1 * * *`. In this case there are expectations that occurrences should happen periodically during the day and this rule can't be broken by time transitions. Thus for **interval based** expressions occurrences will be before and after clock shifts.
 
@@ -232,7 +232,7 @@ Nov 08, 01:30 +03:00 – run
 Nov 08, 02:00 +03:00 – run
 ```
 
-#### Non-interval based expression
+#### Non-interval expression
 
 Cron expression is **non-interval based** whose second, minute or hour field **does not contain** `*`, ranges or steps, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`. We expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
 
