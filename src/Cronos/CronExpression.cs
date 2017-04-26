@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Cronos
@@ -148,6 +149,30 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Returns the list of next occurrences within the given date/time range.
+        /// By default, <paramref name="fromUtc"/> and <paramref name="toUtc"/> values 
+        /// are excluded from the list. When none of the occurrences found, an empty 
+        /// list is returned.
+        /// </summary>
+        public IEnumerable<DateTime> GetNextOccurrences(
+            DateTime fromUtc,
+            DateTime toUtc,
+            bool fromInclusive = false,
+            bool toInclusive = false)
+        {
+            if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+
+            for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
+                occurrence < toUtc || occurrence == toUtc && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
@@ -169,6 +194,31 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Returns the list of next occurrences within the given date/time range and specified time zone.
+        /// By default, <paramref name="fromUtc"/> and <paramref name="toUtc"/> values 
+        /// are excluded from the list. When none of the occurrences found, an empty 
+        /// list is returned.
+        /// </summary>
+        public IEnumerable<DateTime> GetNextOccurrences(
+            DateTime fromUtc,
+            DateTime toUtc,
+            TimeZoneInfo zone,
+            bool fromInclusive = false,
+            bool toInclusive = false)
+        {
+            if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+
+            for (var occurrence = GetNextOccurrence(fromUtc, zone, fromInclusive);
+                occurrence < toUtc || occurrence == toUtc && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
         /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
@@ -183,6 +233,31 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
             return GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
+        }
+
+        /// <summary>
+        /// Returns the list of next occurrences within the given date/time offset range 
+        /// and specified time zone. By default, <paramref name="from"/> and 
+        /// <paramref name="to"/> values are excluded from the list. When none of the 
+        /// occurrences found, an empty list is returned.
+        /// </summary>
+        public IEnumerable<DateTimeOffset> GetNextOccurrences(
+            DateTimeOffset from,
+            DateTimeOffset to,
+            TimeZoneInfo zone,
+            bool fromInclusive = false,
+            bool toInclusive = false)
+        {
+            if (from > to) ThrowFromShouldBeLessThanToException(nameof(from), nameof(to));
+
+            for (var occurrence = GetNextOccurrence(from, zone, fromInclusive);
+                occurrence < to || occurrence == to && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
         }
 
         private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
@@ -785,6 +860,12 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowFromShouldBeLessThanToException(string fromName, string toName)
+        {
+            throw new ArgumentException($"The value of the {fromName} argument should be less than the value of the {toName} argument.", fromName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowWrongDateTimeKindException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
@@ -801,7 +882,7 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        internal static void SetBit(ref long value, int index)
+        private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
         }

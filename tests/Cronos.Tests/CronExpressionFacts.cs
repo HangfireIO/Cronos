@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Xunit;
 
 namespace Cronos.Tests
@@ -2104,6 +2105,177 @@ namespace Cronos.Tests
             var nextOccurrence = cronExpression.GetNextOccurrence(from, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), nextOccurrence);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTime_ThrowsAnException_WhenFromGreaterThanTo()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            Assert.Throws<ArgumentException>(
+                () => expression.GetNextOccurrences(DateTime.UtcNow, DateTime.UtcNow.AddHours(-5)).ToArray());
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTime_ReturnsEmptyEnumerable_WhenNoOccurrencesFound()
+        {
+            var expression = CronExpression.Parse("* * 30 FEB *");
+
+            var occurrences = expression.GetNextOccurrences(DateTime.UtcNow, DateTime.UtcNow.AddYears(1));
+
+            Assert.Empty(occurrences);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTime_ReturnsCollectionThatDoesNotIncludeFromAndToByDefault()
+        {
+            var expression = CronExpression.Parse("* 00 26 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to).ToArray();
+
+            Assert.Equal(1, occurrences.Length);
+            Assert.Equal(new DateTime(2017, 04, 26, 00, 01, 00, 000, DateTimeKind.Utc), occurrences[0]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTime_HandlesFromInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 00 26 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, fromInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(from, occurrences[0]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTime_HandlesToInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 00 26 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, toInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(to, occurrences[1]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeTimeZone_ThrowsAnException_WhenFromGreaterThanTo()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            Assert.Throws<ArgumentException>(
+                () => expression.GetNextOccurrences(DateTime.UtcNow, DateTime.UtcNow.AddHours(-5), EasternTimeZone).ToArray());
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeTimeZone_ReturnsEmptyEnumerable_WhenNoOccurrencesFound()
+        {
+            var expression = CronExpression.Parse("* * 30 FEB *");
+
+            var occurrences = expression.GetNextOccurrences(DateTime.UtcNow, DateTime.UtcNow.AddYears(1), EasternTimeZone);
+
+            Assert.Empty(occurrences);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeTimeZone_ReturnsCollectionThatDoesNotIncludeFromAndToByDefault()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone).ToArray();
+
+            Assert.Equal(1, occurrences.Length);
+            Assert.Equal(new DateTime(2017, 04, 26, 00, 01, 00, 000, DateTimeKind.Utc), occurrences[0]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeTimeZone_HandlesFromInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone, fromInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(from, occurrences[0]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeTimeZone_HandlesToInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone, toInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(to, occurrences[1]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeOffset_ThrowsAnException_WhenFromGreaterThanTo()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            Assert.Throws<ArgumentException>(
+                () => expression.GetNextOccurrences(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(-5), EasternTimeZone).ToArray());
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeOffset_ReturnsEmptyEnumerable_WhenNoOccurrencesFound()
+        {
+            var expression = CronExpression.Parse("* * 30 FEB *");
+
+            var occurrences = expression.GetNextOccurrences(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(1), EasternTimeZone);
+
+            Assert.Empty(occurrences);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeOffset_ReturnsCollectionThatDoesNotIncludeFromAndToByDefault()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTimeOffset(2017, 04, 26, 00, 00, 00, 000, TimeSpan.Zero);
+            var to = new DateTimeOffset(2017, 04, 26, 00, 02, 00, 000, TimeSpan.Zero);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone).ToArray();
+
+            Assert.Equal(1, occurrences.Length);
+            Assert.Equal(new DateTimeOffset(2017, 04, 25, 20, 01, 00, 000, TimeSpan.FromHours(-4)), occurrences[0]);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeOffset_HandlesFromInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTimeOffset(2017, 04, 26, 00, 00, 00, 000, TimeSpan.Zero);
+            var to = new DateTimeOffset(2017, 04, 26, 00, 02, 00, 000, TimeSpan.Zero);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone, fromInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(from, occurrences[0].UtcDateTime);
+        }
+
+        [Fact]
+        public void GetNextOccurrences_DateTimeOffset_HandlesToInclusiveArgument()
+        {
+            var expression = CronExpression.Parse("* 20 25 04 *");
+            var from = new DateTime(2017, 04, 26, 00, 00, 00, 000, DateTimeKind.Utc);
+            var to = new DateTime(2017, 04, 26, 00, 02, 00, 000, DateTimeKind.Utc);
+
+            var occurrences = expression.GetNextOccurrences(from, to, EasternTimeZone, toInclusive: true).ToArray();
+
+            Assert.Equal(2, occurrences.Length);
+            Assert.Equal(to, occurrences[1]);
         }
 
         private static IEnumerable<object[]> GetTimeZones()
