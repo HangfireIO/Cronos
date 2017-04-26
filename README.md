@@ -94,7 +94,7 @@ Cron expression is a mask to define fixed times, dates and intervals. The mask c
     │ │ ┌───────────── hour                0-23              * , - /                      
     │ │ │ ┌───────────── day of month      1-31              * , - / L W ?                
     │ │ │ │ ┌───────────── month           1-12 or JAN-DEC   * , - /                      
-    │ │ │ │ │ ┌───────────── day of week   0-7  or MON-SUN   * , - / # L ?                Both 0 and 7 means SUN
+    │ │ │ │ │ ┌───────────── day of week   0-6  or SUN-SAT   * , - / # L ?                Both 0 and 7 means SUN
     │ │ │ │ │ │
     * * * * * *
 
