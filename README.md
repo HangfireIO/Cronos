@@ -184,62 +184,55 @@ space :: ' ' | '\t'
 
 ## Daylight Saving Time
 
-Cronos is the only library to handle daylight saving time transitions correctly. 
+Cronos is the only library to handle daylight saving time transitions in intuitive way with the same behavior as Vixie Cron (utility for *nix systems). During a spring transition, we don't skip occurrences scheduled to invalid time during. In an autumn transition we don't get duplicate occurrences for daily expressions, and don't skip interval expressions when the local time is ambiguous.
 
-There aren't skipping occurrences on Standard Time (ST) to Daylight Saving Time (DST) transitions (when the clock jumps forward). Also there are no skipping interval based (whose second, minute or hour field contains `*`, ranges or steps) and no duplicate non-interval based occurrences on DST to ST transitions (backward jump).
+### Transition to Summer time (in spring)
 
-### Standard Time to Daylight Saving Time transition
+During the transition to Summer time, the clock is moved forward, for example the next minute after `01:59 AM` is `03:00 AM`. So any daily Cron expression that should match `02:30 AM`, points to an invalid time. It doesn't exist, and can't be mapped to UTC.
 
-When Standard Time (ST) transit to Daylight Saving Time (DST) the clock jumps forward. So there is non-existing, invalid time and if an occurrence falls on that time we can't just skip it. Instead we shift that occurrence to next valid time. 
+Cronos adjusts the next occurrence to the next valid time in these cases. If you use Cron to schedule jobs, you may have shorter or longer intervals between runs when this happen, but you'll not lose your jobs:
 
-**Example:**
+```
+"30 02 * * *" (every day at 02:30 AM)
 
-2016-03-13 is the day when Daylight Saving Time starts in Eastern time zone. The clocks jump from `02:00 AM -05:00` to `03:00 AM -04:00`. So duration from `02:00 AM` to `02:59 AM` is invalid.
+Mar 13, 02:30 +03:00 – run
+Mar 14, 03:00 +04:00 – run (adjusted)
+Mar 15, 02:30 +04:00 – run
+```
 
-Consider `0 30 2 * * *` expression.
+### Transition from Summer time (in autumn)
 
-It should occur at `02:30 AM` every day. **But** `2016-03-13 02:30 AM` is invalid and that occurrence shifts to next valid time `2016-03-13 03:00 AM -04:00`. Thus occurrences of given expression will be at:
-* `2016-03-12 02:30 AM`,
-* `2016-03-13 03:00 AM`, **it shifted** from `2016-03-13 02:30 AM`
-* `2016-03-14 02:30 AM`,
-* so on at `02:30 AM` every day.
+When Daylight Saving Time ends you set the clocks backward so there is duration which repeats twice. For example, after `01:59 AM` you get `01:00 AM` again, so the interval between `01:00 AM` to `02:00 AM` (excluding) is ambiguous, and can be mapped to multiple UTC offsets.
 
-### Daylight Saving Time to Standard Time transition
+We don't want to have multiple occurrences of daily expressions during this transition, but at the same time we want to schedule interval expressions as usually, without skipping them. So we have different behavior for different Cron expressions.
 
-When Daylight Saving Time ends you set the clocks backward so there is duration which repeats twice. If next occurrence falls on this duration behavior depends on kind of cron expression: non-interval based or interval based. 
+#### Interval based expression
 
-*We will consider Eastern time zone in examples. 2016-11-06 is the day when Daylight Saving Time ends. The clocks jump from `02:00 AM -04:00` to `01:00 AM -05:00`. So **duration from 01:00 AM to 01:59 AM is ambiguous** because it exists in two offsets.*
+Cron expression is **interval based** whose second, minute or hour field contains `*`, ranges or steps, e.g. `30 * * * *` (hour field), `* 1 * * *` (minute field), `0,5 0/10 1 * * *`. In this case there are expectations that occurrences should happen periodically during the day and this rule can't be broken by time transitions. Thus for **interval based** expressions occurrences will be before and after clock shifts.
+
+Consider `*/30 * * * *` interval expression. It should occur every 30 minutes no matter what.
+
+```
+Nov 08, 00:30 +04:00 – run
+Nov 08, 01:00 +04:00 – run
+Nov 08, 01:30 +04:00 – run
+Nov 08, 01:00 +03:00 – run
+Nov 08, 01:30 +03:00 – run
+Nov 08, 02:00 +03:00 – run
+```
 
 #### Non-interval based expression
 
 Cron expression is **non-interval based** whose second, minute or hour field **does not contain** `*`, ranges or steps, e.g. `0 30 1 * * *` or `0 0,45 1,2 * * *`. We expect they occur given number of times per day. Thus for **non-interval** expressions occurrences will be just before clock shifts.
 
-**Example:**
+Consider `30 1 * * *` non-interval expression. It should occur once a day no matter what.
 
-Consider `30 1 * * *` non-interval expression.
-
-It should occur once a day no matter what. Thus occurrences in Eastern time zone will be at:
-* `2016-11-05 01:30 AM -04:00`, 
-* `2016-11-06 01:30 AM -04:00`, 
-* ~~`2016-11-06 01:30 AM -05:00`~~, **it was skipped**,
-* `2016-11-07 01:30 AM -05:00`
-* so on at `01:30` every day.
-
-#### Interval based expression
-
-Cron expression is **interval based** whose second, minute or hour field contains `*`, ranges or steps, e.g. `0 30 * * * *`, `0 * 1 * * *`, `0,5 0/10 1 * * *`. In this case there are expectations that occurrences should happen periodically during the day and this rule can't be broken by time transitions. Thus for **interval based** expressions occurrences will be before and after clock shifts.
-
-**Example:**
-
-Consider `30 * * * *` interval expression.
-
-It should occur every 30 minutes no matter what. Thus occurrences Eastern time zone will be on 2016-11-06 at:
-* `00:00 AM -04:00`, 
-* `00:30 AM -04:00`, 
-* `01:30 AM -04:00`,
-* `01:30 AM -05:00`, **it wasn't skipped**,
-* `02:30 AM -05:00`,
-* so on every 30 minutes.
+```
+Nov 07, 01:30 +04:00 – run
+Nov 08, 01:30 +04:00 – run
+Nov 08, 01:30 +03:00 – skip
+Nov 09, 01:30 +03:00 – run
+```
 
 ## Benchmarks
 
