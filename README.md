@@ -141,17 +141,17 @@ It differs from Unix crontab and Quartz cron implementations. Crontab handles it
 
 A macro is a string starting with `@` and representing a shortcut for simple cases like *every day* or *every minute*.
 
-| Macro          | Equivalent    |
-|----------------|---------------|
-|`@every_second` | `* * * * * *` |
-|`@every_minute` | `* * * * *`   |
-|`@hourly`       | `0 * * * *`   |
-|`@daily`        | `0 0 * * *`   |
-|`@midnight`     | `0 0 * * *`   |
-|`@weekly`       | `0 0 * * 0`   |
-|`@monthly`      | `0 0 1 * *`   |
-|`@yearly`       | `0 0 1 1 *`   |
-|`@annually`     | `0 0 1 1 *`   |
+ Macro          | Equivalent    | Comment
+----------------|---------------| -------
+`@every_second` | `* * * * * *` | Run once a second
+`@every_minute` | `* * * * *`   | Run once a minute at the beginning of the minute
+`@hourly`       | `0 * * * *`   | Run once an hour at the beginning of the hour
+`@daily`        | `0 0 * * *`   | Run once a day at midnight
+`@midnight`     | `0 0 * * *`   | Run once a day at midnight
+`@weekly`       | `0 0 * * 0`   | Run once a week at midnight on Sunday morning
+`@monthly`      | `0 0 1 * *`   | Run once a month at midnight of the first day of the month
+`@yearly`       | `0 0 1 1 *`   | Run once a year at midnight of 1 January
+`@annually`     | `0 0 1 1 *`   | Run once a year at midnight of 1 January
 
 ### Cron grammar
 
@@ -263,8 +263,6 @@ Complex.GetTimeAfter(DateTimeOffset.Now)    |  6,573.0269 ns |     7.9192 ns
 
 ## License
 
-Cronos is under the [Apache License 2.0][Apache-2.0].
-
-Copyright © 2016-2017 Sergey Odinokov.
+Copyright © 2016-2017 Sergey Odinokov. Cronos is licensed under the [Apache License 2.0][Apache-2.0].
 
 [Apache-2.0]:LICENSE
