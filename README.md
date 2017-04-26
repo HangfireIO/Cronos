@@ -20,7 +20,7 @@ This section explains how Cron expressions should be converted, when moving to C
 
 Library | Comments
 --- | ---
-Vixie Cron | When both day-of-month and day-of-week are specified, Cronos uses AND operator for matching (Vixie Cron uses OR operator).
+Vixie Cron | When both day-of-month and day-of-week are specified, Cronos uses AND operator for matching (Vixie Cron uses OR operator for backward compatibility).
 Quartz.NET | Cronos uses different, but more intuitive Daylight saving time handling logic (as in Vixie Cron). Full month names such as `september` aren't supported. Day-of-week field has different values, `0` and `7` stand for Sunday, `1` for Monday, etc. (as in Vixie Cron). Year field is not supported. 
 NCrontab | Compatible
 CronNET | Compatible
