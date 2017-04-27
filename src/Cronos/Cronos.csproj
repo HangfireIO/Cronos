@@ -4,7 +4,7 @@
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
     <TargetFrameworks>netstandard1.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Release\netstandard1.0\Cronos.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>full</DebugType>
 
     <PackageId>Cronos</PackageId>
@@ -24,9 +24,5 @@
   <ItemGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
     <PackageReference Include="NETStandard.Library" Version="1.6.0" />
   </ItemGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <Optimize>False</Optimize>
-  </PropertyGroup>
 
 </Project>
