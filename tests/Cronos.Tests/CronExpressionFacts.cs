@@ -2298,6 +2298,128 @@ namespace Cronos.Tests
             Assert.Equal(from.AddMinutes(2), occurrences[2].UtcDateTime);
         }
 
+        [Theory]
+        [InlineData("* * * * *", "* * * * *")]
+
+        [InlineData("* * * * *", "0/2,1/2    * * * *")]
+        [InlineData("* * * * *", "1/2,0-59/2 * * * *")]
+        [InlineData("* * * * *", "0-59       * * * *")]
+        [InlineData("* * * * *", "0,1,2-59   * * * *")]
+        [InlineData("* * * * *", "0-59/1     * * * *")]
+        [InlineData("* * * * *", "50-49      * * * *")]
+
+        [InlineData("* * * * *", "* 0/3,2/3,1/3 * * *")]
+        [InlineData("* * * * *", "* 0-23/2,1/2  * * *")]
+        [InlineData("* * * * *", "* 0-23        * * *")]
+        [InlineData("* * * * *", "* 0-23/1      * * *")]
+        [InlineData("* * * * *", "* 12-11       * * *")]
+
+        [InlineData("* * * * *", "* * 1/2,2/2     * *")]
+        [InlineData("* * * * *", "* * 1-31/2,2/2  * *")]
+        [InlineData("* * * * *", "* * 1-31        * *")]
+        [InlineData("* * * * *", "* * 1-31/1      * *")]
+        [InlineData("* * * * *", "* * 5-4         * *")]
+
+        [InlineData("* * * * *", "* * * 1/2,2/2    *")]
+        [InlineData("* * * * *", "* * * 1-12/2,2/2 *")]
+        [InlineData("* * * * *", "* * * 1-12       *")]
+        [InlineData("* * * * *", "* * * 1-12/1     *")]
+        [InlineData("* * * * *", "* * * 12-11      *")]
+
+        [InlineData("* * * * *", "* * * * 0/2,1/2    ")]
+        [InlineData("* * * * *", "* * * * SUN/2,MON/2")]
+        [InlineData("* * * * *", "* * * * 0-6/2,1/2  ")]
+        [InlineData("* * * * *", "* * * * 0-7/2,1/2  ")]
+        [InlineData("* * * * *", "* * * * 0-7/2,MON/2")]
+        [InlineData("* * * * *", "* * * * 0-6        ")]
+        [InlineData("* * * * *", "* * * * 0-7        ")]
+        [InlineData("* * * * *", "* * * * SUN-SAT    ")]
+        [InlineData("* * * * *", "* * * * 0-6/1      ")]
+        [InlineData("* * * * *", "* * * * 0-7/1      ")]
+        [InlineData("* * * * *", "* * * * SUN-SAT/1  ")]
+        [InlineData("* * * * *", "* * * * MON-SUN    ")]
+
+        [InlineData("* * *     * 0  ", "* * *     * 7  ")]
+        [InlineData("* * *     * 0  ", "* * *     * SUN")]
+        [InlineData("* * LW    * *  ", "* * LW    * *  ")]
+        [InlineData("* * L-20W * 2  ", "* * L-20W * 2  ")]
+        [InlineData("* * *     * 0#1", "* * *     * 0#1")]
+        [InlineData("* * *     * 0L ", "* * *     * 7L ")]
+        [InlineData("* * L-3W  * 0L ", "* * L-3W  * 0L ")]
+        [InlineData("1 1 1     1 1  ", "1 1 1     1 1  ")]
+        [InlineData("* * *     * *  ", "* * ?     * *  ")]
+        [InlineData("* * *     * *  ", "* * *     * ?  ")]
+
+        [InlineData("1-5 * * * *", "1-5 * * * *")]
+        [InlineData("1-5 * * * *", "1-5/1 * * * *")]
+        [InlineData("* * * * *", "0/1 * * * *")]
+        [InlineData("1 * * * *", "1-1 * * * *")]
+        [InlineData("*/4 * * * *", "0-59/4 * * * *")]
+
+        [InlineData("1-5 1-5 1-5 1-5 1-5", "1-5 1-5 1-5 1-5 1-5")]
+
+        [InlineData("50-15 * * * *", "50-15      * * * *")]
+        [InlineData("50-15 * * * *", "0-15,50-59 * * * *")]
+
+        [InlineData("* 20-15 * * *", "* 20-15      * * *")]
+        [InlineData("* 20-15 * * *", "* 0-15,20-23 * * *")]
+
+        [InlineData("* * 20-15 * *", "* * 20-15      * *")]
+        [InlineData("* * 20-15 * *", "* * 1-15,20-31 * *")]
+
+        [InlineData("* * * 10-3 *", "* * * 10-3      *")]
+        [InlineData("* * * 10-3 *", "* * * 1-3,10-12 *")]
+
+        [InlineData("* * * * 5-2", "* * * * 5-2    ")]
+        [InlineData("* * * * 5-2", "* * * * 0-2,5-7")]
+        [InlineData("* * * * 5-2", "* * * * 0-2,5-6")]
+        [InlineData("* * * * 5-2", "* * * * 1-2,5-7")]
+
+        [InlineData("* * * * FRI-TUE", "* * * * FRI-TUE        ")]
+        [InlineData("* * * * FRI-TUE", "* * * * SUN-TUE,FRI-SUN")]
+        [InlineData("* * * * FRI-TUE", "* * * * SUN-TUE,FRI-SAT")]
+        [InlineData("* * * * FRI-TUE", "* * * * MON-TUE,FRI-SUN")]
+        public void Equals_ReturnsTrue_WhenCronExpressionsAreEqual(string leftExpression, string rightExpression)
+        {
+            var leftCronExpression = CronExpression.Parse(leftExpression);
+            var rightCronExpression = CronExpression.Parse(rightExpression);
+
+            Assert.True(leftCronExpression.Equals(rightCronExpression));
+            Assert.True(leftCronExpression == rightCronExpression);
+            Assert.False(leftCronExpression != rightCronExpression);
+            Assert.True(leftCronExpression.GetHashCode() == rightCronExpression.GetHashCode());
+        }
+
+        public void Equals_ReturnsFalse_WhenOtherIsNull()
+        {
+            var cronExpression = CronExpression.Parse("* * * * *");
+
+            Assert.False(cronExpression.Equals(null));
+            Assert.False(cronExpression == null);
+        }
+
+        [Theory]
+        [InlineData("1 1 1 1 1", "2 1 1 1 1")]
+        [InlineData("1 1 1 1 1", "1 2 1 1 1")]
+        [InlineData("1 1 1 1 1", "1 1 2 1 1")]
+        [InlineData("1 1 1 1 1", "1 1 1 2 1")]
+        [InlineData("1 1 1 1 1", "1 1 1 1 2")]
+        [InlineData("* * * * *", "1 1 1 1 1")]
+
+        [InlineData("* * 31 1 *", "* * L    1 *")]
+        [InlineData("* * L  * *", "* * LW   * *")]
+        [InlineData("* * LW * *", "* * L-1W * *")]
+        [InlineData("* * *  * 0", "* * L-1W * 0#1")]
+        public void Equals_ReturnsFalse_WhenCronExpressionsAreNotEqual(string leftExpression, string rightExpression)
+        {
+            var leftCronExpression = CronExpression.Parse(leftExpression);
+            var rightCronExpression = CronExpression.Parse(rightExpression);
+
+            Assert.False(leftCronExpression.Equals(rightCronExpression));
+            Assert.True(leftCronExpression != rightCronExpression);
+            Assert.True(leftCronExpression.GetHashCode() != rightCronExpression.GetHashCode());
+        }
+
         private static IEnumerable<object[]> GetTimeZones()
         {
             yield return new object[] {EasternTimeZone};

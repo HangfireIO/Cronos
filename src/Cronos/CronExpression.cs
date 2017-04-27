@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Cronos
@@ -7,7 +8,7 @@ namespace Cronos
     /// <summary>
     /// Provides a parser and scheduler for cron expressions.
     /// </summary>
-    public sealed class CronExpression
+    public sealed class CronExpression: IEquatable<CronExpression>
     {
         private const long NotFound = 0;
 
@@ -257,6 +258,75 @@ namespace Cronos
                 yield return occurrence.Value;
             }
         }
+
+        /// <summary>
+        /// Determines whether the specified <see cref="Object"/> is equal to the current <see cref="Object"/>.
+        /// </summary>
+        /// <param name="other">The <see cref="Object"/> to compare with the current <see cref="Object"/>.</param>
+        /// <returns>
+        /// <c>true</c> if the specified <see cref="Object"/> is equal to the current <see cref="Object"/>; otherwise, <c>false</c>.
+        /// </returns>
+        public bool Equals(CronExpression other)
+        {
+            if (other == null) return false;
+
+            return _second == other._second &&
+                   _minute == other._minute &&
+                   _hour == other._hour &&
+                   _dayOfMonth == other._dayOfMonth &&
+                   _month == other._month &&
+                   _dayOfWeek == other._dayOfWeek &&
+                   _nthdayOfWeek == other._nthdayOfWeek &&
+                   _lastMonthOffset == other._lastMonthOffset &&
+                   _flags == other._flags;
+        }
+
+        /// <summary>
+        /// Determines whether the specified <see cref="System.Object" /> is equal to this instance.
+        /// </summary>
+        /// <param name="obj">The <see cref="System.Object" /> to compare with this instance.</param>
+        /// <returns>
+        /// <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance;
+        /// otherwise, <c>false</c>.
+        /// </returns>
+        public override bool Equals(object obj) => Equals(obj as CronExpression);
+
+        /// <summary>
+        /// Returns a hash code for this instance.
+        /// </summary>
+        /// <returns>
+        /// A hash code for this instance, suitable for use in hashing algorithms and data
+        /// structures like a hash table. 
+        /// </returns>
+        [SuppressMessage("ReSharper", "NonReadonlyMemberInGetHashCode")]
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = _second.GetHashCode();
+                hashCode = (hashCode * 397) ^ _minute.GetHashCode();
+                hashCode = (hashCode * 397) ^ _hour;
+                hashCode = (hashCode * 397) ^ _dayOfMonth;
+                hashCode = (hashCode * 397) ^ _month.GetHashCode();
+                hashCode = (hashCode * 397) ^ _dayOfWeek.GetHashCode();
+                hashCode = (hashCode * 397) ^ _nthdayOfWeek.GetHashCode();
+                hashCode = (hashCode * 397) ^ _lastMonthOffset.GetHashCode();
+                hashCode = (hashCode * 397) ^ (int)_flags;
+
+                return hashCode;
+            }
+        }
+
+        /// <summary>
+        /// Implements the operator ==.
+        /// </summary>
+        public static bool operator ==(CronExpression left, CronExpression right) => Equals(left, right);
+
+        /// <summary>
+        /// Implements the operator !=.
+        /// </summary>
+        public static bool operator !=(CronExpression left, CronExpression right) => !Equals(left, right);
+
 
         private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
         {
@@ -763,40 +833,38 @@ namespace Cronos
 #endif
         private static long GetBits(CronField field, int num1, int num2, int step)
         {
-            // If upper bound less than bottom one, e.g. range 55-10 specified
-            // we'll set bits from 0 to 15 then we shift it right by 5 bits.
-            int shift = 0;
-            int high = field.Last;
-            if (num2 < num1)
-            {
-                // Skip one of sundays.
-                if (field == CronField.DaysOfWeek) high--;
+            if (num2 < num1) return GetReversedRangeBits(field, num1, num2, step);
+            if (step == 1) return (1L << (num2 + 1)) - (1L << num1);
 
-                shift = high - num1 + 1;
-                num2 = num2 + shift;
-                num1 = field.First;
-            }
+            return GetRangeBits(num1, num2, step);
+        }
 
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static long GetRangeBits(int low, int high, int step)
+        {
             var bits = 0L;
-            // Range. set all elements from num1 to num2, stepping
-            // by num3.
-            if (step == 1 && num1 < num2 + 1)
+            for (var i = low; i <= high; i += step)
             {
-                // Fast path, to set all the required bits at once.
-                bits |= (1L << (num2 + 1)) - (1L << num1);
+                SetBit(ref bits, i);
             }
-            else
-            {
-                for (var i = num1; i <= num2; i += step)
-                {
-                    SetBit(ref bits, i);
-                }
-            }
+            return bits;
+        }
 
-            // If we have range like 55-10 or 11-1, so num2 > num1 we have to shift bits right.
-            return shift == 0
-                ? bits
-                : bits >> shift | bits << (high - num1 - shift + 1);
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static long GetReversedRangeBits(CronField field, int num1, int num2, int step)
+        {
+            var high = field.Last;
+            // Skip one of sundays.
+            if (field == CronField.DaysOfWeek) high--;
+
+            var bits = GetRangeBits(num1, high, step);
+            
+            num1 = field.First + step - (high - num1) % step - 1;
+            return bits | GetRangeBits(num1, num2, step);
         }
 
 #if !NET40
