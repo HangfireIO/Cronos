@@ -5,7 +5,7 @@
     <TargetFrameworks>netstandard1.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DebugType>full</DebugType>
+    <DebugType>embedded</DebugType>
 
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
@@ -25,4 +25,20 @@
     <PackageReference Include="NETStandard.Library" Version="1.6.0" />
   </ItemGroup>
 
+  <!--Source link configuration-->
+  <PropertyGroup>
+    <RepoUri>https://raw.githubusercontent.com/HangfireIO/Cronos</RepoUri>
+    <SourceLink>$(BaseIntermediateOutputPath)\source_link.json</SourceLink>
+  </PropertyGroup>
+
+  <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile">
+    <Delete Files="$(SourceLink)" Condition="Exists('$(SourceLink)')" />
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
+    </Exec>
+    <Exec Command="git rev-parse --show-toplevel" ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitRootFolder" />
+    </Exec>
+    <WriteLinesToFile File="$(SourceLink)" Lines="{&quot;documents&quot;: { &quot;$([System.IO.Path]::GetFullPath('$(GitRootFolder)/').Replace('\','\\'))*&quot; : &quot;$(RepoUri)/$(LatestCommit)/*&quot; }}" />
+  </Target>
 </Project>
