@@ -12,8 +12,6 @@ branches:
 pull_requests:
   do_not_increment_build_number: true
 
-shallow_clone: true
-
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
