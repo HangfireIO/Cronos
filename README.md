@@ -12,7 +12,7 @@ Cronos is a .NET library for parsing Cron expressions and calculating next occur
 * Does not skip occurrences, when the clock jumps forward to Daylight saving time (knows as Summer time).
 * Does not skip interval-based occurrences, when the clock jumps backward from Summer time.
 * Does not retry non-interval based occurrences, when the clock jumps backward from Summer time.
-* Contains 1000+ unit tests to ensure all is working correctly.
+* Contains 1000+ unit tests to ensure everything is working correctly.
 
 ## Compatibility
 
