@@ -12,7 +12,7 @@
     <Owners>aidmsu, odinserj</Owners>
     <Summary>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Summary>
     <Description>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Description>
-    <ProjectUrl>https://github.com/HangfireIO/Cronos</ProjectUrl>
+    <PackageProjectUrl>https://github.com/HangfireIO/Cronos</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>https://github.com/HangfireIO/Cronos/releases</PackageReleaseNotes>
