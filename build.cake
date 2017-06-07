@@ -6,7 +6,6 @@ var version = Argument<string>("buildVersion", null);
 var target = Argument("target", "Default");
 
 Task("Default").IsDependentOn("Pack");
-Task("CI").IsDependentOn("Pack");
 
 Task("Clean").Does(()=> 
 {
