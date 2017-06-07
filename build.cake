@@ -34,7 +34,7 @@ Task("Test").IsDependentOn("Build").Does(() =>
 {
     DotNetCoreTest("./tests/Cronos.Tests/Cronos.Tests.csproj", new DotNetCoreTestSettings
     {
-        Configuration = "Release",
+        Configuration = configuration,
         ArgumentCustomization = args => args.Append("/p:BuildProjectReferences=false")
     });
 });
