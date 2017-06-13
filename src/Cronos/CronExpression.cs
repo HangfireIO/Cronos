@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Cronos
 {
@@ -257,6 +258,60 @@ namespace Cronos
             {
                 yield return occurrence.Value;
             }
+        }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return FieldValueToString(CronField.Seconds, _second) + " " +
+                   FieldValueToString(CronField.Minutes, _minute) + " " +
+                   FieldValueToString(CronField.Hours, _hour) + " " +
+                   DayOfMonthToString(_dayOfMonth) + " " +
+                   FieldValueToString(CronField.Months, _month) + " " +
+                   DayOfWeekToString(_dayOfWeek);
+        }
+
+        private static string FieldValueToString(CronField field, long fieldValue)
+        {
+            if (field.AllBits == fieldValue) return "*";
+
+            var result = new StringBuilder();
+
+            var lastValue = field.Last;
+            if (field == CronField.DaysOfWeek) lastValue--;
+            
+            for (var i = field.First; i <= lastValue; i++)
+            {
+                if (!GetBit(fieldValue, i)) continue;
+
+                if (result.Length > 0) result.Append(',');
+                result.Append(i);
+            }
+            
+            return result.ToString();
+        }
+
+        private string DayOfMonthToString(int domValue)
+        {
+            var result = HasFlag(CronExpressionFlag.DayOfMonthLast)
+                ? _lastMonthOffset == 0
+                    ? "L"
+                    : $"L-{_lastMonthOffset}"
+                : FieldValueToString(CronField.DaysOfMonth, (uint) domValue);
+
+            if (HasFlag(CronExpressionFlag.NearestWeekday)) result += "W";
+
+            return result;
+        }
+
+        private string DayOfWeekToString(byte dowValue)
+        {
+            var result = FieldValueToString(CronField.DaysOfWeek, dowValue);
+            
+            if (HasFlag(CronExpressionFlag.DayOfWeekLast)) result += "L";
+            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) result += $"#{_nthdayOfWeek}";
+            
+            return result;
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Xunit;
 
 namespace Cronos.Tests
@@ -2418,6 +2419,180 @@ namespace Cronos.Tests
             Assert.False(leftCronExpression.Equals(rightCronExpression));
             Assert.True(leftCronExpression != rightCronExpression);
             Assert.True(leftCronExpression.GetHashCode() != rightCronExpression.GetHashCode());
+        }
+
+        [Theory]
+
+        // Second specified.
+        
+        [InlineData("*      * * * * *", "*                * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0      * * * * *", "0                * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("1,2    * * * * *", "1,2              * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("1-3    * * * * *", "1,2,3            * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("57-3   * * * * *", "0,1,2,3,57,58,59 * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("*/10   * * * * *", "0,10,20,30,40,50 * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0/10   * * * * *", "0,10,20,30,40,50 * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0-20/5 * * * * *", "0,5,10,15,20     * * * * *", CronFormat.IncludeSeconds)]
+
+        [InlineData("10,56-3/2 * * * * *", "0,2,10,56,58 * * * * *", CronFormat.IncludeSeconds)]
+
+        // Minute specified.
+        
+        [InlineData("*      * * * *", "0 *                * * * *", CronFormat.Standard)]
+        [InlineData("0      * * * *", "0 0                * * * *", CronFormat.Standard)]
+        [InlineData("1,2    * * * *", "0 1,2              * * * *", CronFormat.Standard)]
+        [InlineData("1-3    * * * *", "0 1,2,3            * * * *", CronFormat.Standard)]
+        [InlineData("57-3   * * * *", "0 0,1,2,3,57,58,59 * * * *", CronFormat.Standard)]
+        [InlineData("*/10   * * * *", "0 0,10,20,30,40,50 * * * *", CronFormat.Standard)]
+        [InlineData("0/10   * * * *", "0 0,10,20,30,40,50 * * * *", CronFormat.Standard)]
+        [InlineData("0-20/5 * * * *", "0 0,5,10,15,20     * * * *", CronFormat.Standard)]
+
+        [InlineData("10,56-3/2 * * * *", "0 0,2,10,56,58 * * * *", CronFormat.Standard)]
+
+        [InlineData("* *      * * * *", "* *                * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 0      * * * *", "* 0                * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 1,2    * * * *", "* 1,2              * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 1-3    * * * *", "* 1,2,3            * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 57-3   * * * *", "* 0,1,2,3,57,58,59 * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* */10   * * * *", "* 0,10,20,30,40,50 * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 0/10   * * * *", "* 0,10,20,30,40,50 * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* 0-20/5 * * * *", "* 0,5,10,15,20     * * * *", CronFormat.IncludeSeconds)]
+
+        [InlineData("* 10,56-3/2 * * * *", "* 0,2,10,56,58 * * * *", CronFormat.IncludeSeconds)]
+
+        // Hour specified.
+        
+        [InlineData("* *      * * *", "0 * *             * * *", CronFormat.Standard)]
+        [InlineData("* 0      * * *", "0 * 0             * * *", CronFormat.Standard)]
+        [InlineData("* 1,2    * * *", "0 * 1,2           * * *", CronFormat.Standard)]
+        [InlineData("* 1-3    * * *", "0 * 1,2,3         * * *", CronFormat.Standard)]
+        [InlineData("* 22-3   * * *", "0 * 0,1,2,3,22,23 * * *", CronFormat.Standard)]
+        [InlineData("* */10   * * *", "0 * 0,10,20       * * *", CronFormat.Standard)]
+        [InlineData("* 0/10   * * *", "0 * 0,10,20       * * *", CronFormat.Standard)]
+        [InlineData("* 0-20/5 * * *", "0 * 0,5,10,15,20  * * *", CronFormat.Standard)]
+
+        [InlineData("* 10,22-3/2 * * *", "0 * 0,2,10,22    * * *", CronFormat.Standard)]
+
+        [InlineData("* * *      * * *", "* * *             * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 0      * * *", "* * 0             * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 1,2    * * *", "* * 1,2           * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 1-3    * * *", "* * 1,2,3         * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 22-3   * * *", "* * 0,1,2,3,22,23 * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * */10   * * *", "* * 0,10,20       * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 0/10   * * *", "* * 0,10,20       * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * 0-20/5 * * *", "* * 0,5,10,15,20  * * *", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * 10,22-3/2 * * *", "* * 0,2,10,22    * * *", CronFormat.IncludeSeconds)]
+
+        // Day specified.
+        
+        [InlineData("* * *      * *", "0 * * *           * *", CronFormat.Standard)]
+        [InlineData("* * 1      * *", "0 * * 1           * *", CronFormat.Standard)]
+        [InlineData("* * 1,2    * *", "0 * * 1,2         * *", CronFormat.Standard)]
+        [InlineData("* * 1-3    * *", "0 * * 1,2,3       * *", CronFormat.Standard)]
+        [InlineData("* * 30-3   * *", "0 * * 1,2,3,30,31 * *", CronFormat.Standard)]
+        [InlineData("* * */10   * *", "0 * * 1,11,21,31  * *", CronFormat.Standard)]
+        [InlineData("* * 1/10   * *", "0 * * 1,11,21,31  * *", CronFormat.Standard)]
+        [InlineData("* * 1-20/5 * *", "0 * * 1,6,11,16   * *", CronFormat.Standard)]
+
+        [InlineData("* * L     * *", "0 * * L     * *", CronFormat.Standard)]
+        [InlineData("* * L-0   * *", "0 * * L     * *", CronFormat.Standard)]
+        [InlineData("* * L-10  * *", "0 * * L-10  * *", CronFormat.Standard)]
+        [InlineData("* * LW    * *", "0 * * LW    * *", CronFormat.Standard)]
+        [InlineData("* * L-0W  * *", "0 * * LW    * *", CronFormat.Standard)]
+        [InlineData("* * L-10W * *", "0 * * L-10W * *", CronFormat.Standard)]
+        [InlineData("* * 10W   * *", "0 * * 10W   * *", CronFormat.Standard)]
+
+        [InlineData("* * 10,29-3/2 * *", "0 * * 2,10,29,31 * *", CronFormat.Standard)]
+
+        [InlineData("* * * *      * *", "* * * *           * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 1      * *", "* * * 1           * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 1,2    * *", "* * * 1,2         * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 1-3    * *", "* * * 1,2,3       * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 30-3   * *", "* * * 1,2,3,30,31 * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * */10   * *", "* * * 1,11,21,31  * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 1/10   * *", "* * * 1,11,21,31  * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 1-20/5 * *", "* * * 1,6,11,16   * *", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * L     * *", "* * * L     * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * L-0   * *", "* * * L     * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * L-10  * *", "* * * L-10  * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * LW    * *", "* * * LW    * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * L-0W  * *", "* * * LW    * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * L-10W * *", "* * * L-10W * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * 10W   * *", "* * * 10W   * *", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * 10,29-3/2 * *", "* * * 2,10,29,31 * *", CronFormat.IncludeSeconds)]
+
+        // Month specified.
+        
+        [InlineData("* * * *      *", "0 * * * *           *", CronFormat.Standard)]
+        [InlineData("* * * 1      *", "0 * * * 1           *", CronFormat.Standard)]
+        [InlineData("* * * 1,2    *", "0 * * * 1,2         *", CronFormat.Standard)]
+        [InlineData("* * * 1-3    *", "0 * * * 1,2,3       *", CronFormat.Standard)]
+        [InlineData("* * * 11-3   *", "0 * * * 1,2,3,11,12 *", CronFormat.Standard)]
+        [InlineData("* * * */10   *", "0 * * * 1,11        *", CronFormat.Standard)]
+        [InlineData("* * * 1/10   *", "0 * * * 1,11        *", CronFormat.Standard)]
+        [InlineData("* * * 1-12/5 *", "0 * * * 1,6,11      *", CronFormat.Standard)]
+                         
+        [InlineData("* * * 10,11-3/2 *", "0 * * * 1,3,10,11 *", CronFormat.Standard)]
+
+        [InlineData("* * * * *      *", "* * * * *           *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 1      *", "* * * * 1           *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 1,2    *", "* * * * 1,2         *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 1-3    *", "* * * * 1,2,3       *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 11-3   *", "* * * * 1,2,3,11,12 *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * */10   *", "* * * * 1,11        *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 1/10   *", "* * * * 1,11        *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * 1-12/5 *", "* * * * 1,6,11      *", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * * 10,11-3/2 *", "* * * * 1,3,10,11 *", CronFormat.IncludeSeconds)]
+
+        // Day of week specified.
+        
+        [InlineData("* * * * *    ", "0 * * * * *      ", CronFormat.Standard)]
+        [InlineData("* * * * MON  ", "0 * * * * 1      ", CronFormat.Standard)]
+        [InlineData("* * * * 1    ", "0 * * * * 1      ", CronFormat.Standard)]
+        [InlineData("* * * * 1,2  ", "0 * * * * 1,2    ", CronFormat.Standard)]
+        [InlineData("* * * * 1-3  ", "0 * * * * 1,2,3  ", CronFormat.Standard)]
+        [InlineData("* * * * 6-1  ", "0 * * * * 0,1,6  ", CronFormat.Standard)]
+        [InlineData("* * * * */2  ", "0 * * * * 0,2,4,6", CronFormat.Standard)]
+        [InlineData("* * * * 0/2  ", "0 * * * * 0,2,4,6", CronFormat.Standard)]
+        [InlineData("* * * * 1-6/5", "0 * * * * 1,6    ", CronFormat.Standard)]
+
+        [InlineData("* * * * 0L ", "0 * * * * 0L ", CronFormat.Standard)]
+        [InlineData("* * * * 5#1", "0 * * * * 5#1", CronFormat.Standard)]
+
+        [InlineData("* * * * SUNL ", "0 * * * * 0L ", CronFormat.Standard)]
+        [InlineData("* * * * FRI#1", "0 * * * * 5#1", CronFormat.Standard)]
+
+        [InlineData("* * * * 3,6-2/3", "0 * * * * 2,3,6", CronFormat.Standard)]
+
+        [InlineData("* * * * * *    ", "* * * * * *      ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * MON  ", "* * * * * 1      ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 1    ", "* * * * * 1      ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 1,2  ", "* * * * * 1,2    ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 1-3  ", "* * * * * 1,2,3  ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 6-1  ", "* * * * * 0,1,6  ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * */2  ", "* * * * * 0,2,4,6", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 0/2  ", "* * * * * 0,2,4,6", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 1-6/5", "* * * * * 1,6    ", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * * * 0L ", "* * * * * 0L ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * 5#1", "* * * * * 5#1", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * * * SUNL ", "* * * * * 0L ", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * FRI#1", "* * * * * 5#1", CronFormat.IncludeSeconds)]
+
+        [InlineData("* * * * * 3,6-2/3", "* * * * * 2,3,6", CronFormat.IncludeSeconds)]
+        public void ToString_ReturnsCorrectString(string cronExpresion, string expectedResult, CronFormat format)
+        {
+            var expression = CronExpression.Parse(cronExpresion, format);
+
+            // remove redundant spaces.
+            var expectedString = Regex.Replace(expectedResult, @"\s+", " ").Trim();
+            
+            Assert.Equal(expectedString, expression.ToString());
         }
 
         private static IEnumerable<object[]> GetTimeZones()
