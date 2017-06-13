@@ -865,7 +865,7 @@ namespace Cronos
             var num = GetNumber(ref pointer, null);
             if (num == -1 || num < low || num > high)
             {
-                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, low, high);
+                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", low, high);
             }
             return num;
         }
@@ -878,7 +878,7 @@ namespace Cronos
             var num = GetNumber(ref pointer, field.Names);
             if (num == -1 || num < field.First || num > field.Last)
             {
-                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field, field.First, field.Last);
+                ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field.First, field.Last);
             }
             return num;
         }

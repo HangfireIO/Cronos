@@ -422,6 +422,9 @@ namespace Cronos.Tests
         [InlineData("@hour           ", CronFormat.IncludeSeconds, "")]
         [InlineData("@midn           ", CronFormat.IncludeSeconds, "")]
         [InlineData("@week           ", CronFormat.IncludeSeconds, "")]
+        
+        [InlineData("60 * * * *", CronFormat.Standard, "between 0 and 59")]
+        [InlineData("*/60 * * * *", CronFormat.Standard, "between 1 and 59")]
         public void Parse_ThrowsCronFormatException_WhenCronExpressionIsInvalid(string cronExpression, CronFormat format, string invalidField)
         {
             var exception = Assert.Throws<CronFormatException>(() => CronExpression.Parse(cronExpression, format));
