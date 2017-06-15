@@ -263,55 +263,16 @@ namespace Cronos
         /// <inheritdoc />
         public override string ToString()
         {
-            return FieldValueToString(CronField.Seconds, _second) + " " +
-                   FieldValueToString(CronField.Minutes, _minute) + " " +
-                   FieldValueToString(CronField.Hours, _hour) + " " +
-                   DayOfMonthToString(_dayOfMonth) + " " +
-                   FieldValueToString(CronField.Months, _month) + " " +
-                   DayOfWeekToString(_dayOfWeek);
-        }
-
-        private static string FieldValueToString(CronField field, long fieldValue)
-        {
-            if (field.AllBits == fieldValue) return "*";
-
-            var result = new StringBuilder();
-
-            var lastValue = field.Last;
-            if (field == CronField.DaysOfWeek) lastValue--;
+            var expressionBuilder = new StringBuilder();
             
-            for (var i = field.First; i <= lastValue; i++)
-            {
-                if (!GetBit(fieldValue, i)) continue;
+            AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
+            AppendFieldValue(expressionBuilder, CronField.Minutes, _minute).Append(' ');
+            AppendFieldValue(expressionBuilder, CronField.Hours, _hour).Append(' ');
+            AppendDayOfMonth(expressionBuilder, _dayOfMonth).Append(' ');
+            AppendFieldValue(expressionBuilder, CronField.Months, _month).Append(' ');
+            AppendDayOfWeek(expressionBuilder, _dayOfWeek);
 
-                if (result.Length > 0) result.Append(',');
-                result.Append(i);
-            }
-            
-            return result.ToString();
-        }
-
-        private string DayOfMonthToString(int domValue)
-        {
-            var result = HasFlag(CronExpressionFlag.DayOfMonthLast)
-                ? _lastMonthOffset == 0
-                    ? "L"
-                    : $"L-{_lastMonthOffset}"
-                : FieldValueToString(CronField.DaysOfMonth, (uint) domValue);
-
-            if (HasFlag(CronExpressionFlag.NearestWeekday)) result += "W";
-
-            return result;
-        }
-
-        private string DayOfWeekToString(byte dowValue)
-        {
-            var result = FieldValueToString(CronField.DaysOfWeek, dowValue);
-            
-            if (HasFlag(CronExpressionFlag.DayOfWeekLast)) result += "L";
-            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) result += $"#{_nthdayOfWeek}";
-            
-            return result;
+            return expressionBuilder.ToString();
         }
 
         /// <summary>
@@ -881,6 +842,57 @@ namespace Cronos
                 ThrowFormatException(field, "Value must be a number between {0} and {1} (all inclusive).", field.First, field.Last);
             }
             return num;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private static StringBuilder AppendFieldValue(StringBuilder expressionBuilder, CronField field, long fieldValue)
+        {
+            if (field.AllBits == fieldValue) return expressionBuilder.Append('*');
+
+            // Unset 7 bit for Day of week field because both 0 and 7 stand for Sunday.
+            if (field == CronField.DaysOfWeek) fieldValue &= ~(1 << field.Last);
+
+            for (var i = GetFirstSet(fieldValue);; i = GetFirstSet(fieldValue >> i << i))
+            {
+                expressionBuilder.Append(i);
+                if (fieldValue >> ++i == 0) break;
+                expressionBuilder.Append(',');
+            }
+
+            return expressionBuilder;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private StringBuilder AppendDayOfMonth(StringBuilder expressionBuilder, int domValue)
+        {
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                expressionBuilder.Append('L');
+                if (_lastMonthOffset != 0) expressionBuilder.Append($"-{_lastMonthOffset}");
+            }
+            else
+            {
+                AppendFieldValue(expressionBuilder, CronField.DaysOfMonth, (uint)domValue);
+            }
+
+            if (HasFlag(CronExpressionFlag.NearestWeekday)) expressionBuilder.Append('W');
+
+            return expressionBuilder;
+        }
+
+#if !NET40
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        private void AppendDayOfWeek(StringBuilder expressionBuilder, int dowValue)
+        {
+            AppendFieldValue(expressionBuilder, CronField.DaysOfWeek, dowValue);
+
+            if (HasFlag(CronExpressionFlag.DayOfWeekLast)) expressionBuilder.Append('L');
+            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) expressionBuilder.Append($"#{_nthdayOfWeek}");
         }
 
 #if !NET40

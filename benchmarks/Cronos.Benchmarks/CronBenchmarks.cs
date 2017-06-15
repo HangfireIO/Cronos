@@ -253,5 +253,14 @@ namespace Cronos.Benchmarks
         {
             return ComplexExpressionNCrontabAdvanced.GetNextOccurrence(DateTimeNow);
         }
+
+        [Benchmark]
+        public string SimpleToString() => SimpleExpression.ToString();
+
+        [Benchmark]
+        public string ComplexToString() => ComplexExpression.ToString();
+
+        [Benchmark]
+        public string AbmiguousToString() => AbmiguousExpression.ToString();
     }
 }
