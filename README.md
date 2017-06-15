@@ -9,7 +9,7 @@ Cronos is a .NET library for parsing Cron expressions and calculating next occur
 * Supports non-standard characters like `L`, `W`, `#` and their combinations.
 * Supports reversed ranges, like `23-01` (equivalent to `23,00,01`) or `DEC-FEB` (equivalent to `DEC,JAN,FEB`).
 * Supports time zones, and performs all the date/time conversions for you.
-* Does not skip occurrences, when the clock jumps forward to Daylight saving time (knows as Summer time).
+* Does not skip occurrences, when the clock jumps forward to Daylight saving time (known as Summer time).
 * Does not skip interval-based occurrences, when the clock jumps backward from Summer time.
 * Does not retry non-interval based occurrences, when the clock jumps backward from Summer time.
 * Contains 1000+ unit tests to ensure everything is working correctly.
