@@ -83,6 +83,21 @@ CronExpression expression = CronExpression.Parse("*/30 * * * * *", CronFormat.In
 DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
 ```
 
+### Getting occurrences within a range
+
+You can also get occurrences within a fixed date/time range using the `GetOccurrences` method. By default, the `from` argument will be included when matched, and `to` argument will be excluded. However, you can configure that behavior.
+
+```csharp
+CronExpression expression = CronExpression.Parse("* * * * *");
+DateTime? occurrence = expression.GetOccurrences(
+    DateTime.UtcNow,
+    DateTime.UtcNow.AddYears(1),
+    fromInclusive: true,
+    toInclusive: false);
+```
+
+There are different overloads for this method to support `DateTimeOffset` arguments or time zones.
+
 ## Cron format
 
 Cron expression is a mask to define fixed times, dates and intervals. The mask consists of second (optional), minute, hour, day-of-month, month and day-of-week fields. All of the fields allow you to specify multiple values, and any given date/time will satisfy the specified Cron expression, if all the fields contain a matching value.
