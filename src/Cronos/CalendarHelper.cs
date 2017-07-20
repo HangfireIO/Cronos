@@ -44,14 +44,6 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static long AddMillisecond(long ticks)
-        {
-            return ticks + TicksPerMillisecond;
-        }
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool IsGreaterThan(int year1, int month1, int day1, int year2, int month2, int day2)
         {
             if (year1 != year2) return year1 > year2;
@@ -78,9 +70,8 @@ namespace Cronos
         public static void FillDateTimeParts(long ticks, out int second, out int minute, out int hour,
             out int day, out int month, out int year)
         {
-            var millisecond = (int) (ticks / TicksPerMillisecond % 1000);
             second = (int) (ticks / TicksPerSecond % 60);
-            if (millisecond != 0) second++;
+            if (ticks % TicksPerSecond != 0) second++;
             minute = (int) (ticks / TicksPerMinute % 60);
             hour = (int) (ticks / TicksPerHour % 24);
 

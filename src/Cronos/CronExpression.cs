@@ -408,7 +408,7 @@ namespace Cronos
 
         private long FindOccurence(long ticks, bool startInclusive)
         {
-            if (!startInclusive) ticks = CalendarHelper.AddMillisecond(ticks);
+            if (!startInclusive) ticks++;
 
             CalendarHelper.FillDateTimeParts(
                 ticks,
