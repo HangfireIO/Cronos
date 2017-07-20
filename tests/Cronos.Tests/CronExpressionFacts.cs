@@ -1041,6 +1041,21 @@ namespace Cronos.Tests
         }
 
         [Theory]
+        [InlineData(true, 00001)]
+        [InlineData(true, 09999)]
+        [InlineData(false, 0001)]
+        [InlineData(false, 9999)]
+        public void GetNextOccurrence_RoundsFromUtcUpToTheSecond(bool inclusiveFrom, int extraTicks)
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+            var fromUtc = new DateTime(2017, 07, 20, 11, 59, 59, DateTimeKind.Utc).AddTicks(extraTicks);
+
+            var occurrence = expression.GetNextOccurrence(fromUtc, inclusive: inclusiveFrom);
+
+            Assert.Equal(new DateTime(2017, 07, 20, 12, 0, 0, DateTimeKind.Utc), occurrence);
+        }
+
+        [Theory]
 
         // 2016-03-13 is date when the clock jumps forward from 1:59 am -05:00 standard time (ST) to 3:00 am -04:00 DST in Eastern Time Zone.
         // ________1:59 ST///invalid///3:00 DST________
