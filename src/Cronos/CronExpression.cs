@@ -376,6 +376,7 @@ namespace Cronos
                 }
 
                 fromLocal = ambiguousIntervalLocalEnd;
+                inclusive = true;
             }
 
             var occurrenceTicks = FindOccurence(fromLocal.Ticks, inclusive);
