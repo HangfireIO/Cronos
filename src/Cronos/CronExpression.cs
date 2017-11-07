@@ -190,8 +190,8 @@ namespace Cronos
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
-            var occurrence = GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
-
+            var zonedStartOffset = new DateTimeOffset(zonedStart, zonedStart - fromUtc);
+            var occurrence = GetOccurenceByZonedTimes(zonedStartOffset, zone, inclusive);
             return occurrence?.UtcDateTime;
         }
 
