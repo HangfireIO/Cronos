@@ -371,7 +371,7 @@ namespace Cronos
 
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
-                    var foundInStandardOffset = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
+                    var foundInStandardOffset = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks, inclusive);
                     if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
                 }
 

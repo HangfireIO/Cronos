@@ -18,10 +18,12 @@ namespace Cronos.Tests
         private static readonly string EasternTimeZoneId = IsUnix ? "America/New_York" : "Eastern Standard Time";
         private static readonly string JordanTimeZoneId = IsUnix ? "Asia/Amman" : "Jordan Standard Time";
         private static readonly string LordHoweTimeZoneId = IsUnix ? "Australia/Lord_Howe" : "Lord Howe Standard Time";
+        private static readonly string BrusselsTimeZoneId = IsUnix ? "Europe/Brussel" : "W. Europe Standard Time";
 
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById(EasternTimeZoneId);
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(JordanTimeZoneId);
         private static readonly TimeZoneInfo LordHoweTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LordHoweTimeZoneId);
+        private static readonly TimeZoneInfo BrusselsTimeZone = TimeZoneInfo.FindSystemTimeZoneById(BrusselsTimeZoneId);
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
@@ -1282,6 +1284,17 @@ namespace Cronos.Tests
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Fact]
+        public void GetNextOccurrence_HandlesBorderConditions_WhenDSTEnds_ExcludingBeginDate()
+        {
+            var expression = CronExpression.Parse("0 */15 * * * *", CronFormat.IncludeSeconds);
+
+            var from = new DateTime(2017, 10, 29, 01, 45, 00, DateTimeKind.Utc);
+            var executed = expression.GetNextOccurrence(from, BrusselsTimeZone, inclusive: false);
+
+            Assert.Equal(new DateTime(2017, 10, 29, 02, 00, 00, 00), executed);
         }
 
         [Fact]
