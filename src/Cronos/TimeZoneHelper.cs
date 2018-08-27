@@ -13,7 +13,7 @@ namespace Cronos
         // So duration from 1:00 am to 2:00 am repeats twice.
         // .NET Framework and .NET Core consider backward DST transition as [1:00 DST ->> 2:00 DST)--[1:00 ST --> 2:00 ST]. So 2:00 is not ambiguous, but 1:00 is ambiguous.
         // Mono consider backward DST transition as [1:00 DST ->> 2:00 DST]--(1:00 ST --> 2:00 ST]. So 2:00 is ambiguous, but 1:00 is not ambiguous.
-        // We have to add 1 tick to amiguousTime to have the same behavior for all frameworks. Thus 1:00 is ambiguous and 2:00 is not ambiguous. 
+        // We have to add 1 tick to ambiguousTime to have the same behavior for all frameworks. Thus 1:00 is ambiguous and 2:00 is not ambiguous. 
         public static bool IsAmbiguousTime(TimeZoneInfo zone, DateTime ambiguousTime)
         {
             return zone.IsAmbiguousTime(ambiguousTime.AddTicks(1));
@@ -53,7 +53,7 @@ namespace Cronos
 #endif
         }
 
-        public static DateTimeOffset GetStandartTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan daylightOffset)
+        public static DateTimeOffset GetStandardTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan daylightOffset)
         {
             var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);
 

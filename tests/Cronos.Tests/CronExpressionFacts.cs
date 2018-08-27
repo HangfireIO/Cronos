@@ -376,6 +376,7 @@ namespace Cronos.Tests
         // Macro is invalid.
         [InlineData("@", CronFormat.Standard, "")]
 
+        // ReSharper disable StringLiteralTypo
         [InlineData("@invalid        ", CronFormat.Standard, "")]
         [InlineData("          @yearl", CronFormat.Standard, "")]
         [InlineData("@yearl          ", CronFormat.Standard, "")]
@@ -425,6 +426,7 @@ namespace Cronos.Tests
         
         [InlineData("60 * * * *", CronFormat.Standard, "between 0 and 59")]
         [InlineData("*/60 * * * *", CronFormat.Standard, "between 1 and 59")]
+        // ReSharper restore StringLiteralTypo
         public void Parse_ThrowsCronFormatException_WhenCronExpressionIsInvalid(string cronExpression, CronFormat format, string invalidField)
         {
             var exception = Assert.Throws<CronFormatException>(() => CronExpression.Parse(cronExpression, format));
@@ -468,7 +470,7 @@ namespace Cronos.Tests
         [InlineData("  @EVERY_SECOND", CronFormat.IncludeSeconds)]
         public void Parse_DoesNotThrowAnException_WhenExpressionIsMacro(string cronExpression, CronFormat format)
         {
-            CronExpression.Parse(cronExpression);
+            CronExpression.Parse(cronExpression, format);
         }
 
         [Theory]
@@ -881,6 +883,7 @@ namespace Cronos.Tests
         // 2016-01-23    2016-01-24    2016-01-25    2016-01-26    2016-01-27    2016-01-28    2016-01-29
         // 2016-01-30    2016-01-31
 
+        // ReSharper disable StringLiteralTypo
         [InlineData("* * * * * 0L  ", "2017-01-29", "2017-01-29")]
         [InlineData("* * * * * 0L  ", "2017-01-01", "2017-01-29")]
         [InlineData("* * * * * SUNL", "2017-01-01", "2017-01-29")]
@@ -904,6 +907,7 @@ namespace Cronos.Tests
         [InlineData("* * * * * SATL", "2017-01-01", "2017-01-28")]
         [InlineData("* * * * * 7L  ", "2017-01-29", "2017-01-29")]
         [InlineData("* * * * * 7L  ", "2016-12-31", "2017-01-29")]
+        // ReSharper restore StringLiteralTypo
 
         // Support '#' in day of week field.
 
@@ -1468,10 +1472,10 @@ namespace Cronos.Tests
             var fromUtc = fromWithOffset.UtcDateTime;
 
             var occurrenceDateTime = expression.GetNextOccurrence(fromUtc, TimeZoneInfo.Utc, inclusive: true);
-            Assert.Equal(null, occurrenceDateTime);
+            Assert.Null(occurrenceDateTime);
 
             var occurrenceWithOffset = expression.GetNextOccurrence(fromWithOffset, TimeZoneInfo.Utc);
-            Assert.Equal(null, occurrenceWithOffset);
+            Assert.Null(occurrenceWithOffset);
         }
 
         [Theory]
@@ -2216,7 +2220,7 @@ namespace Cronos.Tests
         [InlineData("5 5 5 5 * *", "2017-03-05 05:05:05", "2017-04-05 05:05:05")]
         [InlineData("5 5 5 5 5 *", "2017-05-05 05:05:05", "2018-05-05 05:05:05")]
         [InlineData("5 5 5 5 5 5", "2017-05-05 05:05:05", "2023-05-05 05:05:05")]
-        public void GetNextOccurrence_ReturnsCorrectDate_When6fiedsExpressionIsUsedAndInclusiveIsFalse(string expression, string fromString, string expectedString)
+        public void GetNextOccurrence_ReturnsCorrectDate_When6fieldsExpressionIsUsedAndInclusiveIsFalse(string expression, string fromString, string expectedString)
         {
             var cronExpression = CronExpression.Parse(expression, CronFormat.IncludeSeconds);
 
@@ -2272,7 +2276,7 @@ namespace Cronos.Tests
                 .GetOccurrences(from, from.AddMinutes(2), fromInclusive: false)
                 .ToArray();
 
-            Assert.Equal(1, occurrences.Length);
+            Assert.Single(occurrences);
             Assert.Equal(from.AddMinutes(1), occurrences[0]);
         }
 
@@ -2336,7 +2340,7 @@ namespace Cronos.Tests
                 .GetOccurrences(from, from.AddMinutes(2), EasternTimeZone, fromInclusive: false)
                 .ToArray();
 
-            Assert.Equal(1, occurrences.Length);
+            Assert.Single(occurrences);
             Assert.Equal(from.AddMinutes(1), occurrences[0]);
         }
 
@@ -2400,7 +2404,7 @@ namespace Cronos.Tests
                 .GetOccurrences(from, from.AddMinutes(2), EasternTimeZone, fromInclusive: false)
                 .ToArray();
 
-            Assert.Equal(1, occurrences.Length);
+            Assert.Single(occurrences);
             Assert.Equal(from.AddMinutes(1), occurrences[0].UtcDateTime);
         }
 
@@ -2510,6 +2514,7 @@ namespace Cronos.Tests
             Assert.True(leftCronExpression.GetHashCode() == rightCronExpression.GetHashCode());
         }
 
+        [Fact]
         public void Equals_ReturnsFalse_WhenOtherIsNull()
         {
             var cronExpression = CronExpression.Parse("* * * * *");
@@ -2682,6 +2687,7 @@ namespace Cronos.Tests
         [InlineData("* * * * 0L ", "0 * * * * 0L ", CronFormat.Standard)]
         [InlineData("* * * * 5#1", "0 * * * * 5#1", CronFormat.Standard)]
 
+        // ReSharper disable once StringLiteralTypo
         [InlineData("* * * * SUNL ", "0 * * * * 0L ", CronFormat.Standard)]
         [InlineData("* * * * FRI#1", "0 * * * * 5#1", CronFormat.Standard)]
 
@@ -2700,13 +2706,14 @@ namespace Cronos.Tests
         [InlineData("* * * * * 0L ", "* * * * * 0L ", CronFormat.IncludeSeconds)]
         [InlineData("* * * * * 5#1", "* * * * * 5#1", CronFormat.IncludeSeconds)]
 
+        // ReSharper disable once StringLiteralTypo
         [InlineData("* * * * * SUNL ", "* * * * * 0L ", CronFormat.IncludeSeconds)]
         [InlineData("* * * * * FRI#1", "* * * * * 5#1", CronFormat.IncludeSeconds)]
 
         [InlineData("* * * * * 3,6-2/3", "* * * * * 2,3,6", CronFormat.IncludeSeconds)]
-        public void ToString_ReturnsCorrectString(string cronExpresion, string expectedResult, CronFormat format)
+        public void ToString_ReturnsCorrectString(string cronExpression, string expectedResult, CronFormat format)
         {
-            var expression = CronExpression.Parse(cronExpresion, format);
+            var expression = CronExpression.Parse(cronExpression, format);
 
             // remove redundant spaces.
             var expectedString = Regex.Replace(expectedResult, @"\s+", " ").Trim();
@@ -2714,7 +2721,7 @@ namespace Cronos.Tests
             Assert.Equal(expectedString, expression.ToString());
         }
 
-        private static IEnumerable<object[]> GetTimeZones()
+        public static IEnumerable<object[]> GetTimeZones()
         {
             yield return new object[] {EasternTimeZone};
             yield return new object[] {JordanTimeZone};

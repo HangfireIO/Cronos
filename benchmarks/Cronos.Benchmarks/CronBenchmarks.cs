@@ -1,11 +1,10 @@
 ﻿using System;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Jobs;
 using NCrontab;
 
 namespace Cronos.Benchmarks
 {
-    [RyuJitX64Job]
+    [RyuJitX64Job, CoreJob]
     public class CronBenchmarks
     {
         private static readonly CronExpression SimpleExpression =
@@ -22,7 +21,7 @@ namespace Cronos.Benchmarks
         private static readonly CronExpression NthDayOfWeekUnreachableExpression =
             CronExpression.Parse("* * 1-28 * SUN#5");
 
-        private static readonly CronExpression AbmiguousExpression = CronExpression.Parse("30 1 4 11 *");
+        private static readonly CronExpression AmbiguousExpression = CronExpression.Parse("30 1 4 11 *");
 
         private static readonly CrontabSchedule SimpleExpressionNCrontab = CrontabSchedule.Parse("* * * * *");
         private static readonly CrontabSchedule ComplexExpressionNCrontab = CrontabSchedule.Parse("*/10 12-20 * DEC 3");
@@ -179,7 +178,7 @@ namespace Cronos.Benchmarks
         [Benchmark]
         public DateTimeOffset? NextHandlesAmbiguousDaylight()
         {
-            return AbmiguousExpression.GetNextOccurrence(AmbiguousDaylightTime, PacificTimeZone);
+            return AmbiguousExpression.GetNextOccurrence(AmbiguousDaylightTime, PacificTimeZone);
         }
 
         [Benchmark]
@@ -261,6 +260,6 @@ namespace Cronos.Benchmarks
         public string ComplexToString() => ComplexExpression.ToString();
 
         [Benchmark]
-        public string AbmiguousToString() => AbmiguousExpression.ToString();
+        public string AmbiguousToString() => AmbiguousExpression.ToString();
     }
 }

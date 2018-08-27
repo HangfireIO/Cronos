@@ -48,7 +48,7 @@ namespace Cronos
         private short _month;      // 12 bits -> from 1 bit to 12 bit
         private byte  _dayOfWeek;  // 8 bits  -> from 0 bit to 7 bit
 
-        private byte  _nthdayOfWeek;
+        private byte  _nthDayOfWeek;
         private byte  _lastMonthOffset;
 
         private CronExpressionFlag _flags;
@@ -61,7 +61,7 @@ namespace Cronos
         /// Constructs a new <see cref="CronExpression"/> based on the specified
         /// cron expression. It's supported expressions consisting of 5 fields:
         /// minute, hour, day of month, month, day of week. 
-        /// If you want to parse non-standard cron expresions use <see cref="Parse(string, CronFormat)"/> with specified CronFields argument.
+        /// If you want to parse non-standard cron expressions use <see cref="Parse(string, CronFormat)"/> with specified CronFields argument.
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
         public static CronExpression Parse(string expression)
@@ -124,7 +124,7 @@ namespace Cronos
                 cronExpression._month = (short)ParseField(CronField.Months, ref pointer, ref cronExpression._flags);
                 ParseWhiteSpace(CronField.Months, ref pointer);
 
-                cronExpression._dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref cronExpression._flags, ref cronExpression._nthdayOfWeek);
+                cronExpression._dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref cronExpression._flags, ref cronExpression._nthDayOfWeek);
                 ParseEndOfString(ref pointer);
 
                 // Make sundays equivalent.
@@ -292,7 +292,7 @@ namespace Cronos
                    _dayOfMonth == other._dayOfMonth &&
                    _month == other._month &&
                    _dayOfWeek == other._dayOfWeek &&
-                   _nthdayOfWeek == other._nthdayOfWeek &&
+                   _nthDayOfWeek == other._nthDayOfWeek &&
                    _lastMonthOffset == other._lastMonthOffset &&
                    _flags == other._flags;
         }
@@ -325,7 +325,7 @@ namespace Cronos
                 hashCode = (hashCode * 397) ^ _dayOfMonth;
                 hashCode = (hashCode * 397) ^ _month.GetHashCode();
                 hashCode = (hashCode * 397) ^ _dayOfWeek.GetHashCode();
-                hashCode = (hashCode * 397) ^ _nthdayOfWeek.GetHashCode();
+                hashCode = (hashCode * 397) ^ _nthDayOfWeek.GetHashCode();
                 hashCode = (hashCode * 397) ^ _lastMonthOffset.GetHashCode();
                 hashCode = (hashCode * 397) ^ (int)_flags;
 
@@ -362,7 +362,7 @@ namespace Cronos
                     var foundInDaylightOffset = FindOccurence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
                     if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
 
-                    fromLocal = TimeZoneHelper.GetStandartTimeStart(zone, fromLocal, daylightOffset).DateTime;
+                    fromLocal = TimeZoneHelper.GetStandardTimeStart(zone, fromLocal, daylightOffset).DateTime;
                     inclusive = true;
                 }
 
@@ -429,8 +429,6 @@ namespace Cronos
             var month = startMonth;
             var year = startYear;
 
-            int lastCheckedDay;
-
             if (!GetBit(_second, second) && !Move(_second, ref second)) minute++;
             if (!GetBit(_minute, minute) && !Move(_minute, ref minute)) hour++;
             if (!GetBit(_hour, hour) && !Move(_hour, ref hour)) day++;
@@ -446,7 +444,8 @@ namespace Cronos
             if (day > GetLastDayOfMonth(year, month)) goto RetryMonth;
 
             if (HasFlag(CronExpressionFlag.DayOfMonthLast)) day = GetLastDayOfMonth(year, month);
-            lastCheckedDay = day;
+
+            var lastCheckedDay = day;
 
             if (HasFlag(CronExpressionFlag.NearestWeekday)) day = CalendarHelper.MoveToNearestWeekDay(year, month, day);
 
@@ -498,7 +497,7 @@ namespace Cronos
         private bool IsDayOfWeekMatch(int year, int month, int day)
         {
             if (HasFlag(CronExpressionFlag.DayOfWeekLast) && !CalendarHelper.IsLastDayOfWeek(year, month, day) ||
-                HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthdayOfWeek))
+                HasFlag(CronExpressionFlag.NthDayOfWeek) && !CalendarHelper.IsNthDayOfWeek(day, _nthDayOfWeek))
             {
                 return false;
             }
@@ -777,9 +776,9 @@ namespace Cronos
 #if !NET40
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        private static unsafe long ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthdayOfWeek)
+        private static unsafe long ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthDayOfWeek)
         {
-            nthdayOfWeek = (byte)ParseNumber(field, ref pointer, MinNthDayOfWeek, MaxNthDayOfWeek);
+            nthDayOfWeek = (byte)ParseNumber(field, ref pointer, MinNthDayOfWeek, MaxNthDayOfWeek);
             flags |= CronExpressionFlag.NthDayOfWeek;
             return GetBit(dayOfWeek);
         }
@@ -893,7 +892,7 @@ namespace Cronos
             AppendFieldValue(expressionBuilder, CronField.DaysOfWeek, dowValue);
 
             if (HasFlag(CronExpressionFlag.DayOfWeekLast)) expressionBuilder.Append('L');
-            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) expressionBuilder.Append($"#{_nthdayOfWeek}");
+            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) expressionBuilder.Append($"#{_nthDayOfWeek}");
         }
 
 #if !NET40
