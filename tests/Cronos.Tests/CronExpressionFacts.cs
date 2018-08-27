@@ -10,7 +10,7 @@ namespace Cronos.Tests
     public class CronExpressionFacts
     {
         private static readonly bool IsUnix =
-#if NETCOREAPP1_0
+#if NETCOREAPP1_1
             !System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 #else
             Environment.OSVersion.Platform == PlatformID.MacOSX || Environment.OSVersion.Platform == PlatformID.Unix;
