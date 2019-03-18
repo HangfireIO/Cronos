@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.11.1" />
-    <PackageReference Include="NCrontab" Version="3.3.0" />
+    <PackageReference Include="NCrontab.Signed" Version="3.3.0" />
     <PackageReference Include="NCrontab.Advanced" Version="1.3.11" />
     <PackageReference Include="Quartz" Version="3.0.6" />
   </ItemGroup>
