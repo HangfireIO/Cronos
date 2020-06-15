@@ -57,7 +57,7 @@ It is possible to specify a time zone directly, in this case you should pass `Da
 CronExpression expression = CronExpression.Parse("* * * * *");
 TimeZoneInfo easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
 
-DateTime?       next = expression.GetNextOccurrence(DateTime.UtcNow, easternTimeZone));
+DateTime?       next = expression.GetNextOccurrence(DateTime.UtcNow, easternTimeZone);
 DateTimeOffset? next = expression.GetNextOccurrence(DateTimeOffset.UtcNow, easternTimeZone);
 ```
 
@@ -80,7 +80,7 @@ If you want to specify seconds, use another overload of the `Parse` method and s
 
 ```csharp
 CronExpression expression = CronExpression.Parse("*/30 * * * * *", CronFormat.IncludeSeconds);
-DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow));
+DateTime? next = expression.GetNextOccurrence(DateTime.UtcNow);
 ```
 
 ### Getting occurrences within a range
