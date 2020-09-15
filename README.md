@@ -89,7 +89,7 @@ You can also get occurrences within a fixed date/time range using the `GetOccurr
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
-DateTime? occurrence = expression.GetOccurrences(
+IEnumerable<DateTime> occurrences = expression.GetOccurrences(
     DateTime.UtcNow,
     DateTime.UtcNow.AddYears(1),
     fromInclusive: true,
