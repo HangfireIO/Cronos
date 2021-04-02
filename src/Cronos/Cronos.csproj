@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
-    <TargetFrameworks>netstandard1.0;net45;net40</TargetFrameworks>
+    <TargetFrameworks>netstandard1.0;netstandard2.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
@@ -10,24 +9,20 @@
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
     <Owners>aidmsu, odinserj</Owners>
-    <Summary>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Summary>
-    <Description>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind, and correctly handles Daylight Saving Time transitions.</Description>
+    <Description>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind and correctly handles daylight saving time transitions.</Description>
     <PackageProjectUrl>https://github.com/HangfireIO/Cronos</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>https://github.com/HangfireIO/Cronos/releases</PackageReleaseNotes>
-    <Copyright>Copyright © 2016-2017 Sergey Odinokov.</Copyright>
+    <Copyright>Copyright © 2016-2018 Sergey Odinokov.</Copyright>
     <PackageTags>Cronos Cron Recurring</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard1.0'">
-    <PackageReference Include="NETStandard.Library" Version="1.6.0" />
-  </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="SourceLink.Create.GitHub" Version="2.1.2" PrivateAssets="All" />
-    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.1.2" />
-    <DotNetCliToolReference Include="dotnet-sourcelink" Version="2.1.2" />
+    <PackageReference Include="SourceLink.Create.GitHub" Version="2.8.3" PrivateAssets="All" />
+    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.8.3" />
+    <DotNetCliToolReference Include="dotnet-sourcelink" Version="2.8.3" />
   </ItemGroup>
 </Project>

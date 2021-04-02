@@ -3,7 +3,7 @@
 
 sudo: required
 dist: trusty
-dotnet: 1.0.1
+dotnet: 2.1.401
 mono: none
 
 language: csharp
@@ -15,4 +15,4 @@ os:
 # Run the build script
 script:
     travis_retry dotnet restore Cronos.sln --disable-parallel;
-    dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:netcoreapp1.0;
+    dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:netcoreapp2.1;
