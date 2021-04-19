@@ -1134,6 +1134,28 @@ namespace Cronos.Tests
 
         [Theory]
 
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9999999 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9999000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9990000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9900000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9000000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+
+        [InlineData("30 0 L  * *", "2017-03-31 01:00:00.0000001 +02:00", "2017-04-30 00:30:00 +03:00", true)]
+        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForward_And_FromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var fromInstant = GetInstant(fromString);
+            var expectedInstant = GetInstant(expectedString);
+
+            var executed = expression.GetNextOccurrence(fromInstant, JordanTimeZone, inclusive);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Theory]
+
         // 2017-10-01 is date when the clock jumps forward from 1:59 am +10:30 standard time (ST) to 2:30 am +11:00 DST on Lord Howe.
         // ________1:59 ST///invalid///2:30 DST________
 
@@ -2788,6 +2810,7 @@ namespace Cronos.Tests
                 {
                     "yyyy-MM-dd HH:mm:ss zzz",
                     "yyyy-MM-dd HH:mm zzz",
+                    "yyyy-MM-dd HH:mm:ss.fffffff zzz"
                 },
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None);

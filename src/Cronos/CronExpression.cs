@@ -211,6 +211,8 @@ namespace Cronos
                 return new DateTime(found, DateTimeKind.Utc);
             }
 
+            fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
+
             var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
             var zonedStartOffset = new DateTimeOffset(zonedStart, zonedStart - fromUtc);
             var occurrence = GetOccurrenceByZonedTimes(zonedStartOffset, zone, inclusive);
@@ -253,6 +255,8 @@ namespace Cronos
 
                 return new DateTimeOffset(found, TimeSpan.Zero);
             }
+
+            from = DateTimeHelper.FloorToSeconds(from);
 
             var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
             return GetOccurrenceByZonedTimes(zonedStart, zone, inclusive);
