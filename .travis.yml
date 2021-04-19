@@ -1,7 +1,6 @@
 # Travis-CI Build for Cronos
 # see travis-ci.org for details
 
-sudo: required
 dist: trusty
 dotnet: 2.1.401
 mono: none
@@ -14,5 +13,25 @@ os:
   
 # Run the build script
 script:
-    travis_retry dotnet restore Cronos.sln --disable-parallel;
-    dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:netcoreapp2.1;
+  - travis_retry dotnet restore Cronos.sln --disable-parallel
+  - dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:netcoreapp2.1
+
+# Mono jobs
+
+_shared_job : &mono_job
+  mono: latest
+  install:
+    - nuget restore Cronos.sln
+    - nuget install xunit.runner.console -Version 2.4.1 -OutputDirectory testrunner
+  script:
+    - msbuild /p:Configuration=Release Cronos.sln
+    - mono ./testrunner/xunit.runner.console.2.4.1/tools/net452/xunit.console.exe ./tests/Cronos.Tests/bin/Release/net452/Cronos.Tests.dll
+
+jobs:
+  include:
+    - os: linux
+      dist: xenial
+      <<: *mono_job
+
+    - os: osx
+      <<: *mono_job
