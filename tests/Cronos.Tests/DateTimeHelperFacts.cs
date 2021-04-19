@@ -57,8 +57,8 @@ namespace Cronos.Tests
         [InlineData("2021-04-19 01:45:45.1000000", "2021-04-19 01:45:45.0000000", DateTimeKind.Unspecified)]
         public void FloorToSeconds_WorksCorrectlyWithDateTimeUtc(string dateTime, string expected, DateTimeKind kind)
         {
-            var dateTimeInstant = GetDateTimeUtcInstant(dateTime, kind);
-            var expectedDateTimeInstant = GetDateTimeUtcInstant(expected, kind);
+            var dateTimeInstant = GetDateTimeInstant(dateTime, kind);
+            var expectedDateTimeInstant = GetDateTimeInstant(expected, kind);
 
             var flooredDateTime = DateTimeHelper.FloorToSeconds(dateTimeInstant);
 
@@ -82,7 +82,7 @@ namespace Cronos.Tests
             return dateTime;
         }
 
-        private static DateTime GetDateTimeUtcInstant(string dateTimeString, DateTimeKind kind)
+        private static DateTime GetDateTimeInstant(string dateTimeString, DateTimeKind kind)
         {
             dateTimeString = dateTimeString.Trim();
 
