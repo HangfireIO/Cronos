@@ -166,7 +166,7 @@ namespace Cronos
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            var found = FindOccurence(fromUtc.Ticks, inclusive);
+            var found = FindOccurrence(fromUtc.Ticks, inclusive);
             if (found == NotFound) return null;
 
             return new DateTime(found, DateTimeKind.Utc);
@@ -205,7 +205,7 @@ namespace Cronos
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
-                var found = FindOccurence(fromUtc.Ticks, inclusive);
+                var found = FindOccurrence(fromUtc.Ticks, inclusive);
                 if (found == NotFound) return null;
 
                 return new DateTime(found, DateTimeKind.Utc);
@@ -213,7 +213,7 @@ namespace Cronos
 
             var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
             var zonedStartOffset = new DateTimeOffset(zonedStart, zonedStart - fromUtc);
-            var occurrence = GetOccurenceByZonedTimes(zonedStartOffset, zone, inclusive);
+            var occurrence = GetOccurrenceByZonedTimes(zonedStartOffset, zone, inclusive);
             return occurrence?.UtcDateTime;
         }
 
@@ -248,14 +248,14 @@ namespace Cronos
         {
             if (ReferenceEquals(zone, UtcTimeZone))
             {
-                var found = FindOccurence(from.UtcTicks, inclusive);
+                var found = FindOccurrence(from.UtcTicks, inclusive);
                 if (found == NotFound) return null;
 
                 return new DateTimeOffset(found, TimeSpan.Zero);
             }
 
             var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
-            return GetOccurenceByZonedTimes(zonedStart, zone, inclusive);
+            return GetOccurrenceByZonedTimes(zonedStart, zone, inclusive);
         }
 
         /// <summary>
@@ -366,7 +366,7 @@ namespace Cronos
         public static bool operator !=(CronExpression left, CronExpression right) => !Equals(left, right);
 
 
-        private DateTimeOffset? GetOccurenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
+        private DateTimeOffset? GetOccurrenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
         {
             var fromLocal = from.DateTime;
 
@@ -381,7 +381,7 @@ namespace Cronos
                     var daylightTimeLocalEnd = TimeZoneHelper.GetDaylightTimeEnd(zone, fromLocal, daylightOffset).DateTime;
 
                     // Early period, try to find anything here.
-                    var foundInDaylightOffset = FindOccurence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
+                    var foundInDaylightOffset = FindOccurrence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
                     if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
 
                     fromLocal = TimeZoneHelper.GetStandardTimeStart(zone, fromLocal, daylightOffset).DateTime;
@@ -393,7 +393,7 @@ namespace Cronos
 
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
-                    var foundInStandardOffset = FindOccurence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
+                    var foundInStandardOffset = FindOccurrence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
                     if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
                 }
 
@@ -401,7 +401,7 @@ namespace Cronos
                 inclusive = true;
             }
 
-            var occurrenceTicks = FindOccurence(fromLocal.Ticks, inclusive);
+            var occurrenceTicks = FindOccurrence(fromLocal.Ticks, inclusive);
             if (occurrenceTicks == NotFound) return null;
 
             var occurrence = new DateTime(occurrenceTicks);
@@ -421,15 +421,15 @@ namespace Cronos
             return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
         }
 
-        private long FindOccurence(long startTimeTicks, long endTimeTicks, bool startInclusive)
+        private long FindOccurrence(long startTimeTicks, long endTimeTicks, bool startInclusive)
         {
-            var found = FindOccurence(startTimeTicks, startInclusive);
+            var found = FindOccurrence(startTimeTicks, startInclusive);
 
             if (found == NotFound || found > endTimeTicks) return NotFound;
             return found;
         }
 
-        private long FindOccurence(long ticks, bool startInclusive)
+        private long FindOccurrence(long ticks, bool startInclusive)
         {
             if (!startInclusive) ticks++;
 
