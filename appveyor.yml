@@ -18,11 +18,6 @@ pull_requests:
 
 build_script:
   - powershell .\build.ps1 -Target Pack
-
-after_build:
-  - "SET PATH=C:\\Python34;C:\\Python34\\Scripts;%PATH%"
-  - pip install codecov
-  - codecov -f coverage.xml
   
 #---------------------------------#
 #      artifacts configuration    #
