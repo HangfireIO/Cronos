@@ -1141,7 +1141,7 @@ namespace Cronos.Tests
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9000000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
 
         [InlineData("30 0 L  * *", "2017-03-31 01:00:00.0000001 +02:00", "2017-04-30 00:30:00 +03:00", true)]
-        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForward_And_FromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
+        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForwardAndFromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
             var expression = CronExpression.Parse(cronExpression);
 
@@ -1149,6 +1149,25 @@ namespace Cronos.Tests
             var expectedInstant = GetInstant(expectedString);
 
             var executed = expression.GetNextOccurrence(fromInstant, JordanTimeZone, inclusive);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Theory]
+        [InlineData("0  7 * * *", "2020-05-20 07:00:00.0000001 -04:00", "2020-05-21 07:00:00 -04:00", true)]
+        [InlineData("0  7 * * *", "2020-05-20 07:00:00.0000001 -04:00", "2020-05-21 07:00:00 -04:00", false)]
+
+        [InlineData("0  7 * * *", "2023-08-12 07:00:00.9999999 -04:00", "2023-08-13 07:00:00 -04:00", true)]
+        [InlineData("0  7 * * *", "2023-08-12 07:00:00.9999999 -04:00", "2023-08-13 07:00:00 -04:00", false)]
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenFromIsNotRoundAndZoneIsSpecified(string cronExpression, string fromString, string expectedString, bool inclusive)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var fromInstant = GetInstant(fromString);
+            var expectedInstant = GetInstant(expectedString);
+
+            var executed = expression.GetNextOccurrence(fromInstant, EasternTimeZone, inclusive);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
