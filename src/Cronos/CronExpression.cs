@@ -211,11 +211,10 @@ namespace Cronos
                 return new DateTime(found, DateTimeKind.Utc);
             }
 
-            fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
+            var fromOffset = new DateTimeOffset(fromUtc);
 
-            var zonedStart = TimeZoneInfo.ConvertTime(fromUtc, zone);
-            var zonedStartOffset = new DateTimeOffset(zonedStart, zonedStart - fromUtc);
-            var occurrence = GetOccurrenceByZonedTimes(zonedStartOffset, zone, inclusive);
+            var occurrence = GetOccurrenceConsideringTimeZone(fromOffset, zone, inclusive);
+
             return occurrence?.UtcDateTime;
         }
 
@@ -256,10 +255,7 @@ namespace Cronos
                 return new DateTimeOffset(found, TimeSpan.Zero);
             }
 
-            from = DateTimeHelper.FloorToSeconds(from);
-
-            var zonedStart = TimeZoneInfo.ConvertTime(from, zone);
-            return GetOccurrenceByZonedTimes(zonedStart, zone, inclusive);
+            return GetOccurrenceConsideringTimeZone(from, zone, inclusive);
         }
 
         /// <summary>
@@ -369,9 +365,21 @@ namespace Cronos
         /// </summary>
         public static bool operator !=(CronExpression left, CronExpression right) => !Equals(left, right);
 
-
-        private DateTimeOffset? GetOccurrenceByZonedTimes(DateTimeOffset from, TimeZoneInfo zone, bool inclusive)
+        private DateTimeOffset? GetOccurrenceConsideringTimeZone(DateTimeOffset fromUtc, TimeZoneInfo zone, bool inclusive)
         {
+            if (!DateTimeHelper.IsRound(fromUtc))
+            {
+                // Rarely, if fromUtc is very close to DST transition, `TimeZoneInfo.ConvertTime` may not convert it correctly on Windows.
+                // E.g., In Jordan Time DST started 2017-03-31 00:00 local time. Clocks jump forward from `2017-03-31 00:00 +02:00` to `2017-03-31 01:00 +3:00`.
+                // But `2017-03-30 23:59:59.9999000 +02:00` will be converted to `2017-03-31 00:59:59.9999000 +03:00` instead of `2017-03-30 23:59:59.9999000 +02:00` on Windows.
+                // It can lead to skipped occurrences. To avoid such errors we floor fromUtc to seconds:
+                // `2017-03-30 23:59:59.9999000 +02:00` will be floored to `2017-03-30 23:59:59.0000000 +02:00` and will be converted to `2017-03-30 23:59:59.0000000 +02:00`.
+                fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
+                inclusive = false;
+            }
+
+            var from = TimeZoneInfo.ConvertTime(fromUtc, zone);
+
             var fromLocal = from.DateTime;
 
             if (TimeZoneHelper.IsAmbiguousTime(zone, fromLocal))
