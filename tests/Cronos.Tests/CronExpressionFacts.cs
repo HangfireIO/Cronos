@@ -40,10 +40,12 @@ namespace Cronos.Tests
         private static readonly string EasternTimeZoneId = IsUnix ? "America/New_York" : "Eastern Standard Time";
         private static readonly string JordanTimeZoneId = IsUnix ? "Asia/Amman" : "Jordan Standard Time";
         private static readonly string LordHoweTimeZoneId = IsUnix ? "Australia/Lord_Howe" : "Lord Howe Standard Time";
+        private static readonly string PacificTimeZoneId = IsUnix ? "America/Santiago" : "Pacific SA Standard Time";
 
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById(EasternTimeZoneId);
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(JordanTimeZoneId);
         private static readonly TimeZoneInfo LordHoweTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LordHoweTimeZoneId);
+        private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById(PacificTimeZoneId);
 
         private static readonly DateTime Today = new DateTime(2016, 12, 09);
 
@@ -1134,6 +1136,12 @@ namespace Cronos.Tests
 
         [Theory]
 
+        // 2017-03-31 00:00 is time in Jordan Time Zone when the clock jumps forward
+        // from 2017-03-30 23:59:59.9999999 +02:00 standard time (ST) to 01:00:00.0000000 am +03:00 DST.
+        // ________23:59:59.9999999 ST///invalid///01:00:00.0000000 DST________
+
+        // Run missed.
+
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9999999 +02:00", "2017-03-31 01:00:00 +03:00", false)]
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9999000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9990000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
@@ -1149,6 +1157,32 @@ namespace Cronos.Tests
             var expectedInstant = GetInstant(expectedString);
 
             var executed = expression.GetNextOccurrence(fromInstant, JordanTimeZone, inclusive);
+
+            Assert.Equal(expectedInstant, executed);
+            Assert.Equal(expectedInstant.Offset, executed?.Offset);
+        }
+
+        [Theory]
+
+        // 2021-04-04 00:00 is time in Chile Time Zone when the clock jumps backward
+        // from 2021-04-03 23:59:59.9999999 -03:00 standard time (ST) to 2021-04-03 23:00:00.0000000 am -04:00 DST .
+        // ________23:59:59.9999999 -03:00 ST -> 23:00:00.0000000 -04:00 DST
+
+        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9999999 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9999000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9990000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9900000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9000000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+
+        [InlineData("30 23 * * *", "2021-04-04 00:00:00.0000001 -04:00", "2021-04-04 23:30:00 -04:00", true)]
+        public void GetNextOccurrence_HandleDST_WhenTheClockJumpsBackwardAndFromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+
+            var fromInstant = GetInstant(fromString);
+            var expectedInstant = GetInstant(expectedString);
+
+            var executed = expression.GetNextOccurrence(fromInstant, PacificTimeZone, inclusive);
 
             Assert.Equal(expectedInstant, executed);
             Assert.Equal(expectedInstant.Offset, executed?.Offset);
