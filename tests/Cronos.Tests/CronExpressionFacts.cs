@@ -1147,6 +1147,7 @@ namespace Cronos.Tests
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9990000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9900000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
         [InlineData("30 0 L  * *", "2017-03-30 23:59:59.9000000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
+        [InlineData("30 0 L  * *", "2017-03-30 23:59:59.0000000 +02:00", "2017-03-31 01:00:00 +03:00", false)]
 
         [InlineData("30 0 L  * *", "2017-03-31 01:00:00.0000001 +02:00", "2017-04-30 00:30:00 +03:00", true)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForwardAndFromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
@@ -1164,17 +1165,18 @@ namespace Cronos.Tests
 
         [Theory]
 
-        // 2021-04-04 00:00 is time in Chile Time Zone when the clock jumps backward
-        // from 2021-04-03 23:59:59.9999999 -03:00 standard time (ST) to 2021-04-03 23:00:00.0000000 am -04:00 DST .
+        // 2017-05-14 00:00 is time in Chile Time Zone when the clock jumps backward
+        // from 2017-05-13 23:59:59.9999999 -03:00 standard time (ST) to 2017-05-13 23:00:00.0000000 am -04:00 DST .
         // ________23:59:59.9999999 -03:00 ST -> 23:00:00.0000000 -04:00 DST
 
-        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9999999 -03:00", "2021-04-04 23:30:00 -04:00", false)]
-        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9999000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
-        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9990000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
-        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9900000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
-        [InlineData("30 23 * * *", "2021-04-03 23:59:59.9000000 -03:00", "2021-04-04 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.9999999 -03:00", "2017-05-14 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.9999000 -03:00", "2017-05-14 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.9990000 -03:00", "2017-05-14 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.9900000 -03:00", "2017-05-14 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.9000000 -03:00", "2017-05-14 23:30:00 -04:00", false)]
+        [InlineData("30 23 * * *", "2017-05-13 23:59:59.0000000 -03:00", "2017-05-14 23:30:00 -04:00", false)]
 
-        [InlineData("30 23 * * *", "2021-04-04 00:00:00.0000001 -04:00", "2021-04-04 23:30:00 -04:00", true)]
+        [InlineData("30 23 * * *", "2017-05-14 00:00:00.0000001 -04:00", "2017-05-14 23:30:00 -04:00", true)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsBackwardAndFromIsAroundDST(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
             var expression = CronExpression.Parse(cronExpression);
