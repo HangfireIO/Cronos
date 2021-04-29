@@ -2283,6 +2283,35 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.UtcDateTime, nextOccurrence);
         }
 
+        [Theory(Timeout = 1000)]
+
+        [InlineData("* * * * * *", "1991-01-01 00:00")]
+        [InlineData("0 * * * * *", "1991-03-02 00:00")]
+        [InlineData("* 0 * * * *", "1991-03-15 00:00")]
+        [InlineData("* * 0 * * *", "1991-03-31 00:00")]
+        [InlineData("* * * 1 * *", "1991-04-15 00:00")]
+        [InlineData("* * * * 1 *", "1991-05-25 00:00")]
+        [InlineData("* * * * * 0", "1991-06-27 00:00")]
+        [InlineData("0 0 0 * * *", "1991-07-16 00:00")]
+        [InlineData("0 0 0 1 * *", "1991-10-30 00:00")]
+        [InlineData("0 0 0 1 1 *", "1991-12-31 00:00")]
+        [InlineData("0 0 0 1 * 1", "1991-12-31 00:00")]
+        public void GetNextOccurrence_MakesProgressInsideLoop(string expression, string fromString)
+        {
+            var cronExpression = CronExpression.Parse(expression, CronFormat.IncludeSeconds);
+
+            var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
+
+            for (var i = 0; i < 100; i++)
+            {
+                var nextOccurrence = cronExpression.GetNextOccurrence(fromInstant.AddTicks(1), EasternTimeZone, inclusive: true);
+
+                Assert.True(nextOccurrence > fromInstant);
+
+                fromInstant = nextOccurrence.Value;
+            }
+        }
+
         [Theory]
         [InlineData("* * * * *", "2017-03-16 16:00", "2017-03-16 16:01")]
         [InlineData("5 * * * *", "2017-03-16 16:05", "2017-03-16 17:05")]
