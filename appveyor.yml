@@ -32,16 +32,8 @@ artifacts:
 #---------------------------------#
 
 deploy:
-  - provider: GitHub
-    auth_token:
-      secure: Hw+eMEw//BNM8ZZSQidchwbrj25XFKykj+NdQKXtXWEsHKZdXTWRZjfDjK6UZLxU
-    artifact: /.*\.zip/
-    draft: true
-    on:
-      appveyor_repo_tag: true
-
   - provider: NuGet
     api_key: 
-      secure: kh5QkGdRphbEh7b8XEPZQ57zkMzwFIO2IAUBYvq15reCmczepmUZmGF0KIp0razF
+      secure: ngA2/w4mo/D10zK1vfIqEXFk2UzmvynE8QDQVLB3cKDGDkCm12CSA3IlQK2yPIy6
     on:
       appveyor_repo_tag: true
