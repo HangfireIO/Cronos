@@ -2312,6 +2312,17 @@ namespace Cronos.Tests
             }
         }
 
+        [Fact]
+        public void GetNextOccurrence_ReturnsAGreaterValue_EvenWhenMillisecondTruncationRuleIsAppliedDueToDST()
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+            var fromInstant = DateTimeOffset.Parse("2021-03-25 23:59:59.9999999 +02:00");
+
+            var nextInstant = expression.GetNextOccurrence(fromInstant, JordanTimeZone, inclusive: true);
+
+            Assert.True(nextInstant > fromInstant);
+        }
+
         [Theory]
         [InlineData("* * * * *", "2017-03-16 16:00", "2017-03-16 16:01")]
         [InlineData("5 * * * *", "2017-03-16 16:05", "2017-03-16 17:05")]
