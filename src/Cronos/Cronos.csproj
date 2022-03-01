@@ -14,7 +14,7 @@
     <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>https://github.com/HangfireIO/Cronos/releases</PackageReleaseNotes>
-    <Copyright>Copyright © 2016-2018 Sergey Odinokov.</Copyright>
+    <Copyright>Copyright © 2016-2018 Hangfire OÜ.</Copyright>
     <PackageTags>Cronos Cron Recurring</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <FileVersion>1.0.0.0</FileVersion>
