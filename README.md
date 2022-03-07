@@ -287,6 +287,6 @@ Complex.GetTimeAfter(DateTimeOffset.Now)    |  6,573.0269 ns |     7.9192 ns
 
 ## License
 
-Copyright © 2017 Hangfire OÜ. Cronos is licensed under [The MIT License (MIT)][LICENSE].
+Copyright © 2017 Sergey Odinokov. Cronos is licensed under [The MIT License (MIT)][LICENSE].
 
 [LICENSE]:LICENSE
