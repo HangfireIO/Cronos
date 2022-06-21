@@ -182,28 +182,28 @@ A macro is a string starting with `@` and representing a shortcut for simple cas
 Cronos parser uses following case-insensitive grammar:
 
 ```
-cron :: expression | macro
-expression :: [second space] minute space hour space day-of-month space month space day-of-week
-second :: field
-minute :: field
-hour :: field
-day-of-month :: '*' step | lastday | value [ 'W' | range [list] ] | '?'
-month :: field
-day-of-week :: '*' step | value [ dowspec | range [list] ] | '?'
-macro :: '@every_second' | '@every_minute' | '@hourly' | '@daily' | '@midnight' | '@weekly' | '@monthly' |
-         '@yearly' | '@annually'
-field :: '*' step | value [range] [list] | '?'
-list :: { ',' value [range] }
-range :: '-' value [step] | [step]
-step :: '/' number
-value :: number | name
-name :: month-name | dow-name
-month-name :: 'JAN' | 'FEB' | 'MAR' | 'APR' | 'MAY' | 'JUN' | 'JUL' | 'AUG' | 'SEP' | 'OCT' | 'NOV' | 'DEC'
-dow-name :: 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT'
-dowspec :: 'L' | '#' number
-lastday :: 'L' ['-' number] ['W']
-number :: digit | number digit
-space :: ' ' | '\t'
+        cron ::= expression | macro
+  expression ::= [second space] minute space hour space day-of-month space month space day-of-week
+      second ::= field
+      minute ::= field
+        hour ::= field
+day-of-month ::= '*' step | lastday | value [ 'W' | range [list] ] | '?'
+       month ::= field
+ day-of-week ::= '*' step | value [ dowspec | range [list] ] | '?'
+       macro ::= '@every_second' | '@every_minute' | '@hourly' | '@daily' | '@midnight' | '@weekly' | '@monthly'|
+                 '@yearly' | '@annually'
+       field ::= '*' step | value [range] [list] | '?'
+        list ::= { ',' value [range] }
+       range ::= '-' value [step] | [step]
+        step ::= '/' number
+       value ::= number | name
+        name ::= month-name | dow-name
+  month-name ::= 'JAN' | 'FEB' | 'MAR' | 'APR' | 'MAY' | 'JUN' | 'JUL' | 'AUG' | 'SEP' | 'OCT' | 'NOV' | 'DEC'
+    dow-name ::= 'SUN' | 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT'
+     dowspec ::= 'L' | '#' number
+     lastday ::= 'L' ['-' number] ['W']
+      number ::= digit | number digit
+       space ::= ' ' | '\t'
 ```
 
 ## Daylight Saving Time
