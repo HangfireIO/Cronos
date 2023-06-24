@@ -187,12 +187,12 @@ Cronos parser uses following case-insensitive grammar:
       second ::= field
       minute ::= field
         hour ::= field
-day-of-month ::= '*' [step] | lastday | value [ 'W' | range [list] ] | '?' [step]
+day-of-month ::= '*' [step] | '?' [step] | lastday | value [ 'W' | range [list] ]
        month ::= field
- day-of-week ::= '*' [step] | value [ dowspec | range [list] ] | '?' [step]
+ day-of-week ::= '*' [step] | '?' [step] | value [ dowspec | range [list] ]
        macro ::= '@every_second' | '@every_minute' | '@hourly' | '@daily' | '@midnight' | '@weekly' | '@monthly'|
                  '@yearly' | '@annually'
-       field ::= '*' [step] | value [range] [list] | '?' [step]
+       field ::= '*' [step] | '?' [step] | value [range] [list]
         list ::= { ',' value [range] }
        range ::= '-' value [step] | [step]
         step ::= '/' number
