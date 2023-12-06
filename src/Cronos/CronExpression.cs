@@ -39,7 +39,7 @@ namespace Cronos
         private const int MaxNthDayOfWeek = 5;
         private const int SundayBits = 0b1000_0001;
 
-        private const int MaxYear = 2099;
+        private const int MaxYear = 2499;
 
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
@@ -162,9 +162,11 @@ namespace Cronos
         /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in UTC time zone.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public DateTime? GetNextOccurrence(DateTime fromUtc, bool inclusive = false)
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
 
             var found = FindOccurrence(fromUtc.Ticks, inclusive);
             if (found == NotFound) return null;
@@ -178,6 +180,7 @@ namespace Cronos
         /// by default, and UTC time zone. When none of the occurrences found, an 
         /// empty list is returned.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public IEnumerable<DateTime> GetOccurrences(
             DateTime fromUtc,
             DateTime toUtc,
@@ -185,6 +188,8 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
+            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
 
             for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
                 occurrence < toUtc || occurrence == toUtc && toInclusive;
@@ -199,9 +204,11 @@ namespace Cronos
         /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
@@ -223,6 +230,7 @@ namespace Cronos
         /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and 
         /// specified time zone. When none of the occurrences found, an empty list is returned.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public IEnumerable<DateTime> GetOccurrences(
             DateTime fromUtc,
             DateTime toUtc,
@@ -231,6 +239,8 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
+            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
 
             for (var occurrence = GetNextOccurrence(fromUtc, zone, fromInclusive);
                 occurrence < toUtc || occurrence == toUtc && toInclusive;
@@ -245,8 +255,11 @@ namespace Cronos
         /// <summary>
         /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
+            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
+
             if (ReferenceEquals(zone, UtcTimeZone))
             {
                 var found = FindOccurrence(from.UtcTicks, inclusive);
@@ -263,6 +276,7 @@ namespace Cronos
         /// including <paramref name="from"/> and excluding <paramref name="to"/> by
         /// default. When none of the occurrences found, an empty list is returned.
         /// </summary>
+        /// <exception cref="ArgumentException"/>
         public IEnumerable<DateTimeOffset> GetOccurrences(
             DateTimeOffset from,
             DateTimeOffset to,
@@ -271,6 +285,8 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (from > to) ThrowFromShouldBeLessThanToException(nameof(from), nameof(to));
+            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
+            if (to.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(to));
 
             for (var occurrence = GetNextOccurrence(from, zone, fromInclusive);
                 occurrence < to || occurrence == to && toInclusive;
@@ -1036,6 +1052,12 @@ namespace Cronos
         private static void ThrowWrongDateTimeKindException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowDateTimeExceedsMaxException(string paramName)
+        {
+            throw new ArgumentException($"The supplied DateTime is after the supported year of {MaxYear}.", paramName);
         }
 
 #if !NET40
