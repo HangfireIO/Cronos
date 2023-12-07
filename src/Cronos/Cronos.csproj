@@ -24,13 +24,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-  </ItemGroup>
-
-
-  <ItemGroup>
-    <PackageReference Include="SourceLink.Create.GitHub" Version="2.8.3" PrivateAssets="All" />
-    <DotNetCliToolReference Include="dotnet-sourcelink-git" Version="2.8.3" />
-    <DotNetCliToolReference Include="dotnet-sourcelink" Version="2.8.3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 </Project>
