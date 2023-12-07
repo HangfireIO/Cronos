@@ -54,6 +54,7 @@ Task("Pack").IsDependentOn("TestCoverage").Does(()=>
     CreateDirectory("build");
     
     CopyFiles(GetFiles("./src/Cronos/bin/**/*.nupkg"), "build");
+    CopyFiles(GetFiles("./src/Cronos/bin/**/*.snupkg"), "build");
     Zip("./src/Cronos/bin/" + configuration, "build/Cronos-" + version +".zip");
 });
 

@@ -1,8 +1,8 @@
 # AppVeyor CI build file, https://ci.appveyor.com/project/odinserj/cronos
 
-os: Visual Studio 2019
+os: Visual Studio 2022
 
-version: 0.7.0-build-0{build}
+version: 0.7.2-build-0{build}
 
 pull_requests:
   do_not_increment_build_number: true
@@ -30,6 +30,6 @@ artifacts:
 deploy:
   - provider: NuGet
     api_key: 
-      secure: AobFVKZmhZM34uZV2V7jbebMdL9+ZgZ67HzrhBGLf2w9dl70bWx4JVGAteNbbjMR
+      secure: S4K9NB29VqiuIt4aPkoeT+mFMmbdVdnKCwMDF+PxjD1hcFXs8pZiv+h+Aq76QntP
     on:
       appveyor_repo_tag: true
