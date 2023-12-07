@@ -401,7 +401,7 @@ namespace Cronos
             if (TimeZoneHelper.IsAmbiguousTime(zone, fromLocal))
             {
                 var currentOffset = from.Offset;
-                var standardOffset = zone.BaseUtcOffset;
+                var standardOffset = zone.GetUtcOffset(fromLocal);
                
                 if (standardOffset != currentOffset)
                 {
