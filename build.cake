@@ -1,5 +1,5 @@
-#tool "nuget:?package=xunit.runner.console"
-#tool "nuget:?package=OpenCover"
+#tool "nuget:?package=xunit.runner.console&version=2.6.2"
+#tool "nuget:?package=OpenCover&version=4.7.1221"
 
 var configuration = Argument("configuration", "Release");
 var version = Argument<string>("buildVersion", null);
@@ -15,7 +15,7 @@ Task("Clean").Does(()=>
 
 Task("Restore").Does(()=> 
 {
-    DotNetCoreRestore();
+    DotNetRestore();
 });
 
 Task("Build")
@@ -24,15 +24,15 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(()=> 
 {
-    var buildSettings =  new DotNetCoreBuildSettings { Configuration = configuration };
+    var buildSettings =  new DotNetBuildSettings { Configuration = configuration };
     if(!string.IsNullOrEmpty(version)) buildSettings.ArgumentCustomization = args => args.Append("/p:Version=" + version);
 
-    DotNetCoreBuild("src/Cronos/Cronos.csproj",  buildSettings);
+    DotNetBuild("src/Cronos/Cronos.csproj",  buildSettings);
 });
 
 Task("Test").IsDependentOn("Build").Does(() =>
 {
-    DotNetCoreTest("./tests/Cronos.Tests/Cronos.Tests.csproj", new DotNetCoreTestSettings
+    DotNetTest("./tests/Cronos.Tests/Cronos.Tests.csproj", new DotNetTestSettings
     {
         Configuration = configuration,
         ArgumentCustomization = args => args.Append("/p:BuildProjectReferences=false")
