@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -1033,13 +1034,13 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(CronField field, string format, params object[] args)
         {
-            throw new CronFormatException(field, String.Format(format, args));
+            throw new CronFormatException(field, String.Format(CultureInfo.CurrentCulture, format, args));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(string format, params object[] args)
         {
-            throw new CronFormatException(String.Format(format, args));
+            throw new CronFormatException(String.Format(CultureInfo.CurrentCulture, format, args));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

@@ -11,7 +11,7 @@
     <Owners>aidmsu, odinserj</Owners>
     <Description>A fully-featured .NET library for parsing Cron expressions and calculating next occurrences that was designed with time zones in mind and correctly handles daylight saving time transitions.</Description>
     <PackageProjectUrl>https://github.com/HangfireIO/Cronos</PackageProjectUrl>
-    <PackageLicenseUrl>https://raw.github.com/HangfireIO/Cronos/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>https://github.com/HangfireIO/Cronos/releases</PackageReleaseNotes>
     <Copyright>Copyright © 2016-2023 Hangfire OÜ.</Copyright>
@@ -26,4 +26,15 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 </Project>
