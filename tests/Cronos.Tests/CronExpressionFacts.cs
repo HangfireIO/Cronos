@@ -2405,7 +2405,7 @@ namespace Cronos.Tests
             var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1)));
+                () => expression.GetOccurrences(from, from.AddHours(1)).ToArray());
 
             Assert.Equal("fromUtc", exception.ParamName);
         }
@@ -2417,7 +2417,7 @@ namespace Cronos.Tests
             var to = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to));
+                () => expression.GetOccurrences(to.AddHours(-1), to).ToArray());
 
             Assert.Equal("toUtc", exception.ParamName);
         }
@@ -2492,7 +2492,7 @@ namespace Cronos.Tests
             var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone));
+                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone).ToArray());
 
             Assert.Equal("fromUtc", exception.ParamName);
         }
@@ -2504,7 +2504,7 @@ namespace Cronos.Tests
             var to = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone));
+                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone).ToArray());
 
             Assert.Equal("toUtc", exception.ParamName);
         }
@@ -2580,7 +2580,7 @@ namespace Cronos.Tests
             var from = new DateTimeOffset(2500, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone));
+                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone).ToArray());
 
             Assert.Equal("from", exception.ParamName);
         }
@@ -2592,7 +2592,7 @@ namespace Cronos.Tests
             var to = new DateTimeOffset(2500, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone));
+                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone).ToArray());
 
             Assert.Equal("to", exception.ParamName);
         }
