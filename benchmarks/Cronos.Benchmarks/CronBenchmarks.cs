@@ -22,11 +22,12 @@
 
 using System;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using NCrontab;
 
 namespace Cronos.Benchmarks
 {
-    [RyuJitX64Job, CoreJob]
+    [RyuJitX64Job, SimpleJob(RuntimeMoniker.Net80)]
     public class CronBenchmarks
     {
         private static readonly CronExpression SimpleExpression =
