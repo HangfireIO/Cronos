@@ -12,7 +12,7 @@ pull_requests:
 #---------------------------------#
 
 build_script:
-  - powershell .\build.ps1 -Target Pack
+  - powershell .\build.ps1 --target=Pack
   
 #---------------------------------#
 #      artifacts configuration    #
