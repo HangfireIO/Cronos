@@ -115,11 +115,6 @@
           "Microsoft.CodeAnalysis.Common": "[4.1.0]"
         }
       },
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
-      },
       "Microsoft.CSharp": {
         "type": "Transitive",
         "resolved": "4.5.0",
@@ -1376,10 +1371,7 @@
         }
       },
       "cronos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )"
-        }
+        "type": "Project"
       }
     }
   }

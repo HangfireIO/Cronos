@@ -32,11 +32,6 @@
           "Microsoft.NET.Test.Sdk": "15.0.0"
         }
       },
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
-      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "17.8.0",
@@ -116,10 +111,7 @@
         }
       },
       "cronos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )"
-        }
+        "type": "Project"
       }
     },
     ".NETFramework,Version=v4.5.2": {
@@ -154,11 +146,6 @@
         "requested": "[2.4.0, )",
         "resolved": "2.4.0",
         "contentHash": "3eq5cGXbEJkqW9nwLuXwtxy9B5gMA8i7HW4rN63AhAvy5UvEcQbZnve23wx/oPrkyg/4CbfNhxkBezS0b1oUdQ=="
-      },
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
       },
       "Microsoft.NETFramework.ReferenceAssemblies.net452": {
         "type": "Transitive",
@@ -206,10 +193,7 @@
         }
       },
       "cronos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )"
-        }
+        "type": "Project"
       }
     },
     "net6.0": {
@@ -243,11 +227,6 @@
           "Microsoft.NET.Test.Sdk": "15.0.0"
         }
       },
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
-      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "17.8.0",
@@ -327,10 +306,7 @@
         }
       },
       "cronos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )"
-        }
+        "type": "Project"
       }
     },
     "net8.0": {
@@ -364,11 +340,6 @@
           "Microsoft.NET.Test.Sdk": "15.0.0"
         }
       },
-      "Microsoft.CodeAnalysis.NetAnalyzers": {
-        "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
-      },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
         "resolved": "17.8.0",
@@ -448,10 +419,7 @@
         }
       },
       "cronos": {
-        "type": "Project",
-        "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )"
-        }
+        "type": "Project"
       }
     }
   }
