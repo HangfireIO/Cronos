@@ -15,6 +15,7 @@ pull_requests:
 
 build_script:
   - cmd: powershell .\build.ps1 --target=Pack
+  - sh: nuget locals all -clear
   - sh: dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:net6.0
   
 #---------------------------------#
