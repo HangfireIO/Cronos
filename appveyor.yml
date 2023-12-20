@@ -1,6 +1,8 @@
 # AppVeyor CI build file, https://ci.appveyor.com/project/odinserj/cronos
 
-os: Visual Studio 2022
+image:
+  - Visual Studio 2022
+  - Ubuntu
 
 version: 0.7.2-build-0{build}
 
@@ -12,7 +14,8 @@ pull_requests:
 #---------------------------------#
 
 build_script:
-  - powershell .\build.ps1 --target=Pack
+  - ps: .\build.ps1 --target=Pack
+  - sh: dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:net6.0
   
 #---------------------------------#
 #      artifacts configuration    #
