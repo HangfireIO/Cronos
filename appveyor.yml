@@ -2,7 +2,7 @@
 
 image:
   - Visual Studio 2022
-  - Ubuntu
+  - Ubuntu2204
 
 version: 0.7.2-build-0{build}
 
