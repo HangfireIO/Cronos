@@ -433,7 +433,7 @@ namespace Cronos
             var occurrenceTicks = FindOccurrence(fromLocal.Ticks, inclusive);
             if (occurrenceTicks == NotFound) return null;
 
-            var occurrence = new DateTime(occurrenceTicks);
+            var occurrence = new DateTime(occurrenceTicks, DateTimeKind.Unspecified);
 
             if (zone.IsInvalidTime(occurrence))
             {
