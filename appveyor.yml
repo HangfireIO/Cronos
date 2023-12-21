@@ -2,7 +2,7 @@
 
 image:
   - Visual Studio 2022
-  - Ubuntu2204
+#  - Ubuntu2204
 
 version: 0.7.2-build-0{build}
 
@@ -15,7 +15,6 @@ pull_requests:
 
 build_script:
   - cmd: powershell .\build.ps1 --target=Pack
-  - sh: sudo apt upgrade tzdata
   - sh: nuget locals all -clear
   - sh: dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:net6.0
   
