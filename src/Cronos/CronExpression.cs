@@ -37,6 +37,48 @@ namespace Cronos
         private const long NotFound = 0;
         private const int MaxYear = 2499;
 
+        /// <summary>
+        /// Represents a cron expression that fires on Jan 1st every year at midnight.
+        /// Equals to "0 0 1 1 *".
+        /// </summary>
+        public static readonly CronExpression Yearly = Parse("0 0 1 1 *", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires every Sunday at midnight.
+        /// Equals to "0 0 * * 0".
+        /// </summary>
+        public static readonly CronExpression Weekly = Parse("0 0 * * 0", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires on 1st day of every month at midnight.
+        /// Equals to "0 0 1 * *".
+        /// </summary>
+        public static readonly CronExpression Monthly = Parse("0 0 1 * *", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires every day at midnight.
+        /// Equals to "0 0 * * *".
+        /// </summary>
+        public static readonly CronExpression Daily = Parse("0 0 * * *", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires every hour at the beginning of the hour.
+        /// Equals to "0 * * * *".
+        /// </summary>
+        public static readonly CronExpression Hourly = Parse("0 * * * *", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires every minute.
+        /// Equals to "* * * * *".
+        /// </summary>
+        public static readonly CronExpression EveryMinute = Parse("* * * * *", CronFormat.Standard);
+
+        /// <summary>
+        /// Represents a cron expression that fires every second.
+        /// Equals to "* * * * * *". 
+        /// </summary>
+        public static readonly CronExpression EverySecond = Parse("* * * * * *", CronFormat.IncludeSeconds);
+
         private static readonly TimeZoneInfo UtcTimeZone = TimeZoneInfo.Utc;
 
         private static readonly int[] DeBruijnPositions =
