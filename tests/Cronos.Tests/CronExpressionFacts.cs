@@ -47,7 +47,7 @@ namespace Cronos.Tests
         private static readonly TimeZoneInfo LordHoweTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LordHoweTimeZoneId);
         private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById(PacificTimeZoneId);
 
-        private static readonly DateTime Today = new DateTime(2016, 12, 09);
+        private static readonly DateTime Today = new DateTime(2016, 12, 09, 00, 00, 00, DateTimeKind.Utc);
 
         private static readonly CronExpression MinutelyExpression = CronExpression.Parse("* * * * *");
 
@@ -495,6 +495,47 @@ namespace Cronos.Tests
         public void Parse_DoesNotThrowAnException_WhenExpressionIsMacro(string cronExpression, CronFormat format)
         {
             CronExpression.Parse(cronExpression, format);
+        }
+
+        [Fact]
+        public void TryParse_ThrowsAnException_WhenExpressionIsNull()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null, out _));
+            Assert.Equal("expression", exception.ParamName);
+        }
+
+        [Fact]
+        public void TryParse_ReturnsTrue_WhenAbleToParseTheGivenExpression_WithCorrectCronExpressionInstance()
+        {
+            var result = CronExpression.TryParse("* * * * *", out var cron);
+
+            Assert.True(result);
+            Assert.Equal(Today.AddMinutes(1), cron.GetNextOccurrence(Today));
+        }
+
+        [Fact]
+        public void TryParse_ResultsFalse_WhenNotAbleToParseTheGivenExpression_WithNullCronExpressionInstance()
+        {
+            var result = CronExpression.TryParse("SomeG@rbage", out var cron);
+            
+            Assert.False(result);
+            Assert.Null(cron);
+        }
+
+        [Fact]
+        public void TryParse_ReturnsFalse_WhenTheNumberOfFieldsIsNotExpected()
+        {
+            var result = CronExpression.TryParse("* * * * * *", out _);
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void TryParse_WithSecondsSpecified_ReturnsTrue_AndGivesSecondBasedCronExpressionInstance()
+        {
+            var result = CronExpression.TryParse("* * * * * *", CronFormat.IncludeSeconds, out var cron);
+
+            Assert.True(result);
+            Assert.Equal(Today.AddSeconds(1), cron.GetNextOccurrence(Today));
         }
 
         [Theory]

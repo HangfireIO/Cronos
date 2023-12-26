@@ -111,6 +111,37 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the
+        /// <see cref="CronFormat.Standard"/> format.
+        /// A return value indicates whether the operation succeeded.
+        /// </summary>
+        public static bool TryParse(string expression, out CronExpression cronExpression)
+        {
+            return TryParse(expression, CronFormat.Standard, out cronExpression);
+        }
+
+        /// <summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the specified
+        /// <paramref name="format"/>.
+        /// A return value indicates whether the operation succeeded.
+        /// </summary>
+        public static bool TryParse(string expression, CronFormat format, out CronExpression cronExpression)
+        {
+            if (expression == null) throw new ArgumentNullException(nameof(expression));
+
+            try
+            {
+                cronExpression = Parse(expression, format);
+                return true;
+            }
+            catch (CronFormatException)
+            {
+                cronExpression = null;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in UTC time zone.
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -253,7 +284,7 @@ namespace Cronos
         public override string ToString()
         {
             var expressionBuilder = new StringBuilder();
-            
+
             AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
             AppendFieldValue(expressionBuilder, CronField.Minutes, _minute).Append(' ');
             AppendFieldValue(expressionBuilder, CronField.Hours, _hour).Append(' ');
