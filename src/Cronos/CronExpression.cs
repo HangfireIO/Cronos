@@ -233,6 +233,7 @@ namespace Cronos
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
             if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
+            if (zone == null) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
@@ -283,6 +284,7 @@ namespace Cronos
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
             if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
+            if (zone == null) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
@@ -653,6 +655,12 @@ namespace Cronos
         private static void ThrowDateTimeExceedsMaxException(string paramName)
         {
             throw new ArgumentException($"The supplied DateTime is after the supported year of {MaxYear}.", paramName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowArgumentNullException(string paramName)
+        {
+            throw new ArgumentNullException(paramName);
         }
 
         private static bool GetBit(long value, int index)

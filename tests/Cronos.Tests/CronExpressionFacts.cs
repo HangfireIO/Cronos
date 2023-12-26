@@ -590,6 +590,15 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetNextOccurrence_DateTimeTimeZone_ThrowsAnException_WhenZoneIsNull()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(
+                () => CronExpression.EveryMinute.GetNextOccurrence(Today, null));
+
+            Assert.Equal("zone", exception.ParamName);
+        }
+
+        [Fact]
         public void GetNextOccurrence_DateTimeOffset_ThrowsAnException_WhenToGreaterThanMaxYear()
         {
             var expression = CronExpression.Parse("* * * * *");
@@ -599,6 +608,15 @@ namespace Cronos.Tests
                 () => expression.GetNextOccurrence(from, EasternTimeZone));
 
             Assert.Equal("from", exception.ParamName);
+        }
+
+        [Fact]
+        public void GetNextOccurrence_DateTimeOffsetTimeZone_ThrowsAnException_WhenZoneIsNull()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(
+                () => CronExpression.EveryMinute.GetNextOccurrence(new DateTimeOffset(Today), null));
+
+            Assert.Equal("zone", exception.ParamName);
         }
 
         [Theory]
