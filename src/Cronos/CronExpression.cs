@@ -23,7 +23,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -245,7 +244,9 @@ namespace Cronos
 
             var fromOffset = new DateTimeOffset(fromUtc);
 
+#pragma warning disable CA1062
             var occurrence = GetOccurrenceConsideringTimeZone(fromOffset, zone, inclusive);
+#pragma warning restore CA1062
 
             return occurrence?.UtcDateTime;
         }
@@ -294,7 +295,9 @@ namespace Cronos
                 return new DateTimeOffset(found, TimeSpan.Zero);
             }
 
+#pragma warning disable CA1062
             return GetOccurrenceConsideringTimeZone(from, zone, inclusive);
+#pragma warning restore CA1062
         }
 
         /// <summary>
