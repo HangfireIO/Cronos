@@ -24,7 +24,6 @@ build_script:
 
 artifacts:
   - path: 'build\*.nupkg'
-  - path: 'build\*.snupkg'
   - path: 'build\*.zip'
 
 #---------------------------------#
