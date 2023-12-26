@@ -332,7 +332,11 @@ namespace Cronos
         {
             var expressionBuilder = new StringBuilder();
 
-            AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
+            if (_second != 1L)
+            {
+                AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
+            }
+
             AppendFieldValue(expressionBuilder, CronField.Minutes, _minute).Append(' ');
             AppendFieldValue(expressionBuilder, CronField.Hours, _hour).Append(' ');
             AppendDayOfMonth(expressionBuilder, _dayOfMonth).Append(' ');
