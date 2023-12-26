@@ -2391,6 +2391,28 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetOccurrence_PassesTests_DefinedInTheGitHubIssue53()
+        {
+            var jan1St2000 = new DateTimeOffset(2000, 01, 01, 00, 00, 00, new TimeSpan(-5, 0, 0));
+            var expression = CronExpression.Parse("0 0 * * SAT");
+
+            // Asking just BEFORE midnight should yield the 1st
+            Assert.Equal(jan1St2000, expression.GetNextOccurrence(jan1St2000.AddMilliseconds(-1), EasternTimeZone));
+
+            // Asking exactly AT midnight with inclusive `true` should should yield 1st
+            Assert.Equal(jan1St2000, expression.GetNextOccurrence(jan1St2000, EasternTimeZone, inclusive: true));
+
+            // Asking exactly AT midnight should skip 1st by default as non-inclusive
+            Assert.Equal(jan1St2000.AddDays(7), expression.GetNextOccurrence(jan1St2000, EasternTimeZone));
+
+            // Asking just AFTER midnight should yield the 8th
+            Assert.Equal(jan1St2000.AddDays(7), expression.GetNextOccurrence(jan1St2000.AddHours(1), EasternTimeZone));
+
+            // Asking just AFTER midnight should yield the 8th
+            Assert.Equal(jan1St2000.AddDays(7), expression.GetNextOccurrence(jan1St2000.AddSeconds(61), EasternTimeZone));
+        }
+
+        [Fact]
         public void GetOccurrences_DateTime_ThrowsAnException_WhenFromGreaterThanTo()
         {
             var expression = CronExpression.Parse("* * * * *");
