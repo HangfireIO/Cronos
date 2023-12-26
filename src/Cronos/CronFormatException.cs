@@ -21,6 +21,9 @@
 // SOFTWARE.
 
 using System;
+#if !NETSTANDARD1_0
+using System.Runtime.Serialization;
+#endif
 
 namespace Cronos
 {
@@ -43,5 +46,12 @@ namespace Cronos
         internal CronFormatException(CronField field, string message) : this($"{field}: {message}")
         {
         }
+
+#if !NETSTANDARD1_0
+        /// <inheritdoc />
+        protected CronFormatException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+#endif
     }
 }
