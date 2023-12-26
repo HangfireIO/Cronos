@@ -1,4 +1,4 @@
-﻿// The MIT License(MIT)
+// The MIT License(MIT)
 // 
 // Copyright (c) 2023 Hangfire OÜ
 // 
@@ -40,9 +40,6 @@ namespace Cronos
         private static readonly CronExpression Minutely = Parse("* * * * *", CronFormat.Standard);
         private static readonly CronExpression Secondly = Parse("* * * * * *", CronFormat.IncludeSeconds);
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static unsafe CronExpression Parse(string expression, CronFormat format)
         {
             fixed (char* value = expression)
@@ -110,26 +107,17 @@ namespace Cronos
             }
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe void SkipWhiteSpaces(ref char* pointer)
         {
             while (IsWhiteSpace(*pointer)) { pointer++; }
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe void ParseWhiteSpace(CronField prevField, ref char* pointer)
         {
             if (!IsWhiteSpace(*pointer)) ThrowFormatException(prevField, "Unexpected character '{0}'.", *pointer);
             SkipWhiteSpaces(ref pointer);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe void ParseEndOfString(ref char* pointer)
         {
             if (!IsWhiteSpace(*pointer) && !IsEndOfString(*pointer)) ThrowFormatException(CronField.DaysOfWeek, "Unexpected character '{0}'.", *pointer);
@@ -274,9 +262,6 @@ namespace Cronos
             return bits;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe long ParseDayOfWeek(ref char* pointer, ref CronExpressionFlag flags, ref byte nthWeekDay)
         {
             var field = CronField.DaysOfWeek;
@@ -293,9 +278,6 @@ namespace Cronos
             return bits;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe long ParseStar(CronField field, ref char* pointer)
         {
             return Accept(ref pointer, '/')
@@ -303,9 +285,6 @@ namespace Cronos
                 : field.AllBits;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe long ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
         {
             var num = ParseValue(field, ref pointer);
@@ -346,9 +325,6 @@ namespace Cronos
             return GetBits(field, low, high, step);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe long ParseLastDayOfMonth(CronField field, ref char* pointer, ref CronExpressionFlag flags, ref byte lastMonthOffset)
         {
             flags |= CronExpressionFlag.DayOfMonthLast;
@@ -358,9 +334,6 @@ namespace Cronos
             return field.AllBits;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe long ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthDayOfWeek)
         {
             nthDayOfWeek = (byte)ParseNumber(field, ref pointer, MinNthDayOfWeek, MaxNthDayOfWeek);
@@ -368,19 +341,12 @@ namespace Cronos
             return GetBit(dayOfWeek);
         }
 
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static long ParseLastWeekDay(int dayOfWeek, ref CronExpressionFlag flags)
         {
             flags |= CronExpressionFlag.DayOfWeekLast;
             return GetBit(dayOfWeek);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe bool Accept(ref char* pointer, char character)
         {
             if (*pointer == character)
@@ -392,9 +358,6 @@ namespace Cronos
             return false;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe bool AcceptCharacter(ref char* pointer, char character)
         {
             if (ToUpper(*pointer) == character)
@@ -416,9 +379,6 @@ namespace Cronos
             return num;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static unsafe int ParseValue(CronField field, ref char* pointer)
         {
             var num = GetNumber(ref pointer, field.Names);
@@ -429,11 +389,6 @@ namespace Cronos
             return num;
         }
 
-
-
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static long GetBits(CronField field, int num1, int num2, int step)
         {
             if (num2 < num1) return GetReversedRangeBits(field, num1, num2, step);
@@ -442,9 +397,6 @@ namespace Cronos
             return GetRangeBits(num1, num2, step);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static long GetRangeBits(int low, int high, int step)
         {
             var bits = 0L;
@@ -455,9 +407,6 @@ namespace Cronos
             return bits;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static long GetReversedRangeBits(CronField field, int num1, int num2, int step)
         {
             var high = field.Last;
@@ -470,9 +419,6 @@ namespace Cronos
             return bits | GetRangeBits(num1, num2, step);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static long GetBit(int num1)
         {
             return 1L << num1;
@@ -516,57 +462,36 @@ namespace Cronos
             return -1;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static void SetBit(ref long value, int index)
         {
             value |= 1L << index;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool IsEndOfString(int code)
         {
             return code == '\0';
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool IsWhiteSpace(int code)
         {
             return code == '\t' || code == ' ';
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool IsDigit(int code)
         {
             return code >= 48 && code <= 57;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool IsLetter(int code)
         {
             return (code >= 65 && code <= 90) || (code >= 97 && code <= 122);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static int GetNumeric(int code)
         {
             return code - 48;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static int ToUpper(int code)
         {
             if (code >= 97 && code <= 122)

@@ -1,4 +1,4 @@
-﻿// The MIT License(MIT)
+// The MIT License(MIT)
 // 
 // Copyright (c) 2017 Hangfire OÜ
 // 
@@ -510,9 +510,6 @@ namespace Cronos
             return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static int GetFirstSet(long value)
         {
             // TODO: Add description and source
@@ -525,9 +522,6 @@ namespace Cronos
             return (_flags & value) != 0;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static StringBuilder AppendFieldValue(StringBuilder expressionBuilder, CronField field, long fieldValue)
         {
             if (field.AllBits == fieldValue) return expressionBuilder.Append('*');
@@ -545,9 +539,6 @@ namespace Cronos
             return expressionBuilder;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private StringBuilder AppendDayOfMonth(StringBuilder expressionBuilder, int domValue)
         {
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
@@ -565,9 +556,6 @@ namespace Cronos
             return expressionBuilder;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private void AppendDayOfWeek(StringBuilder expressionBuilder, int dowValue)
         {
             AppendFieldValue(expressionBuilder, CronField.DaysOfWeek, dowValue);
@@ -594,9 +582,6 @@ namespace Cronos
             throw new ArgumentException($"The supplied DateTime is after the supported year of {MaxYear}.", paramName);
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         private static bool GetBit(long value, int index)
         {
             return (value & (1L << index)) != 0;

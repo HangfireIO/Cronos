@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
@@ -41,9 +41,6 @@ namespace Cronos
             -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
         };
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool IsGreaterThan(int year1, int month1, int day1, int year2, int month2, int day2)
         {
             if (year1 != year2) return year1 > year2;
@@ -51,9 +48,7 @@ namespace Cronos
             if (day2 != day1) return day1 > day2;
             return false;
         }
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
+
         public static long DateTimeToTicks(int year, int month, int day, int hour, int minute, int second)
         {
             int[] days = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? DaysToMonth366 : DaysToMonth365;
@@ -64,9 +59,6 @@ namespace Cronos
 
         // Returns a given date part of this DateTime. This method is used
         // to compute the year, day-of-year, month, or day part.
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static void FillDateTimeParts(long ticks, out int second, out int minute, out int hour,
             out int day, out int month, out int year)
         {
@@ -113,9 +105,6 @@ namespace Cronos
             day = n - days[month - 1] + 1;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static DayOfWeek GetDayOfWeek(int year, int month, int day)
         {
             var isLeapYear = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
@@ -127,9 +116,6 @@ namespace Cronos
             return ((DayOfWeek)((int)(ticks / TicksPerDay + 1) % 7));
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int GetDaysInMonth(int year, int month)
         {
             if (month != 2 || year % 4 != 0) return DaysInMonth[month];
@@ -137,9 +123,6 @@ namespace Cronos
             return year % 100 != 0 || year % 400 == 0 ? 29 : 28;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static int MoveToNearestWeekDay(int year, int month, int day)
         {
             var dayOfWeek = GetDayOfWeek(year, month, day);
@@ -155,18 +138,12 @@ namespace Cronos
                     : day - 1;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool IsNthDayOfWeek(int day, int n)
         {
             return day - DaysPerWeekCount * n < CronField.DaysOfMonth.First &&
                    day - DaysPerWeekCount * (n - 1) >= CronField.DaysOfMonth.First;
         }
 
-#if !NET40
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         public static bool IsLastDayOfWeek(int year, int month, int day)
         {
             return day + DaysPerWeekCount > GetDaysInMonth(year, month);
