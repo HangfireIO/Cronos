@@ -10,18 +10,12 @@ Task("Default").IsDependentOn("Pack");
 Task("Clean").Does(()=> 
 {
     CleanDirectory("./build");
-    StartProcess("dotnet", "clean -c:" + configuration);
-});
-
-Task("Restore").Does(()=> 
-{
-    DotNetRestore();
+    StartProcess("dotnet", "clean -v minimal -c:" + configuration);
 });
 
 Task("Build")
     .IsDependentOn("UseAppVeyorVersion")
     .IsDependentOn("Clean")
-    .IsDependentOn("Restore")
     .Does(()=> 
 {
     var buildSettings =  new DotNetBuildSettings { Configuration = configuration };
