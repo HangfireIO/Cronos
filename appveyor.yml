@@ -4,16 +4,19 @@ image:
   - Visual Studio 2022
 #  - Ubuntu2204
 
+# Please don't edit it manually, use the `build.bat version` command instead.
 version: 0.8.2-build-0{build}
 
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
-build_script:
-  - cmd: powershell .\build.ps1 --target=Pack
+before_build:
   - sh: nuget locals all -clear
-  - sh: dotnet test tests/Cronos.Tests/Cronos.Tests.csproj -c:Release -f:net6.0
+
+build_script:
+  - cmd: build.bat
+  - sh: dotnet test -c:release -f:net6.0 tests/Cronos.Tests
 
 #---------------------------------#
 #       tests configuration       #

@@ -2,7 +2,7 @@
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
     <PropertyGroup>
-        <!--GenerateAssemblyInfo>false</GenerateAssemblyInfo-->
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <DebugType>embedded</DebugType>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -14,13 +14,13 @@
         <DeterministicSourcePaths>false</DeterministicSourcePaths>
     </PropertyGroup>
 
-    <!--ItemGroup>
+    <ItemGroup>
         <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
-    </ItemGroup-->
+    </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0"  PrivateAssets="All" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0"  PrivateAssets="All" />
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     </ItemGroup>
 
     <PropertyGroup>

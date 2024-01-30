@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Cronos</id>
+    <version>%version%</version>
+    <title>Cronos</title>
+    <authors>Andrey Dorokhov, Sergey Odinokov</authors>
+    <owners>odinserj</owners>
+    <projectUrl>https://github.com/HangfireIO/Cronos</projectUrl>
+    <repository type="git" url="https://github.com/HangfireIO/Cronos.git" commit="%commit%" />
+    <license type="expression">MIT</license>
+    <description>A fully-featured .NET library for parsing cron expressions and calculating next occurrences that was designed with time zones in mind and correctly handles daylight saving time transitions.</description>
+    <copyright>Copyright © 2016-2024 Hangfire OÜ.</copyright>
+    <readme>README.md</readme>
+    <tags>Cronos Cron Recurring</tags>
+    <releaseNotes>https://github.com/HangfireIO/Cronos/releases</releaseNotes>
+    <dependencies>
+      <group targetFramework="net40">
+      </group>
+      <group targetFramework="net45">
+      </group>
+      <group targetFramework="netstandard1.0">
+        <dependency id="NETStandard.Library" version="1.6.1" />
+      </group>
+      <group targetFramework="netstandard2.0">
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="net40\Cronos.dll" target="lib\net40" />
+    <file src="net40\Cronos.xml" target="lib\net40" />
+
+    <file src="net45\Cronos.dll" target="lib\net45" />
+    <file src="net45\Cronos.xml" target="lib\net45" />
+
+    <file src="netstandard1.0\Cronos.dll" target="lib\netstandard1.0" />
+    <file src="netstandard1.0\Cronos.xml" target="lib\netstandard1.0" />
+
+    <file src="netstandard2.0\Cronos.dll" target="lib\netstandard2.0" />
+    <file src="netstandard2.0\Cronos.xml" target="lib\netstandard2.0" />
+
+    <file src="LICENSE" />
+    <file src="README.md" />
+  </files>
+</package>

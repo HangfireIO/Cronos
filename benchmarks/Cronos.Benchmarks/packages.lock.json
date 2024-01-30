@@ -88,6 +88,11 @@
         "resolved": "1.1.0",
         "contentHash": "1Am6l4Vpn3/K32daEqZI+FFr96OlZkgwK2LcT3pZ2zWubR5zTPW3/FkO1Rat9kb7oQOa4rxgl9LJHc5tspCWfg=="
       },
+      "Microsoft.Build.Tasks.Git": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+      },
       "Microsoft.CodeAnalysis.Analyzers": {
         "type": "Transitive",
         "resolved": "3.3.3",
@@ -114,6 +119,11 @@
         "dependencies": {
           "Microsoft.CodeAnalysis.Common": "[4.1.0]"
         }
+      },
+      "Microsoft.CodeAnalysis.NetAnalyzers": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
       },
       "Microsoft.CSharp": {
         "type": "Transitive",
@@ -224,6 +234,20 @@
         "type": "Transitive",
         "resolved": "1.1.0",
         "contentHash": "aOZA3BWfz9RXjpzt0sRJJMjAscAUm3Hoa4UWAfceV9UTYxgwZ1lZt5nO2myFf+/jetYQo4uTP7zS8sJY67BBxg=="
+      },
+      "Microsoft.SourceLink.Common": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+      },
+      "Microsoft.SourceLink.GitHub": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+        "dependencies": {
+          "Microsoft.Build.Tasks.Git": "8.0.0",
+          "Microsoft.SourceLink.Common": "8.0.0"
+        }
       },
       "Microsoft.Win32.Primitives": {
         "type": "Transitive",
@@ -1371,7 +1395,11 @@
         }
       },
       "cronos": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )",
+          "Microsoft.SourceLink.GitHub": "[8.0.0, )"
+        }
       }
     }
   }
