@@ -3028,7 +3028,7 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse(cronExpression, format);
 
             // remove redundant spaces.
-            var expectedString = Regex.Replace(expectedResult, @"\s+", " ").Trim();
+            var expectedString = Regex.Replace(expectedResult, @"\s+", " ", RegexOptions.None, TimeSpan.FromSeconds(1)).Trim();
             
             Assert.Equal(expectedString, expression.ToString());
         }
