@@ -1,0 +1,32 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <!--GenerateAssemblyInfo>false</GenerateAssemblyInfo-->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DebugType>embedded</DebugType>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(APPVEYOR)' == 'True'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->
+        <DeterministicSourcePaths>false</DeterministicSourcePaths>
+    </PropertyGroup>
+
+    <!--ItemGroup>
+        <Compile Include="..\SharedAssemblyInfo.cs" Link="Properties\SharedAssemblyInfo.cs" />
+    </ItemGroup-->
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0"  PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0"  PrivateAssets="All" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AnalysisMode>All</AnalysisMode>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+</Project>

@@ -9,11 +9,23 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cronos.Tests", "tests\Crono
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cronos.Benchmarks", "benchmarks\Cronos.Benchmarks\Cronos.Benchmarks.csproj", "{841F8D1B-54E5-4173-AC1A-318B7BD73A8B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{E7E9BEA8-5972-4B89-89C6-F7FB876F52FF}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E7E9BEA8-5972-4B89-89C6-F7FB876F52FF}"
 	ProjectSection(SolutionItems) = preProject
-		.travis.yml = .travis.yml
 		appveyor.yml = appveyor.yml
 		build.cake = build.cake
+		Directory.build.props = Directory.build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6CCA8557-BAA6-43C7-B16F-03AE845AA7C9}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.build.props = src\Directory.build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{B9763689-55C4-4759-B374-C0AB7E9F7843}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F69A71BE-736C-4A27-8DFA-7740B585039A}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
 	EndProjectSection
 EndProject
 Global
@@ -79,5 +91,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{55AFE501-212E-4360-9C4B-D9958EA20124} = {6CCA8557-BAA6-43C7-B16F-03AE845AA7C9}
+		{841F8D1B-54E5-4173-AC1A-318B7BD73A8B} = {B9763689-55C4-4759-B374-C0AB7E9F7843}
+		{EDAA9F0C-DABC-486E-B58F-472658629EDD} = {F69A71BE-736C-4A27-8DFA-7740B585039A}
 	EndGlobalSection
 EndGlobal

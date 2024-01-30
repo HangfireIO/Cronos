@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard1.0;netstandard2.0;net45;net40</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DebugType>embedded</DebugType>
 
     <PackageId>Cronos</PackageId>
     <Authors>Andrey Dorokhov, Sergey Odinokov</Authors>
@@ -19,28 +17,10 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <FileVersion>1.0.0.0</FileVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(APPVEYOR)' == 'True'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->
-    <DeterministicSourcePaths>false</DeterministicSourcePaths>
-    <RestoreLockedMode>true</RestoreLockedMode>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="All" />
+  <ItemGroup Condition="'$(TargetFramework)'=='net40' or '$(TargetFramework)'=='net45'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>All</AnalysisMode>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
 </Project>
