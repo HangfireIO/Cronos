@@ -23,5 +23,6 @@ Task Pack -Depends Collect -Description "Create NuGet packages and archive files
 }
 
 Task Sign -Depends Pack -Description "Sign artifacts." {
+    $version = Get-PackageVersion
     Sign-ArchiveContents "Cronos-$version" "cronos" "initial"
 }
