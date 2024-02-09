@@ -11,15 +11,20 @@ image:
 # Please don't edit it manually, use the `build.bat version` command instead.
 version: 0.8.2-build-0{build}
 
+environment:
+  SIGNPATH_API_TOKEN:
+    secure: J4NQ06YnHkzn0R+ZXz+TGbHHnfsp2KHeWzAeFr3oPKsvZnpkYuZNv5L118BcEx3B
+
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
 
 before_build:
+  - ps: Install-Module -Name SignPath
   - sh: nuget locals all -clear
 
 build_script:
-  - cmd: build.bat
+  - cmd: build.bat sign
   - sh: dotnet test -c:release -f:net6.0 tests/Cronos.Tests
 
 #---------------------------------#
