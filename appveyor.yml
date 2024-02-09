@@ -1,5 +1,9 @@
 # AppVeyor CI build file, https://ci.appveyor.com/project/odinserj/cronos
 
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
 image:
   - Visual Studio 2022
 #  - Ubuntu2204
