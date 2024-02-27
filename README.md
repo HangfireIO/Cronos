@@ -1,5 +1,5 @@
 # Cronos
-[![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![Build status](https://ci.appveyor.com/api/projects/status/4elmix39mvr18cqf?svg=true)](https://ci.appveyor.com/project/odinserj/cronos)
+[![NuGet](https://img.shields.io/nuget/v/Cronos.svg)](https://www.nuget.org/packages/Cronos) [![Build status](https://ci.appveyor.com/api/projects/status/4elmix39mvr18cqf?svg=true)](https://ci.appveyor.com/project/hangfireio/cronos)
 
 Cronos is a .NET library for parsing Cron expressions and calculating next occurrences. It was designed with time zones in mind, and intuitively handles [Daylight saving time](https://en.wikipedia.org/wiki/Daylight_saving_time) (also known as Summer time) transitions as in *nix Cron.
 
