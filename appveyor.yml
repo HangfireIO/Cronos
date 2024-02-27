@@ -9,7 +9,7 @@ image:
 #  - Ubuntu2204
 
 # Please don't edit it manually, use the `build.bat version` command instead.
-version: 0.8.3-build-0{build}
+version: 0.8.4-build-0{build}
 
 environment:
   SIGNPATH_API_TOKEN:
