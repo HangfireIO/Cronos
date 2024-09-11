@@ -198,33 +198,6 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Returns the list of next occurrences within the given date/time range,
-        /// including <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/>
-        /// by default, and UTC time zone. When none of the occurrences found, an 
-        /// empty list is returned.
-        /// </summary>
-        /// <exception cref="ArgumentException"/>
-        public IEnumerable<DateTime> GetOccurrences(
-            DateTime fromUtc,
-            DateTime toUtc,
-            bool fromInclusive = true,
-            bool toInclusive = false)
-        {
-            if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
-            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
-            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
-
-            for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
-                occurrence < toUtc || occurrence == toUtc && toInclusive;
-                // ReSharper disable once RedundantArgumentDefaultValue
-                // ReSharper disable once ArgumentsStyleLiteral
-                occurrence = GetNextOccurrence(occurrence.Value, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
-        }
-
-        /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -252,6 +225,55 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
+        {
+            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
+            if (zone == null) ThrowArgumentNullException(nameof(zone));
+
+            if (ReferenceEquals(zone, UtcTimeZone))
+            {
+                var found = FindOccurrence(from.UtcTicks, inclusive);
+                if (found == NotFound) return null;
+
+                return new DateTimeOffset(found, TimeSpan.Zero);
+            }
+
+#pragma warning disable CA1062
+            return GetOccurrenceConsideringTimeZone(from, zone, inclusive);
+#pragma warning restore CA1062
+        }
+
+        /// <summary>
+        /// Returns the list of next occurrences within the given date/time range,
+        /// including <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/>
+        /// by default, and UTC time zone. When none of the occurrences found, an 
+        /// empty list is returned.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public IEnumerable<DateTime> GetOccurrences(
+            DateTime fromUtc,
+            DateTime toUtc,
+            bool fromInclusive = true,
+            bool toInclusive = false)
+        {
+            if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
+            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
+
+            for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
+                occurrence < toUtc || occurrence == toUtc && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
         /// Returns the list of next occurrences within the given date/time range, including
         /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and 
         /// specified time zone. When none of the occurrences found, an empty list is returned.
@@ -276,28 +298,6 @@ namespace Cronos
             {
                 yield return occurrence.Value;
             }
-        }
-
-        /// <summary>
-        /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
-        /// </summary>
-        /// <exception cref="ArgumentException"/>
-        public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
-        {
-            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
-            if (zone == null) ThrowArgumentNullException(nameof(zone));
-
-            if (ReferenceEquals(zone, UtcTimeZone))
-            {
-                var found = FindOccurrence(from.UtcTicks, inclusive);
-                if (found == NotFound) return null;
-
-                return new DateTimeOffset(found, TimeSpan.Zero);
-            }
-
-#pragma warning disable CA1062
-            return GetOccurrenceConsideringTimeZone(from, zone, inclusive);
-#pragma warning restore CA1062
         }
 
         /// <summary>
