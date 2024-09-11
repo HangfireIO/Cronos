@@ -499,13 +499,13 @@ namespace Cronos
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(CronField field, string format, params object[] args)
         {
-            throw new CronFormatException(field, String.Format(CultureInfo.CurrentCulture, format, args));
+            throw new CronFormatException($"{CronFormatException.BaseMessage} {field}: {String.Format(CultureInfo.CurrentCulture, format, args)}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static void ThrowFormatException(string format, params object[] args)
         {
-            throw new CronFormatException(String.Format(CultureInfo.CurrentCulture, format, args));
+            throw new CronFormatException($"{CronFormatException.BaseMessage} {String.Format(CultureInfo.CurrentCulture, format, args)}");
         }
     }
 }

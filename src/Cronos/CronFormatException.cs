@@ -35,7 +35,7 @@ namespace Cronos
 #endif
     public class CronFormatException : FormatException
     {
-        private const string BaseMessage = "The given cron expression has an invalid format.";
+        internal const string BaseMessage = "The given cron expression has an invalid format.";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CronFormatException"/> class.
@@ -58,11 +58,7 @@ namespace Cronos
         /// cause of this exception.
         /// </summary>
         public CronFormatException(string message, Exception innerException)
-            : base($"{BaseMessage} {message}", innerException)
-        {
-        }
-
-        internal CronFormatException(CronField field, string message) : this($"{BaseMessage} {field}: {message}")
+            : base(message, innerException)
         {
         }
 
