@@ -81,11 +81,9 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void Parse_ThrowAnException_WhenCronExpressionIsEmpty()
+        public void Parse_ThrowCronFormatException_WhenCronExpressionIsEmpty()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse(""));
-
-            Assert.Equal("expression", exception.ParamName);
+            Assert.Throws<CronFormatException>(() => CronExpression.Parse(""));
         }
 
         [Theory]
@@ -502,6 +500,15 @@ namespace Cronos.Tests
         {
             var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null, out _));
             Assert.Equal("expression", exception.ParamName);
+        }
+
+        [Fact]
+        public void TryParse_DoesNotThrowAnException_WhenExpressionIsEmpty()
+        {
+            var result = CronExpression.TryParse("", out var cron);
+
+            Assert.False(result);
+            Assert.Null(cron);
         }
 
         [Fact]

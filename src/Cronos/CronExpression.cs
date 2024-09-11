@@ -146,7 +146,7 @@ namespace Cronos
         /// </summary>
         public static CronExpression Parse(string expression, CronFormat format)
         {
-            if (string.IsNullOrEmpty(expression)) throw new ArgumentNullException(nameof(expression));
+            if (expression == null) throw new ArgumentNullException(nameof(expression));
 
             return CronParser.Parse(expression, format);
         }
