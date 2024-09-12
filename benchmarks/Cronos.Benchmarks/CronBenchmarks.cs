@@ -27,7 +27,7 @@ using NCrontab;
 
 namespace Cronos.Benchmarks
 {
-    [RyuJitX64Job, SimpleJob(RuntimeMoniker.Net80)]
+    [SimpleJob(RuntimeMoniker.Net80), MemoryDiagnoser]
     public class CronBenchmarks
     {
         private static readonly CronExpression SimpleExpression =
