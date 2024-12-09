@@ -104,8 +104,8 @@
       },
       "Microsoft.CodeAnalysis.NetAnalyzers": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
+        "resolved": "9.0.0",
+        "contentHash": "JajbvkrBgtdRghavIjcJuNHMOja4lqBmEezbhZyqWPYh2cpLhT5mPpfC7NQVDO4IehWQum9t/nwF4v+qQGtYWg=="
       },
       "Microsoft.Diagnostics.NETCore.Client": {
         "type": "Transitive",
@@ -1159,7 +1159,7 @@
       "cronos": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.CodeAnalysis.NetAnalyzers": "[8.0.0, )",
+          "Microsoft.CodeAnalysis.NetAnalyzers": "[9.0.0, )",
           "Microsoft.SourceLink.GitHub": "[8.0.0, )"
         }
       }
