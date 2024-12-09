@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -626,7 +627,7 @@ namespace Cronos
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
                 expressionBuilder.Append('L');
-                if (_lastMonthOffset != 0) expressionBuilder.Append($"-{_lastMonthOffset}");
+                if (_lastMonthOffset != 0) expressionBuilder.Append(String.Format(CultureInfo.InvariantCulture, "-{0}", _lastMonthOffset));
             }
             else
             {
@@ -643,7 +644,7 @@ namespace Cronos
             AppendFieldValue(expressionBuilder, CronField.DaysOfWeek, dowValue);
 
             if (HasFlag(CronExpressionFlag.DayOfWeekLast)) expressionBuilder.Append('L');
-            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) expressionBuilder.Append($"#{_nthDayOfWeek}");
+            else if (HasFlag(CronExpressionFlag.NthDayOfWeek)) expressionBuilder.Append(String.Format(CultureInfo.InvariantCulture, "#{0}", _nthDayOfWeek));
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
