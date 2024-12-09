@@ -11,6 +11,7 @@ Task Collect -Depends Test -Description "Copy all artifacts to the build folder.
     Collect-Assembly "Cronos" "net45"
     Collect-Assembly "Cronos" "netstandard1.0"
     Collect-Assembly "Cronos" "netstandard2.0"
+    Collect-Assembly "Cronos" "net6.0"
     Collect-File "LICENSE"
     Collect-File "README.md"
 }

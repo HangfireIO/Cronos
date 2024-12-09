@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{E7E9BEA8
 		Directory.build.props = Directory.build.props
 		psake-project.ps1 = psake-project.ps1
 		.nuget\packages.config = .nuget\packages.config
+		nuspecs\Cronos.nuspec = nuspecs\Cronos.nuspec
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6CCA8557-BAA6-43C7-B16F-03AE845AA7C9}"

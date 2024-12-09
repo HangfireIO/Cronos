@@ -25,6 +25,8 @@
       </group>
       <group targetFramework="netstandard2.0">
       </group>
+      <group targetFramework="net6.0">
+      </group>
     </dependencies>
   </metadata>
   <files>
@@ -39,6 +41,9 @@
 
     <file src="netstandard2.0\Cronos.dll" target="lib\netstandard2.0" />
     <file src="netstandard2.0\Cronos.xml" target="lib\netstandard2.0" />
+
+    <file src="net6.0\Cronos.dll" target="lib\net6.0" />
+    <file src="net6.0\Cronos.xml" target="lib\net6.0" />
 
     <file src="..\nuspecs\icon.png" />
     <file src="LICENSE" />
