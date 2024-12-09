@@ -147,7 +147,11 @@ namespace Cronos
         /// </summary>
         public static CronExpression Parse(string expression, CronFormat format)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(expression);
+#else
             if (expression == null) throw new ArgumentNullException(nameof(expression));
+#endif
 
             return CronParser.Parse(expression, format);
         }
@@ -169,7 +173,11 @@ namespace Cronos
         /// </summary>
         public static bool TryParse(string expression, CronFormat format, out CronExpression cronExpression)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(expression);
+#else
             if (expression == null) throw new ArgumentNullException(nameof(expression));
+#endif
 
             try
             {
