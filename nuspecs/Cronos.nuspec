@@ -10,7 +10,7 @@
     <repository type="git" url="https://github.com/HangfireIO/Cronos.git" commit="%commit%" />
     <license type="expression">MIT</license>
     <description>A fully-featured .NET library for parsing cron expressions and calculating next occurrences that was designed with time zones in mind and correctly handles daylight saving time transitions.</description>
-    <copyright>Copyright © 2016-2024 Hangfire OÜ.</copyright>
+    <copyright>Copyright © 2016–2024 Hangfire OÜ.</copyright>
     <icon>icon.png</icon>
     <readme>README.md</readme>
     <tags>Cronos Cron Recurring</tags>
