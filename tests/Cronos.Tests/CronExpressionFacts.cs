@@ -2457,6 +2457,18 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetNextOccurrence_FromDateTimeMinValueInclusive_SuccessfullyReturned()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            var from = new DateTime(0, DateTimeKind.Utc);
+
+            var occurrence = expression
+                .GetNextOccurrence(from, inclusive: true);
+
+            Assert.Equal(from, occurrence);
+        }
+
+        [Fact]
         public void GetOccurrence_PassesTests_DefinedInTheGitHubIssue53()
         {
             var jan1St2000 = new DateTimeOffset(2000, 01, 01, 00, 00, 00, new TimeSpan(-5, 0, 0));
@@ -2739,6 +2751,20 @@ namespace Cronos.Tests
 
             Assert.Equal(3, occurrences.Length);
             Assert.Equal(from.AddMinutes(2), occurrences[2].UtcDateTime);
+        }
+
+        [Fact]
+        public void GetOccurrences_OccurrenceAtDateTimeMinValue_SuccessfullyReturned()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            var from = new DateTime(0, DateTimeKind.Utc);
+
+            var occurrences = expression
+                .GetOccurrences(from, from.AddSeconds(1), fromInclusive: true)
+                .ToArray();
+
+            Assert.Single(occurrences);
+            Assert.Equal(from, occurrences[0]);
         }
 
         [Theory]

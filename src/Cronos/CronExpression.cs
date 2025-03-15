@@ -34,7 +34,7 @@ namespace Cronos
     /// </summary>
     public sealed class CronExpression: IEquatable<CronExpression>
     {
-        private const long NotFound = 0;
+        private const long NotFound = -1;
         private const int MaxYear = 2499;
 
         /// <summary>
