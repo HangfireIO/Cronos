@@ -1817,6 +1817,31 @@ namespace Cronos.Tests
             Assert.Null(occurrence);
         }
 
+        [Fact]
+        public void GetNextOccurrence_ReturnsNull_WhenOutOfMaxRange()
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
+            var lastFullSecondInDateTime = new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+
+            var occurrence = expression.GetNextOccurrence(lastFullSecondInDateTime);
+
+            Assert.Null(occurrence);
+        }
+
+        [Fact]
+        public void GetNextOccurrence_VeryLastResult()
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
+            var lastFullSecondInDateTime = new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+            var oneTickBeforeLastSecond = lastFullSecondInDateTime - TimeSpan.FromTicks(1);
+
+            var occurrence = expression.GetNextOccurrence(oneTickBeforeLastSecond);
+
+            Assert.Equal(lastFullSecondInDateTime, occurrence);
+        }
+
         [Theory]
 
         // Basic facts.
