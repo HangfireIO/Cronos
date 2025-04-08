@@ -35,7 +35,6 @@ namespace Cronos
     public sealed class CronExpression: IEquatable<CronExpression>
     {
         private const long NotFound = -1;
-        private const int MaxYear = 2499;
 
         /// <summary>
         /// Represents a cron expression that fires on Jan 1st every year at midnight.
@@ -198,7 +197,6 @@ namespace Cronos
         public DateTime? GetNextOccurrence(DateTime fromUtc, bool inclusive = false)
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
-            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
 
             var found = FindOccurrence(fromUtc.Ticks, inclusive);
             if (found == NotFound) return null;
@@ -213,7 +211,6 @@ namespace Cronos
         public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
-            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
             if (zone == null) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
@@ -239,7 +236,6 @@ namespace Cronos
         /// <exception cref="ArgumentException"/>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
-            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
             if (zone == null) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
@@ -269,8 +265,6 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
-            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
-            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
 
             for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
                 occurrence < toUtc || occurrence == toUtc && toInclusive;
@@ -296,8 +290,6 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
-            if (fromUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(fromUtc));
-            if (toUtc.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(toUtc));
 
             for (var occurrence = GetNextOccurrence(fromUtc, zone, fromInclusive);
                 occurrence < toUtc || occurrence == toUtc && toInclusive;
@@ -323,8 +315,6 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (from > to) ThrowFromShouldBeLessThanToException(nameof(from), nameof(to));
-            if (from.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(from));
-            if (to.Year > MaxYear) ThrowDateTimeExceedsMaxException(nameof(to));
 
             for (var occurrence = GetNextOccurrence(from, zone, fromInclusive);
                 occurrence < to || occurrence == to && toInclusive;
@@ -563,7 +553,15 @@ namespace Cronos
 
             RetryMonth:
 
-            if (!Move(_month, ref month) && ++year >= MaxYear) return NotFound;
+            if (!Move(_month, ref month))
+            {
+                year++;
+                if (year > DateTime.MaxValue.Year)
+                {
+                    return NotFound;
+                }
+            }
+            
             day = minMatchedDay;
 
             goto Retry;
@@ -665,12 +663,6 @@ namespace Cronos
         private static void ThrowWrongDateTimeKindException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowDateTimeExceedsMaxException(string paramName)
-        {
-            throw new ArgumentException($"The supplied DateTime is after the supported year of {MaxYear}.", paramName);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

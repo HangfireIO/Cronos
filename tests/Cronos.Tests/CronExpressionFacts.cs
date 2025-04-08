@@ -573,48 +573,12 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetNextOccurrence_DateTime_ThrowsAnException_WhenFromGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetNextOccurrence(from));
-
-            Assert.Equal("fromUtc", exception.ParamName);
-        }
-
-        [Fact]
-        public void GetNextOccurrence_DateTimeTimeZone_ThrowsAnException_WhenFromGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetNextOccurrence(from, EasternTimeZone));
-
-            Assert.Equal("fromUtc", exception.ParamName);
-        }
-
-        [Fact]
         public void GetNextOccurrence_DateTimeTimeZone_ThrowsAnException_WhenZoneIsNull()
         {
             var exception = Assert.Throws<ArgumentNullException>(
                 () => CronExpression.EveryMinute.GetNextOccurrence(Today, null));
 
             Assert.Equal("zone", exception.ParamName);
-        }
-
-        [Fact]
-        public void GetNextOccurrence_DateTimeOffset_ThrowsAnException_WhenToGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTimeOffset(2500, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetNextOccurrence(from, EasternTimeZone));
-
-            Assert.Equal("from", exception.ParamName);
         }
 
         [Fact]
@@ -1853,6 +1817,31 @@ namespace Cronos.Tests
             Assert.Null(occurrence);
         }
 
+        [Fact]
+        public void GetNextOccurrence_ReturnsNull_WhenOutOfMaxRange()
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
+            var lastFullSecondInDateTime = new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+
+            var occurrence = expression.GetNextOccurrence(lastFullSecondInDateTime);
+
+            Assert.Null(occurrence);
+        }
+
+        [Fact]
+        public void GetNextOccurrence_VeryLastResult()
+        {
+            var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);
+
+            var lastFullSecondInDateTime = new DateTime(9999, 12, 31, 23, 59, 59, DateTimeKind.Utc);
+            var oneTickBeforeLastSecond = lastFullSecondInDateTime - TimeSpan.FromTicks(1);
+
+            var occurrence = expression.GetNextOccurrence(oneTickBeforeLastSecond);
+
+            Assert.Equal(lastFullSecondInDateTime, occurrence);
+        }
+
         [Theory]
 
         // Basic facts.
@@ -2499,30 +2488,6 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetOccurrences_DateTime_ThrowsAnException_WhenFromGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1)).ToArray());
-
-            Assert.Equal("fromUtc", exception.ParamName);
-        }
-
-        [Fact]
-        public void GetOccurrences_DateTime_ThrowsAnException_WhenToGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var to = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to).ToArray());
-
-            Assert.Equal("toUtc", exception.ParamName);
-        }
-
-        [Fact]
         public void GetOccurrences_DateTime_ReturnsEmptyEnumerable_WhenNoOccurrencesFound()
         {
             var expression = CronExpression.Parse("* * 30 FEB *");
@@ -2583,30 +2548,6 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse("* * * * *");
             Assert.Throws<ArgumentException>(
                 () => expression.GetOccurrences(DateTime.UtcNow, DateTime.UtcNow.AddHours(-5), EasternTimeZone).ToArray());
-        }
-
-        [Fact]
-        public void GetOccurrences_DateTimeTimeZone_ThrowsAnException_WhenFromGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone).ToArray());
-
-            Assert.Equal("fromUtc", exception.ParamName);
-        }
-
-        [Fact]
-        public void GetOccurrences_DateTimeTimeZone_ThrowsAnException_WhenToGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var to = new DateTime(2500, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone).ToArray());
-
-            Assert.Equal("toUtc", exception.ParamName);
         }
 
         [Fact]
@@ -2671,30 +2612,6 @@ namespace Cronos.Tests
             var expression = CronExpression.Parse("* * * * *");
             Assert.Throws<ArgumentException>(
                 () => expression.GetOccurrences(DateTimeOffset.Now, DateTimeOffset.Now.AddHours(-5), EasternTimeZone).ToArray());
-        }
-
-        [Fact]
-        public void GetOccurrences_DateTimeOffset_ThrowsAnException_WhenFromGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var from = new DateTimeOffset(2500, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(from, from.AddHours(1), EasternTimeZone).ToArray());
-
-            Assert.Equal("from", exception.ParamName);
-        }
-
-        [Fact]
-        public void GetOccurrences_DateTimeOffset_ThrowsAnException_WhenToGreaterThanMaxYear()
-        {
-            var expression = CronExpression.Parse("* * * * *");
-            var to = new DateTimeOffset(2500, 1, 1, 0, 0, 0, TimeSpan.Zero);
-
-            var exception = Assert.Throws<ArgumentException>(
-                () => expression.GetOccurrences(to.AddHours(-1), to, EasternTimeZone).ToArray());
-
-            Assert.Equal("to", exception.ParamName);
         }
 
         [Fact]
