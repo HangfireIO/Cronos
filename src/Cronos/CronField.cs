@@ -20,13 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
+
 namespace Cronos
 {
     internal sealed class CronField
     {
         private static readonly string[] MonthNames =
         {
-            null, "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+            String.Empty, "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
         };
 
         private static readonly string[] DayOfWeekNames =
@@ -51,11 +53,6 @@ namespace Cronos
             for (var i = 1; i < MonthNames.Length; i++)
             {
                 var name = MonthNames[i].ToUpperInvariant();
-                var array = new char[3];
-                array[0] = name[0];
-                array[1] = name[1];
-                array[2] = name[2];
-
                 var combined = name[0] | (name[1] << 8) | (name[2] << 16);
 
                 MonthNamesArray[i] = combined;
@@ -64,11 +61,6 @@ namespace Cronos
             for (var i = 0; i < DayOfWeekNames.Length; i++)
             {
                 var name = DayOfWeekNames[i].ToUpperInvariant();
-                var array = new char[3];
-                array[0] = name[0];
-                array[1] = name[1];
-                array[2] = name[2];
-
                 var combined = name[0] | (name[1] << 8) | (name[2] << 16);
 
                 DayOfWeekNamesArray[i] = combined;
@@ -78,11 +70,11 @@ namespace Cronos
         public readonly string Name;
         public readonly int First;
         public readonly int Last;
-        public readonly int[] Names;
+        public readonly int[]? Names;
         public readonly bool CanDefineInterval;
         public readonly long AllBits;
 
-        private CronField(string name, int first, int last, int[] names, bool canDefineInterval)
+        private CronField(string name, int first, int last, int[]? names, bool canDefineInterval)
         {
             Name = name;
             First = first;

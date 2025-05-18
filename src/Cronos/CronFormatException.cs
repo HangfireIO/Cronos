@@ -48,7 +48,7 @@ namespace Cronos
         /// Initializes a new instance of the <see cref="CronFormatException"/> class with
         /// a specified error message.
         /// </summary>
-        public CronFormatException(string message) : this(message, null)
+        public CronFormatException(string message) : base(message)
         {
         }
 

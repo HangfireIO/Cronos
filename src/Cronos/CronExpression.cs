@@ -160,7 +160,7 @@ namespace Cronos
         /// <see cref="CronFormat.Standard"/> format.
         /// A return value indicates whether the operation succeeded.
         /// </summary>
-        public static bool TryParse(string expression, out CronExpression cronExpression)
+        public static bool TryParse(string expression, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
         {
             return TryParse(expression, CronFormat.Standard, out cronExpression);
         }
@@ -170,7 +170,7 @@ namespace Cronos
         /// <paramref name="format"/>.
         /// A return value indicates whether the operation succeeded.
         /// </summary>
-        public static bool TryParse(string expression, CronFormat format, out CronExpression cronExpression)
+        public static bool TryParse(string expression, CronFormat format, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
         {
 #if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(expression);
@@ -211,7 +211,7 @@ namespace Cronos
         public DateTime? GetNextOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
         {
             if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
-            if (zone == null) ThrowArgumentNullException(nameof(zone));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
@@ -236,7 +236,7 @@ namespace Cronos
         /// <exception cref="ArgumentException"/>
         public DateTimeOffset? GetNextOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
         {
-            if (zone == null) ThrowArgumentNullException(nameof(zone));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
             if (ReferenceEquals(zone, UtcTimeZone))
             {
@@ -352,9 +352,9 @@ namespace Cronos
         /// <returns>
         /// <c>true</c> if the specified <see cref="Object"/> is equal to the current <see cref="Object"/>; otherwise, <c>false</c>.
         /// </returns>
-        public bool Equals(CronExpression other)
+        public bool Equals(CronExpression? other)
         {
-            if (other == null) return false;
+            if (ReferenceEquals(other, null)) return false;
 
             return _second == other._second &&
                    _minute == other._minute &&
@@ -375,7 +375,7 @@ namespace Cronos
         /// <c>true</c> if the specified <see cref="System.Object" /> is equal to this instance;
         /// otherwise, <c>false</c>.
         /// </returns>
-        public override bool Equals(object obj) => Equals(obj as CronExpression);
+        public override bool Equals(object? obj) => Equals(obj as CronExpression);
 
         /// <summary>
         /// Returns a hash code for this instance.
@@ -654,18 +654,21 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
         private static void ThrowFromShouldBeLessThanToException(string fromName, string toName)
         {
             throw new ArgumentException($"The value of the {fromName} argument should be less than the value of the {toName} argument.", fromName);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
         private static void ThrowWrongDateTimeKindException(string paramName)
         {
             throw new ArgumentException("The supplied DateTime must have the Kind property set to Utc", paramName);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
         private static void ThrowArgumentNullException(string paramName)
         {
             throw new ArgumentNullException(paramName);

@@ -46,7 +46,7 @@ namespace Cronos
                     var cronExpression = ParseMacro(ref pointer);
                     SkipWhiteSpaces(ref pointer);
 
-                    if (cronExpression == null || !IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
+                    if (ReferenceEquals(cronExpression, null) || !IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
                     return cronExpression;
                 }
 
@@ -120,7 +120,7 @@ namespace Cronos
         }
 
         [SuppressMessage("SonarLint", "S1764:IdenticalExpressionsShouldNotBeUsedOnBothSidesOfOperators", Justification = "Expected, as the AcceptCharacter method produces side effects.")]
-        private static unsafe CronExpression ParseMacro(ref char* pointer)
+        private static unsafe CronExpression? ParseMacro(ref char* pointer)
         {
             switch (ToUpper(*pointer++))
             {
@@ -418,7 +418,7 @@ namespace Cronos
             return 1L << num1;
         }
 
-        private static unsafe int GetNumber(ref char* pointer, int[] names)
+        private static unsafe int GetNumber(ref char* pointer, int[]? names)
         {
             if (IsDigit(*pointer))
             {
@@ -497,12 +497,14 @@ namespace Cronos
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
         private static void ThrowFormatException(CronField field, string format, params object[] args)
         {
             throw new CronFormatException($"{CronFormatException.BaseMessage} {field}: {String.Format(CultureInfo.CurrentCulture, format, args)}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
         private static void ThrowFormatException(string format, params object[] args)
         {
             throw new CronFormatException($"{CronFormatException.BaseMessage} {String.Format(CultureInfo.CurrentCulture, format, args)}");
