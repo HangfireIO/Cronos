@@ -3,6 +3,7 @@
     <PropertyGroup>
         <NuGetAudit>false</NuGetAudit><!-- We are testing against these packages, not including them into the product -->
         <NuGetAuditMode>direct</NuGetAuditMode>
+        <SignAssembly>true</SignAssembly><!-- InernalsVisibleTo requires test assemblies to be signed too -->
     </PropertyGroup>
 
     <ItemGroup>

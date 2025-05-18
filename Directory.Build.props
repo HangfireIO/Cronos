@@ -4,6 +4,7 @@
         <Company>Hangfire OÜ</Company>
         <Copyright>Copyright © 2016-2025 Hangfire OÜ</Copyright>
         <NeutralLanguage>en-US</NeutralLanguage>
+        <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Cronos.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
 
     <PropertyGroup Label="CI Build" Condition="'$(APPVEYOR)' != ''">
@@ -18,7 +19,7 @@
         <VersionPrefix>0.11.0</VersionPrefix>
         <BuildNumber Condition=" '$(BuildNumber)' == '' ">0</BuildNumber>
         <FileVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(3)).$(BuildNumber)</FileVersion>
-        <!--AssemblyVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(1)).0.0.0</AssemblyVersion-->
+        <AssemblyVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(1)).0.0.0</AssemblyVersion>
     </PropertyGroup>
 
     <PropertyGroup Label="Package Restore">
