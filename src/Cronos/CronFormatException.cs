@@ -62,7 +62,7 @@ namespace Cronos
         {
         }
 
-#if !NETSTANDARD1_0 && !NET8_0_OR_GREATER
+#if !NETSTANDARD1_0
         /// <inheritdoc />
         protected CronFormatException(SerializationInfo info, StreamingContext context) : base(info, context)
         {

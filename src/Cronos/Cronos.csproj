@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Title>Cronos</Title>
     <Description>A fully-featured .NET library for parsing cron expressions and calculating next occurrences that was designed with time zones in mind and correctly handles daylight saving time transitions.</Description>
-    <TargetFrameworks>net40;net45;netstandard1.0;netstandard2.0;net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net40;net45;netstandard1.0;netstandard2.0;net6.0</TargetFrameworks>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
 
