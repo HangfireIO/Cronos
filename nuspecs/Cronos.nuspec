@@ -27,6 +27,8 @@
       </group>
       <group targetFramework="net6.0">
       </group>
+      <group targetFramework="net8.0">
+      </group>
     </dependencies>
   </metadata>
   <files>
@@ -44,6 +46,9 @@
 
     <file src="net6.0\Cronos.dll" target="lib\net6.0" />
     <file src="net6.0\Cronos.xml" target="lib\net6.0" />
+
+    <file src="net8.0\Cronos.dll" target="lib\net8.0" />
+    <file src="net8.0\Cronos.xml" target="lib\net8.0" />
 
     <file src="icon.png" />
     <file src="LICENSE" />
