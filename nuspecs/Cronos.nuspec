@@ -45,7 +45,7 @@
     <file src="net6.0\Cronos.dll" target="lib\net6.0" />
     <file src="net6.0\Cronos.xml" target="lib\net6.0" />
 
-    <file src="..\nuspecs\icon.png" />
+    <file src="icon.png" />
     <file src="LICENSE" />
     <file src="README.md" />
   </files>
