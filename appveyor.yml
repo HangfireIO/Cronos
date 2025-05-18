@@ -4,12 +4,11 @@
 #    environment configuration    #
 #---------------------------------#
 
+version: build.{build}
+
 image:
   - Visual Studio 2022
 #  - Ubuntu2204
-
-# Please don't edit it manually, use the `build.bat version` command instead.
-version: 0.10.0-build-0{build}
 
 environment:
   SIGNPATH_API_TOKEN:

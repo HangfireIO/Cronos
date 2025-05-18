@@ -1,10 +1,28 @@
 <Project>
-    <PropertyGroup>
-        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <PropertyGroup Label="Assembly Properties">
+        <Product>Cronos</Product>
+        <Company>Hangfire OÜ</Company>
+        <Copyright>Copyright © 2016-2025 Hangfire OÜ</Copyright>
+        <NeutralLanguage>en-US</NeutralLanguage>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(APPVEYOR)' == 'True'">
+    <PropertyGroup Label="CI Build" Condition="'$(APPVEYOR)' != ''">
         <RestoreLockedMode>true</RestoreLockedMode>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->
+        <DeterministicSourcePaths>false</DeterministicSourcePaths>
+        <BuildNumber>$(APPVEYOR_BUILD_NUMBER)</BuildNumber>
+    </PropertyGroup>
+
+    <PropertyGroup Label="Versioning">
+        <VersionPrefix>0.11.0</VersionPrefix>
+        <BuildNumber Condition=" '$(BuildNumber)' == '' ">0</BuildNumber>
+        <FileVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(3)).$(BuildNumber)</FileVersion>
+        <!--AssemblyVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(1)).0.0.0</AssemblyVersion-->
+    </PropertyGroup>
+
+    <PropertyGroup Label="Package Restore">
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     </PropertyGroup>
 </Project>

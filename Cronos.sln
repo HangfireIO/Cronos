@@ -21,7 +21,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6CCA8557-BAA6-43C7-B16F-03AE845AA7C9}"
 	ProjectSection(SolutionItems) = preProject
 		src\Directory.build.props = src\Directory.build.props
-		src\SharedAssemblyInfo.cs = src\SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{B9763689-55C4-4759-B374-C0AB7E9F7843}"
