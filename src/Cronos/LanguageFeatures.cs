@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿#if !NET5_0_OR_GREATER
+using System.ComponentModel;
 
 namespace System.Runtime.CompilerServices
 {
@@ -67,3 +68,4 @@ namespace System.Diagnostics.CodeAnalysis
     }
 #endif
 }
+#endif
