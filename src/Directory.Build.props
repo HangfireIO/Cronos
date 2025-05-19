@@ -6,7 +6,6 @@
         <DebugType>embedded</DebugType>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <CheckNotRecommendedTargetFramework>false</CheckNotRecommendedTargetFramework>
-        <NuGetAuditMode>direct</NuGetAuditMode>
         <SignAssembly>true</SignAssembly>
         <Nullable>enable</Nullable>
     </PropertyGroup>

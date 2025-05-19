@@ -6,6 +6,7 @@
         <NeutralLanguage>en-US</NeutralLanguage>
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Cronos.snk</AssemblyOriginatorKeyFile>
         <LangVersion>9.0</LangVersion>
+        <NuGetAuditMode>direct</NuGetAuditMode>
     </PropertyGroup>
 
     <PropertyGroup Label="CI Build" Condition="'$(APPVEYOR)' != ''">
