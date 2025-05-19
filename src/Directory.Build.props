@@ -8,9 +8,22 @@
         <CheckNotRecommendedTargetFramework>false</CheckNotRecommendedTargetFramework>
         <SignAssembly>true</SignAssembly>
         <Nullable>enable</Nullable>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
-    <ItemGroup Label="Assembly Attributes">
+    <PropertyGroup>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AnalysisMode>All</AnalysisMode>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
+        <IsTrimmable>true</IsTrimmable>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    </PropertyGroup>
+
+    <ItemGroup>
         <AssemblyAttribute Include="System.Reflection.AssemblyCultureAttribute">
             <_Parameter1></_Parameter1>
         </AssemblyAttribute>
@@ -26,17 +39,4 @@
         <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisLevel>latest</AnalysisLevel>
-        <AnalysisMode>All</AnalysisMode>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
-
-    <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">
-        <IsTrimmable>true</IsTrimmable>
-        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-        <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
-    </PropertyGroup>
 </Project>
