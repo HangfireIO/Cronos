@@ -9,7 +9,6 @@
         <NuGetAuditMode>direct</NuGetAuditMode>
         <SignAssembly>true</SignAssembly>
         <Nullable>enable</Nullable>
-        <LangVersion>9.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup Label="Assembly Attributes">

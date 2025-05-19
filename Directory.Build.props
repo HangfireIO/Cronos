@@ -5,6 +5,7 @@
         <Copyright>Copyright © 2016-2025 Hangfire OÜ</Copyright>
         <NeutralLanguage>en-US</NeutralLanguage>
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Cronos.snk</AssemblyOriginatorKeyFile>
+        <LangVersion>9.0</LangVersion>
     </PropertyGroup>
 
     <PropertyGroup Label="CI Build" Condition="'$(APPVEYOR)' != ''">

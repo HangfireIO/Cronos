@@ -75,7 +75,7 @@ namespace Cronos.Tests
         [Fact]
         public void Parse_ThrowAnException_WhenCronExpressionIsNull()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse(null));
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse(null!));
 
             Assert.Equal("expression", exception.ParamName);
         }
@@ -498,7 +498,7 @@ namespace Cronos.Tests
         [Fact]
         public void TryParse_ThrowsAnException_WhenExpressionIsNull()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null, out _));
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null!, out _));
             Assert.Equal("expression", exception.ParamName);
         }
 
@@ -576,7 +576,7 @@ namespace Cronos.Tests
         public void GetNextOccurrence_DateTimeTimeZone_ThrowsAnException_WhenZoneIsNull()
         {
             var exception = Assert.Throws<ArgumentNullException>(
-                () => CronExpression.EveryMinute.GetNextOccurrence(Today, null));
+                () => CronExpression.EveryMinute.GetNextOccurrence(Today, null!));
 
             Assert.Equal("zone", exception.ParamName);
         }
@@ -585,7 +585,7 @@ namespace Cronos.Tests
         public void GetNextOccurrence_DateTimeOffsetTimeZone_ThrowsAnException_WhenZoneIsNull()
         {
             var exception = Assert.Throws<ArgumentNullException>(
-                () => CronExpression.EveryMinute.GetNextOccurrence(new DateTimeOffset(Today), null));
+                () => CronExpression.EveryMinute.GetNextOccurrence(new DateTimeOffset(Today), null!));
 
             Assert.Equal("zone", exception.ParamName);
         }
@@ -2358,7 +2358,7 @@ namespace Cronos.Tests
             Assert.Equal(expectedInstant.UtcDateTime, nextOccurrence);
         }
 
-        [Theory(Timeout = 1000)]
+        [Theory]
 
         [InlineData("* * * * * *", "1991-01-01 00:00")]
         [InlineData("0 * * * * *", "1991-03-02 00:00")]
