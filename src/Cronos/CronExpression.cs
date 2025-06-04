@@ -391,8 +391,8 @@ namespace Cronos
             {
                 var hashCode = _second.GetHashCode();
                 hashCode = (hashCode * 397) ^ _minute.GetHashCode();
-                hashCode = (hashCode * 397) ^ _hour;
-                hashCode = (hashCode * 397) ^ _dayOfMonth;
+                hashCode = (hashCode * 397) ^ _hour.GetHashCode();
+                hashCode = (hashCode * 397) ^ _dayOfMonth.GetHashCode();
                 hashCode = (hashCode * 397) ^ _month.GetHashCode();
                 hashCode = (hashCode * 397) ^ _dayOfWeek.GetHashCode();
                 hashCode = (hashCode * 397) ^ _nthDayOfWeek.GetHashCode();
