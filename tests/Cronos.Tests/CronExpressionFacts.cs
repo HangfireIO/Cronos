@@ -1680,10 +1680,11 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetNextOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(TimeZoneInfo zone)
+        public void GetNextOccurrence_ReturnsTheSameDateTimeWithGivenTimeZoneOffset(string zoneId)
         {
             var fromInstant = new DateTimeOffset(2017, 03, 04, 00, 00, 00, new TimeSpan(12, 30, 00));
             var expectedInstant = fromInstant;
+            var zone = TimeZoneInfo.FindSystemTimeZoneById(zoneId);
 
             var expectedOffset = zone.GetUtcOffset(expectedInstant);
 
@@ -1695,9 +1696,10 @@ namespace Cronos.Tests
 
         [Theory]
         [MemberData(nameof(GetTimeZones))]
-        public void GetNextOccurrence_ReturnsUtcDateTime(TimeZoneInfo zone)
+        public void GetNextOccurrence_ReturnsUtcDateTime(string zoneId)
         {
             var from = new DateTime(2017, 03, 06, 00, 00, 00, DateTimeKind.Utc);
+            var zone = TimeZoneInfo.FindSystemTimeZoneById(zoneId);
 
             var occurrence = MinutelyExpression.GetNextOccurrence(from, zone, inclusive: true);
 
@@ -2992,9 +2994,9 @@ namespace Cronos.Tests
 
         public static IEnumerable<object[]> GetTimeZones()
         {
-            yield return new object[] {EasternTimeZone};
-            yield return new object[] {JordanTimeZone};
-            yield return new object[] {TimeZoneInfo.Utc};
+            yield return new object[] {EasternTimeZone.Id};
+            yield return new object[] {JordanTimeZone.Id};
+            yield return new object[] {TimeZoneInfo.Utc.Id};
         }
 
         private static DateTimeOffset GetInstantFromLocalTime(string localDateTimeString, TimeZoneInfo zone)
