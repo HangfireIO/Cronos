@@ -72,7 +72,7 @@ namespace Cronos
                 var hour = (int)ParseField(CronField.Hours, ref pointer, ref flags);
                 ParseWhiteSpace(CronField.Hours, ref pointer);
 
-                var dayOfMonth = (int)ParseDayOfMonth(ref pointer, ref flags, ref lastMonthOffset);
+                var dayOfMonth = unchecked((int)ParseDayOfMonth(ref pointer, ref flags, ref lastMonthOffset));
                 ParseWhiteSpace(CronField.DaysOfMonth, ref pointer);
 
                 var month = (short)ParseField(CronField.Months, ref pointer, ref flags);
