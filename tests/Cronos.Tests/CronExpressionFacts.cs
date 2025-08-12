@@ -517,7 +517,7 @@ namespace Cronos.Tests
             var result = CronExpression.TryParse("* * * * *", out var cron);
 
             Assert.True(result);
-            Assert.Equal(Today.AddMinutes(1), cron.GetNextOccurrence(Today));
+            Assert.Equal(Today.AddMinutes(1), cron!.GetNextOccurrence(Today));
         }
 
         [Fact]
@@ -542,7 +542,7 @@ namespace Cronos.Tests
             var result = CronExpression.TryParse("* * * * * *", CronFormat.IncludeSeconds, out var cron);
 
             Assert.True(result);
-            Assert.Equal(Today.AddSeconds(1), cron.GetNextOccurrence(Today));
+            Assert.Equal(Today.AddSeconds(1), cron!.GetNextOccurrence(Today));
         }
 
         [Theory]
@@ -2785,6 +2785,7 @@ namespace Cronos.Tests
 
             Assert.False(cronExpression.Equals(null));
             Assert.False(cronExpression == null);
+            Assert.True(cronExpression != null);
         }
 
         [Theory]

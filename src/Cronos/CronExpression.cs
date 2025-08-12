@@ -406,12 +406,12 @@ namespace Cronos
         /// <summary>
         /// Implements the operator ==.
         /// </summary>
-        public static bool operator ==(CronExpression left, CronExpression right) => Equals(left, right);
+        public static bool operator ==(CronExpression? left, CronExpression? right) => Equals(left, right);
 
         /// <summary>
         /// Implements the operator !=.
         /// </summary>
-        public static bool operator !=(CronExpression left, CronExpression right) => !Equals(left, right);
+        public static bool operator !=(CronExpression? left, CronExpression? right) => !Equals(left, right);
 
         private DateTimeOffset? GetOccurrenceConsideringTimeZone(DateTimeOffset fromUtc, TimeZoneInfo zone, bool inclusive)
         {
