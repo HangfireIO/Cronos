@@ -72,7 +72,7 @@ namespace Cronos
         public readonly int Last;
         public readonly int[]? Names;
         public readonly bool CanDefineInterval;
-        public readonly long AllBits;
+        public readonly ulong AllBits;
 
         private CronField(string name, int first, int last, int[]? names, bool canDefineInterval)
         {
@@ -83,7 +83,7 @@ namespace Cronos
             CanDefineInterval = canDefineInterval;
             for (int i = First; i <= Last; i++)
             {
-                AllBits = AllBits | (1L << i);
+                AllBits = AllBits | (1UL << i);
             }
         }
 
