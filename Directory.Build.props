@@ -12,6 +12,8 @@
     <PropertyGroup Condition="'$(APPVEYOR)' != ''">
         <RestoreLockedMode>true</RestoreLockedMode>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->
+        <DeterministicSourcePaths>false</DeterministicSourcePaths>
         <BuildNumber>$(APPVEYOR_BUILD_NUMBER)</BuildNumber>
     </PropertyGroup>
 
