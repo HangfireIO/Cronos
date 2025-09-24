@@ -92,11 +92,11 @@ namespace Cronos
             50, 31, 19, 15, 30, 14, 13, 12
         };
 
-        private readonly long  _second;     // 60 bits -> from 0 bit to 59 bit
-        private readonly long  _minute;     // 60 bits -> from 0 bit to 59 bit
-        private readonly int   _hour;       // 24 bits -> from 0 bit to 23 bit
-        private readonly int   _dayOfMonth; // 31 bits -> from 1 bit to 31 bit
-        private readonly short _month;      // 12 bits -> from 1 bit to 12 bit
+        private readonly ulong  _second;     // 60 bits -> from 0 bit to 59 bit
+        private readonly ulong  _minute;     // 60 bits -> from 0 bit to 59 bit
+        private readonly uint   _hour;       // 24 bits -> from 0 bit to 23 bit
+        private readonly uint   _dayOfMonth; // 31 bits -> from 1 bit to 31 bit
+        private readonly ushort _month;      // 12 bits -> from 1 bit to 12 bit
         private readonly byte  _dayOfWeek;  // 8 bits  -> from 0 bit to 7 bit
 
         private readonly byte  _nthDayOfWeek;
@@ -105,11 +105,11 @@ namespace Cronos
         private readonly CronExpressionFlag _flags;
 
         internal CronExpression(
-            long second,
-            long minute,
-            int hour,
-            int dayOfMonth,
-            short month,
+            ulong second,
+            ulong minute,
+            uint hour,
+            uint dayOfMonth,
+            ushort month,
             byte dayOfWeek,
             byte nthDayOfWeek,
             byte lastMonthOffset,
@@ -331,7 +331,7 @@ namespace Cronos
         {
             var expressionBuilder = new StringBuilder();
 
-            if (_second != 1L)
+            if (_second != 1UL)
             {
                 AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
             }
@@ -567,7 +567,7 @@ namespace Cronos
             goto Retry;
         }
 
-        private static bool Move(long fieldBits, ref int fieldValue)
+        private static bool Move(ulong fieldBits, ref int fieldValue)
         {
             if (fieldBits >> ++fieldValue == 0)
             {
@@ -599,10 +599,10 @@ namespace Cronos
             return ((_dayOfWeek >> (int)dayOfWeek) & 1) != 0;
         }
 
-        private static int GetFirstSet(long value)
+        private static int GetFirstSet(ulong value)
         {
             // TODO: Add description and source
-            ulong res = unchecked((ulong)(value & -value) * 0x022fdd63cc95386d) >> 58;
+            ulong res = unchecked((ulong)((long)value & -(long)value) * 0x022fdd63cc95386d) >> 58;
             return DeBruijnPositions[res];
         }
 
@@ -611,12 +611,12 @@ namespace Cronos
             return (_flags & value) != 0;
         }
 
-        private static StringBuilder AppendFieldValue(StringBuilder expressionBuilder, CronField field, long fieldValue)
+        private static StringBuilder AppendFieldValue(StringBuilder expressionBuilder, CronField field, ulong fieldValue)
         {
             if (field.AllBits == fieldValue) return expressionBuilder.Append('*');
 
             // Unset 7 bit for Day of week field because both 0 and 7 stand for Sunday.
-            if (field == CronField.DaysOfWeek) fieldValue &= ~(1 << field.Last);
+            if (field == CronField.DaysOfWeek) fieldValue &= ~(1U << field.Last);
 
             for (var i = GetFirstSet(fieldValue);; i = GetFirstSet(fieldValue >> i << i))
             {
@@ -628,7 +628,7 @@ namespace Cronos
             return expressionBuilder;
         }
 
-        private StringBuilder AppendDayOfMonth(StringBuilder expressionBuilder, int domValue)
+        private StringBuilder AppendDayOfMonth(StringBuilder expressionBuilder, uint domValue)
         {
             if (HasFlag(CronExpressionFlag.DayOfMonthLast))
             {
@@ -645,7 +645,7 @@ namespace Cronos
             return expressionBuilder;
         }
 
-        private void AppendDayOfWeek(StringBuilder expressionBuilder, int dowValue)
+        private void AppendDayOfWeek(StringBuilder expressionBuilder, uint dowValue)
         {
             AppendFieldValue(expressionBuilder, CronField.DaysOfWeek, dowValue);
 
@@ -674,9 +674,9 @@ namespace Cronos
             throw new ArgumentNullException(paramName);
         }
 
-        private static bool GetBit(long value, int index)
+        private static bool GetBit(ulong value, int index)
         {
-            return (value & (1L << index)) != 0;
+            return (value & (1UL << index)) != 0;
         }
     }
 }

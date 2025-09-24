@@ -50,7 +50,7 @@ namespace Cronos
                     return cronExpression;
                 }
 
-                long  second = default;
+                ulong  second = default;
                 byte  nthDayOfWeek = default;
                 byte  lastMonthOffset = default;
 
@@ -69,13 +69,14 @@ namespace Cronos
                 var minute = ParseField(CronField.Minutes, ref pointer, ref flags);
                 ParseWhiteSpace(CronField.Minutes, ref pointer);
 
-                var hour = (int)ParseField(CronField.Hours, ref pointer, ref flags);
+                var hour = (uint)ParseField(CronField.Hours, ref pointer, ref flags);
                 ParseWhiteSpace(CronField.Hours, ref pointer);
 
-                var dayOfMonth = (int)ParseDayOfMonth(ref pointer, ref flags, ref lastMonthOffset);
+                var dayOfMonth = (uint)ParseDayOfMonth(ref pointer, ref flags, ref lastMonthOffset);
+
                 ParseWhiteSpace(CronField.DaysOfMonth, ref pointer);
 
-                var month = (short)ParseField(CronField.Months, ref pointer, ref flags);
+                var month = (ushort)ParseField(CronField.Months, ref pointer, ref flags);
                 ParseWhiteSpace(CronField.Months, ref pointer);
 
                 var dayOfWeek = (byte)ParseDayOfWeek(ref pointer, ref flags, ref nthDayOfWeek);
@@ -218,7 +219,7 @@ namespace Cronos
             }
         }
 
-        private static unsafe long ParseField(CronField field, ref char* pointer, ref CronExpressionFlag flags)
+        private static unsafe ulong ParseField(CronField field, ref char* pointer, ref CronExpressionFlag flags)
         {
             if (Accept(ref pointer, '*') || Accept(ref pointer, '?'))
             {
@@ -234,7 +235,7 @@ namespace Cronos
             return bits;
         }
 
-        private static unsafe long ParseDayOfMonth(ref char* pointer, ref CronExpressionFlag flags, ref byte lastDayOffset)
+        private static unsafe ulong ParseDayOfMonth(ref char* pointer, ref CronExpressionFlag flags, ref byte lastDayOffset)
         {
             var field = CronField.DaysOfMonth;
 
@@ -256,7 +257,7 @@ namespace Cronos
             return bits;
         }
 
-        private static unsafe long ParseDayOfWeek(ref char* pointer, ref CronExpressionFlag flags, ref byte nthWeekDay)
+        private static unsafe ulong ParseDayOfWeek(ref char* pointer, ref CronExpressionFlag flags, ref byte nthWeekDay)
         {
             var field = CronField.DaysOfWeek;
             if (Accept(ref pointer, '*') || Accept(ref pointer, '?')) return ParseStar(field, ref pointer);
@@ -272,14 +273,14 @@ namespace Cronos
             return bits;
         }
 
-        private static unsafe long ParseStar(CronField field, ref char* pointer)
+        private static unsafe ulong ParseStar(CronField field, ref char* pointer)
         {
             return Accept(ref pointer, '/')
                 ? ParseStep(field, ref pointer, field.First, field.Last)
                 : field.AllBits;
         }
 
-        private static unsafe long ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
+        private static unsafe ulong ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
         {
             var num = ParseValue(field, ref pointer);
             var bits = ParseRange(field, ref pointer, num, ref flags);
@@ -292,7 +293,7 @@ namespace Cronos
             } while (true);
         }
 
-        private static unsafe long ParseRange(CronField field, ref char* pointer, int low, ref CronExpressionFlag flags)
+        private static unsafe ulong ParseRange(CronField field, ref char* pointer, int low, ref CronExpressionFlag flags)
         {
             if (!Accept(ref pointer, '-'))
             {
@@ -309,7 +310,7 @@ namespace Cronos
             return GetBits(field, low, high, 1);
         }
 
-        private static unsafe long ParseStep(CronField field, ref char* pointer, int low, int high)
+        private static unsafe ulong ParseStep(CronField field, ref char* pointer, int low, int high)
         {
             // Get the step size -- note: we don't pass the
             // names here, because the number is not an
@@ -319,7 +320,7 @@ namespace Cronos
             return GetBits(field, low, high, step);
         }
 
-        private static unsafe long ParseLastDayOfMonth(CronField field, ref char* pointer, ref CronExpressionFlag flags, ref byte lastMonthOffset)
+        private static unsafe ulong ParseLastDayOfMonth(CronField field, ref char* pointer, ref CronExpressionFlag flags, ref byte lastMonthOffset)
         {
             flags |= CronExpressionFlag.DayOfMonthLast;
 
@@ -328,14 +329,14 @@ namespace Cronos
             return field.AllBits;
         }
 
-        private static unsafe long ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthDayOfWeek)
+        private static unsafe ulong ParseNthWeekDay(CronField field, ref char* pointer, int dayOfWeek, ref CronExpressionFlag flags, out byte nthDayOfWeek)
         {
             nthDayOfWeek = (byte)ParseNumber(field, ref pointer, MinNthDayOfWeek, MaxNthDayOfWeek);
             flags |= CronExpressionFlag.NthDayOfWeek;
             return GetBit(dayOfWeek);
         }
 
-        private static long ParseLastWeekDay(int dayOfWeek, ref CronExpressionFlag flags)
+        private static ulong ParseLastWeekDay(int dayOfWeek, ref CronExpressionFlag flags)
         {
             flags |= CronExpressionFlag.DayOfWeekLast;
             return GetBit(dayOfWeek);
@@ -383,17 +384,17 @@ namespace Cronos
             return num;
         }
 
-        private static long GetBits(CronField field, int num1, int num2, int step)
+        private static ulong GetBits(CronField field, int num1, int num2, int step)
         {
             if (num2 < num1) return GetReversedRangeBits(field, num1, num2, step);
-            if (step == 1) return (1L << (num2 + 1)) - (1L << num1);
+            if (step == 1) return (1UL << (num2 + 1)) - (1UL << num1);
 
             return GetRangeBits(num1, num2, step);
         }
 
-        private static long GetRangeBits(int low, int high, int step)
+        private static ulong GetRangeBits(int low, int high, int step)
         {
-            var bits = 0L;
+            var bits = 0UL;
             for (var i = low; i <= high; i += step)
             {
                 SetBit(ref bits, i);
@@ -401,7 +402,7 @@ namespace Cronos
             return bits;
         }
 
-        private static long GetReversedRangeBits(CronField field, int num1, int num2, int step)
+        private static ulong GetReversedRangeBits(CronField field, int num1, int num2, int step)
         {
             var high = field.Last;
             // Skip one of sundays.
@@ -413,9 +414,9 @@ namespace Cronos
             return bits | GetRangeBits(num1, num2, step);
         }
 
-        private static long GetBit(int num1)
+        private static ulong GetBit(int num1)
         {
-            return 1L << num1;
+            return 1UL << num1;
         }
 
         private static unsafe int GetNumber(ref char* pointer, int[]? names)
@@ -456,9 +457,9 @@ namespace Cronos
             return -1;
         }
 
-        private static void SetBit(ref long value, int index)
+        private static void SetBit(ref ulong value, int index)
         {
-            value |= 1L << index;
+            value |= 1UL << index;
         }
 
         private static bool IsEndOfString(int code)
@@ -486,7 +487,7 @@ namespace Cronos
             return code - 48;
         }
 
-        private static int ToUpper(int code)
+        private static uint ToUpper(uint code)
         {
             if (code >= 97 && code <= 122)
             {
