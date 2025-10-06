@@ -264,11 +264,11 @@ Nov 09, 01:30 +03:00 – run
 <a name="jitter"></a>
 ## Jitter
 
-Cronos supports the ability to distribute cron fields randomly in order to spread out system load over time, a feature called "schedule jitter". You can opt into this capability by passing in a seed for a random number generator and optionally using the special character `H` in a cron expression. Using `H` in an expression while failing to provide a seed will throw an exception.
+Cronos supports the ability to distribute cron fields randomly in order to spread out system load over time, a feature called "schedule jitter". You can opt into this capability by passing in a pre-seeded random number generator (RNG) and optionally using the special character `H` in a cron expression. Using `H` in an expression while failing to provide an RNG will throw an exception.
 
 Just as it is possible to generate impossible combinations in basic cron expressions (e.g. `* * 31 2 *` being February 31st), care should be taken when combining an `H` with other fields. One common protection is built-in: when `H` is used for the day of the month, the range is limited to the first 28 days of the month. However, expressions like `* * 31 H *` (i.e. the 31st day of a random month) share the same limitations as `* * 31 * *` for months that don't have a 31st day. 
 
-The presence of a jitter seed also adjusts the behavior of some macros by offsetting the times by a random amount:
+The presence of an RNG also adjusts the behavior of some macros by offsetting the times by a random amount:
 
 | Macro           | Equivalent    | Comment                                     |
 |-----------------|---------------|---------------------------------------------|

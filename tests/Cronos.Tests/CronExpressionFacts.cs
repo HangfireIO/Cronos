@@ -496,6 +496,13 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void Parse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse("H * * * *"));
+            Assert.Equal("rng", exception.ParamName);
+        }
+
+        [Fact]
         public void TryParse_ThrowsAnException_WhenExpressionIsNull()
         {
             var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null!, out _));
@@ -543,6 +550,13 @@ namespace Cronos.Tests
 
             Assert.True(result);
             Assert.Equal(Today.AddSeconds(1), cron!.GetNextOccurrence(Today));
+        }
+
+        [Fact]
+        public void TryParse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse("H * * * *", out _));
+            Assert.Equal("rng", exception.ParamName);
         }
 
         [Theory]
@@ -2450,22 +2464,23 @@ namespace Cronos.Tests
         [Theory]
         
         // Basics
-        [InlineData("H * * * *", 3, "2017-03-23 16:46", "2017-03-23 17:17")] // minute becomes 17
-        [InlineData("* H * * *", 3, "2017-03-23 16:46", "2017-03-24 07:00")] // hour becomes 7
-        [InlineData("* * H * *", 3, "2017-03-23 16:46", "2017-04-09 00:00")] // day of month becomes 9
-        [InlineData("* * * H *", 3, "2017-03-23 16:46", "2017-04-01 00:00")] // month becomes 4
-        [InlineData("* * * * H", 3, "2017-03-23 16:46", "2017-03-28 00:00")] // day of week becomes 2/Tuesday
+        [InlineData("H * * * *", "2017-03-23 16:46", "2017-03-23 17:17")] // minute becomes 17
+        [InlineData("* H * * *", "2017-03-23 16:46", "2017-03-24 07:00")] // hour becomes 7
+        [InlineData("* * H * *", "2017-03-23 16:46", "2017-04-09 00:00")] // day of month becomes 9
+        [InlineData("* * * H *", "2017-03-23 16:46", "2017-04-01 00:00")] // month becomes 4
+        [InlineData("* * * * H", "2017-03-23 16:46", "2017-03-28 00:00")] // day of week becomes 2/Tuesday
         
         // With steps
-        [InlineData("H/30 * * * *", 3, "2017-03-23 16:46", "2017-03-23 16:47")] // minute offset becomes 17, so 17/47
-        [InlineData("* H/12 * * *", 3, "2017-03-23 16:46", "2017-03-23 19:00")] // hour offset becomes 7, so 7/19
-        [InlineData("* * H/15 * *", 3, "2017-03-23 16:46", "2017-03-25 00:00")] // day of month offset becomes 9, so 10/25 (because low is 1)
-        [InlineData("* * * H/6 *", 3, "2017-03-23 16:46", "2017-05-01 00:00")] // month offset becomes 4, so 5/11 (because low is 1)
-        [InlineData("* * * * H/3", 3, "2017-03-23 16:46", "2017-03-24 00:00")] // day of week offset becomes 2, so 2/5
+        [InlineData("H/30 * * * *", "2017-03-23 16:46", "2017-03-23 16:47")] // minute offset becomes 17, so 17/47
+        [InlineData("* H/12 * * *", "2017-03-23 16:46", "2017-03-23 19:00")] // hour offset becomes 7, so 7/19
+        [InlineData("* * H/15 * *", "2017-03-23 16:46", "2017-03-25 00:00")] // day of month offset becomes 9, so 10/25 (because low is 1)
+        [InlineData("* * * H/6 *", "2017-03-23 16:46", "2017-05-01 00:00")] // month offset becomes 4, so 5/11 (because low is 1)
+        [InlineData("* * * * H/3", "2017-03-23 16:46", "2017-03-24 00:00")] // day of week offset becomes 2, so 2/5
         
-        public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionContainsHash(string cronExpression, int hash, string fromString, string expectedString)
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionContainsHash(string cronExpression, string fromString, string expectedString)
         {
-            var expression = CronExpression.Parse(cronExpression, hash);
+            Random rng = new Random(3);
+            var expression = CronExpression.Parse(cronExpression, rng);
         
             var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
         
@@ -2475,22 +2490,23 @@ namespace Cronos.Tests
         }
 
         [Theory]
-        [InlineData("@every_minute", 3, "2017-03-23 16:46", "2017-03-23 16:46:17")]
-        [InlineData("@every_minute", 3, "2017-03-23 16:47", "2017-03-23 16:47:17")] // same day/time
-        [InlineData("@hourly", 3, "2017-03-23 16:46", "2017-03-23 17:41:17")]
-        [InlineData("@hourly", 3, "2017-03-23 17:40", "2017-03-23 17:41:17")] // same day/time
-        [InlineData("@daily", 3, "2017-03-23 16:46", "2017-03-23 20:41:17")]
-        [InlineData("@daily", 3, "2017-03-24 16:46", "2017-03-24 20:41:17")] // same day/time
-        [InlineData("@weekly", 3, "2017-03-23 16:46", "2017-03-27 20:41:17")]
-        [InlineData("@weekly", 3, "2017-03-30 16:46", "2017-04-03 20:41:17")] // same day/time
-        [InlineData("@monthly", 3, "2017-03-23 16:46", "2017-04-06 20:41:17")]
-        [InlineData("@monthly", 3, "2017-04-23 16:46", "2017-05-06 20:41:17")] // same day/time
-        [InlineData("@yearly", 3, "2017-03-23 16:46", "2017-07-06 20:41:17")]
-        [InlineData("@yearly", 3, "2018-03-23 17:40", "2018-07-06 20:41:17")] // same day/time
-        [InlineData("@annually", 3, "2019-03-23 17:40", "2019-07-06 20:41:17")] // same day/time
-        public void GetNextOccurrence_ReturnsCorrectDate_WhenMacroExpressionHasJitterSeed(string cronExpression, int hash, string fromString, string expectedString)
+        [InlineData("@every_minute", "2017-03-23 16:46", "2017-03-23 16:46:17")]
+        [InlineData("@every_minute", "2017-03-23 16:47", "2017-03-23 16:47:17")] // same day/time
+        [InlineData("@hourly", "2017-03-23 16:46", "2017-03-23 17:41:17")]
+        [InlineData("@hourly", "2017-03-23 17:40", "2017-03-23 17:41:17")] // same day/time
+        [InlineData("@daily", "2017-03-23 16:46", "2017-03-23 20:41:17")]
+        [InlineData("@daily", "2017-03-24 16:46", "2017-03-24 20:41:17")] // same day/time
+        [InlineData("@weekly", "2017-03-23 16:46", "2017-03-27 20:41:17")]
+        [InlineData("@weekly", "2017-03-30 16:46", "2017-04-03 20:41:17")] // same day/time
+        [InlineData("@monthly", "2017-03-23 16:46", "2017-04-06 20:41:17")]
+        [InlineData("@monthly", "2017-04-23 16:46", "2017-05-06 20:41:17")] // same day/time
+        [InlineData("@yearly", "2017-03-23 16:46", "2017-07-06 20:41:17")]
+        [InlineData("@yearly", "2018-03-23 17:40", "2018-07-06 20:41:17")] // same day/time
+        [InlineData("@annually", "2019-03-23 17:40", "2019-07-06 20:41:17")] // same day/time
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenMacroExpressionHasRandom(string cronExpression, string fromString, string expectedString)
         {
-            var expression = CronExpression.Parse(cronExpression, hash);
+            Random rng = new Random(3);
+            var expression = CronExpression.Parse(cronExpression, rng);
         
             var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
         

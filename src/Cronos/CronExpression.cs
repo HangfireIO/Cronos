@@ -46,8 +46,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified time once per year.
         /// Equals to "H H H H H *".
         /// </summary>
-        public static CronExpression YearlyWithJitter(int jitterSeed) =>
-            Parse("H H H H H *", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression YearlyWithJitter(Random rng) =>
+            Parse("H H H H H *", CronFormat.IncludeSeconds, rng);
 
         /// <summary>
         /// Represents a cron expression that fires every Sunday at midnight.
@@ -59,8 +59,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified time once per week.
         /// Equals to "H H H * * H".
         /// </summary>
-        public static CronExpression WeeklyWithJitter(int jitterSeed) =>
-            Parse("H H H * * H", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression WeeklyWithJitter(Random rng) =>
+            Parse("H H H * * H", CronFormat.IncludeSeconds, rng);
 
         /// <summary>
         /// Represents a cron expression that fires on 1st day of every month at midnight.
@@ -72,8 +72,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified time once per month.
         /// Equals to "H H H H * *".
         /// </summary>
-        public static CronExpression MonthlyWithJitter(int jitterSeed) =>
-            Parse("H H H H * *", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression MonthlyWithJitter(Random rng) =>
+            Parse("H H H H * *", CronFormat.IncludeSeconds, rng);
 
         /// <summary>
         /// Represents a cron expression that fires every day at midnight.
@@ -85,8 +85,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified time every day.
         /// Equals to "H H H * * *".
         /// </summary>
-        public static CronExpression DailyWithJitter(int jitterSeed) =>
-            Parse("H H H * * *", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression DailyWithJitter(Random rng) =>
+            Parse("H H H * * *", CronFormat.IncludeSeconds, rng);
         
         /// <summary>
         /// Represents a cron expression that fires every hour at the beginning of the hour.
@@ -98,8 +98,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified time every hour.
         /// Equals to "H H * * * *".
         /// </summary>
-        public static CronExpression HourlyWithJitter(int jitterSeed) =>
-            Parse("H H * * * *", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression HourlyWithJitter(Random rng) =>
+            Parse("H H * * * *", CronFormat.IncludeSeconds, rng);
         
         /// <summary>
         /// Represents a cron expression that fires every minute.
@@ -111,8 +111,8 @@ namespace Cronos
         /// Represents a cron expression that fires at an unspecified second every minute.
         /// Equals to "H * * * * *".
         /// </summary>
-        public static CronExpression EveryMinuteWithJitter(int jitterSeed) =>
-            Parse("H * * * * *", CronFormat.IncludeSeconds, jitterSeed);
+        public static CronExpression EveryMinuteWithJitter(Random rng) =>
+            Parse("H * * * * *", CronFormat.IncludeSeconds, rng);
 
         /// <summary>
         /// Represents a cron expression that fires every second.
@@ -174,9 +174,9 @@ namespace Cronos
         /// minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, int? jitterSeed = null)
+        public static CronExpression Parse(string expression, Random? rng = null)
         {
-            return Parse(expression, CronFormat.Standard, jitterSeed);
+            return Parse(expression, CronFormat.Standard, rng);
         }
 
         ///<summary>
@@ -185,7 +185,7 @@ namespace Cronos
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, CronFormat format, int? jitterSeed = null)
+        public static CronExpression Parse(string expression, CronFormat format, Random? rng = null)
         {
 #if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(expression);
@@ -193,7 +193,7 @@ namespace Cronos
             if (expression == null) throw new ArgumentNullException(nameof(expression));
 #endif
 
-            return CronParser.Parse(expression, format, jitterSeed);
+            return CronParser.Parse(expression, format, rng);
         }
 
         /// <summary>
