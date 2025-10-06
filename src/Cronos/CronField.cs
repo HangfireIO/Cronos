@@ -47,6 +47,7 @@ namespace Cronos
         public static readonly CronField Hours = new CronField("Hours", 0, 23, null, true);
         public static readonly CronField Minutes = new CronField("Minutes", 0, 59, null, true);
         public static readonly CronField Seconds = new CronField("Seconds", 0, 59, null, true);
+        public const int LastCommonDayOfMonth = 28;
 
         static CronField()
         {

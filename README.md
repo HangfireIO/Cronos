@@ -7,6 +7,7 @@ Cronos is a .NET library for parsing Cron expressions and calculating next occur
 
 * Supports standard Cron format with optional seconds.
 * Supports non-standard characters like `L`, `W`, `#` and their combinations.
+* Supports schedule jitter via the `H` character, inspired by Jenkins.
 * Supports reversed ranges, like `23-01` (equivalent to `23,00,01`) or `DEC-FEB` (equivalent to `DEC,JAN,FEB`).
 * Supports time zones, and performs all the date/time conversions for you.
 * Does not skip occurrences, when the clock jumps forward to Daylight saving time (known as Summer time).
@@ -16,14 +17,14 @@ Cronos is a .NET library for parsing Cron expressions and calculating next occur
 
 ## Compatibility
 
-This section explains how Cron expressions should be converted, when moving to Cronos.
+This section explains how Cron expressions should be converted when moving to Cronos.
 
-Library | Comments
---- | ---
-Vixie Cron | When both day-of-month and day-of-week are specified, Cronos uses AND operator for matching (Vixie Cron uses OR operator for backward compatibility).
-Quartz.NET | Cronos uses different, but more intuitive Daylight saving time handling logic (as in Vixie Cron). Full month names such as `september` aren't supported. Day-of-week field in Cronos has different values, `0` and `7` stand for Sunday, `1` for Monday, etc. (as in Vixie Cron). Year field is not supported. 
-NCrontab | Compatible
-CronNET | Compatible
+| Library    | Comments                                                                                                                                                                                                                                                                                                       |
+|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Vixie Cron | When both day-of-month and day-of-week are specified, Cronos uses AND operator for matching (Vixie Cron uses OR operator for backward compatibility).                                                                                                                                                          |
+| Quartz.NET | Cronos uses different, but more intuitive Daylight saving time handling logic (as in Vixie Cron). Full month names such as `september` aren't supported. Day-of-week field in Cronos has different values, `0` and `7` stand for Sunday, `1` for Monday, etc. (as in Vixie Cron). Year field is not supported. |
+| NCrontab   | Compatible                                                                                                                                                                                                                                                                                                     |
+| CronNET    | Compatible                                                                                                                                                                                                                                                                                                     |
 
 ## Installation
 
@@ -35,7 +36,7 @@ PM> Install-Package Cronos
 
 ## Usage
 
-We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. So you can only use `DateTime` with `DateTimeKind.Utc` specified (for example, `DateTime.UtcNow`), or `DateTimeOffset` classes to calculate next occurrences. You **can not use** local `DateTime` objects (such as `DateTime.Now`), because this may lead to ambiguity during DST transitions, and an exception will be thrown if you attempt to use them.
+We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. So you can only use `DateTime` with `DateTimeKind.Utc` specified (for example, `DateTime.UtcNow`), or `DateTimeOffset` classes to calculate next occurrences. You **cannot use** local `DateTime` objects (such as `DateTime.Now`), because this may lead to ambiguity during DST transitions, and an exception will be thrown if you attempt to use them.
 
 To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To learn about Cron format, please refer to the next section.
 
@@ -51,7 +52,7 @@ The `nextUtc` will contain the next occurrence in UTC, *after the given time*, o
 
 ### Working with time zones
 
-It is possible to specify a time zone directly, in this case you should pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class, that's is smart enough to always point to an exact, non-ambiguous instant.
+It is possible to specify a time zone directly; in this case you should pass `DateTime` with `DateTimeKind.Utc` flag, or use `DateTimeOffset` class, since that is smart enough to always point to an exact, non-ambiguous instant.
 
 ```csharp
 CronExpression expression = CronExpression.Parse("* * * * *");
@@ -104,22 +105,24 @@ Cron expression is a mask to define fixed times, dates and intervals. The mask c
 
                                            Allowed values    Allowed special characters   Comment
 
-    ┌───────────── second (optional)       0-59              * , - /                      
-    │ ┌───────────── minute                0-59              * , - /                      
-    │ │ ┌───────────── hour                0-23              * , - /                      
-    │ │ │ ┌───────────── day of month      1-31              * , - / L W ?                
-    │ │ │ │ ┌───────────── month           1-12 or JAN-DEC   * , - /                      
-    │ │ │ │ │ ┌───────────── day of week   0-6  or SUN-SAT   * , - / # L ?                Both 0 and 7 means SUN
+    ┌───────────── second (optional)       0-59              * , - / H                    
+    │ ┌───────────── minute                0-59              * , - / H                    
+    │ │ ┌───────────── hour                0-23              * , - / H                    
+    │ │ │ ┌───────────── day of month      1-31              * , - / H L W ?                
+    │ │ │ │ ┌───────────── month           1-12 or JAN-DEC   * , - / H                    
+    │ │ │ │ │ ┌───────────── day of week   0-6  or SUN-SAT   * , - / H # L ?              Both 0 and 7 means SUN
     │ │ │ │ │ │
     * * * * * *
 
 ### Base characters
 
-In all fields you can use number, `*` to mark field as *any value*, `-` to specify ranges of values. Reversed ranges like `22-1`(equivalent to `22,23,0,1,2`) are also supported.
+In all fields you can use numbers, `*` to mark a field as *every value*, and `-` to specify ranges of values. Reversed ranges like `22-1` (equivalent to `22,23,0,1,2`) are also supported.
 
-It's possible to define **step** combining `/` with `*`, numbers and ranges. For example, `*/5` in minute field describes *every 5 minute* and `1-15/3` in day-of-month field – *every 3 days from the 1st to the 15th*. Pay attention that `*/24` is just equivalent to `0,24,48` and `*/24` in minute field doesn't literally mean *every 24 minutes* it means *every 0,24,48 minute*.
+You can also use `H` to choose a *single value* left up to the implementation, for use cases where you might want to distribute load. This is a form a [schedule jitter](#jitter).
 
-Concatinate values and ranges by `,`. Comma works like `OR` operator. So `3,5-11/3,12` is equivalent to `3,5,8,11,12`.
+It's possible to define **steps** by combining `/` with `*`, `H`, numbers and ranges. For example, `*/5` in the minute field describes *every 5 minutes* and `1-15/3` in day-of-month field describes *every 3 days from the 1st to the 15th*. Pay attention that `*/24` is just equivalent to `0,24,48` and `*/24` in minute field doesn't literally mean *every 24 minutes* - it means *every 0,24,48 minute*.
+
+Concatenate values and ranges by `,`. Comma works like `OR` operator. So `3,5-11/3,12` is equivalent to `3,5,8,11,12`.
 
 In month and day-of-week fields, you can use names of months or days of weeks abbreviated to first three letters (`Jan-Dec` or `Mon-Sun`) instead of their numeric values. Full names like `JANUARY` or `MONDAY` **aren't supported**.
 
@@ -139,7 +142,7 @@ Most expressions you can describe using base characters. If you want to deal wit
 
 **`L`** stands for "last". When used in the day-of-week field, it allows you to specify constructs such as *the last Friday* (`5L`or `FRIL`). In the day-of-month field, it specifies the last day of the month.
 
-**`W`** in day-of-month field is the nearest weekday. Use `W`  with single value (not ranges, steps or `*`) to define *the nearest weekday* to the given day. In this case there are two base rules to determine occurrence: we should shift to **the nearest weekday** and **can't shift to different month**. Thus if given day is Saturday we shift to Friday, if it is Sunday we shift to Monday. **But** if given day is **the 1st day of month** (e.g. `0 0 1W * *`) and it is Saturday we shift to the 3rd Monday, if given day is **last day of month** (`0 0 31W 0 0`) and it is Sunday we shift to that Friday. Mix `L` (optionaly with offset) and `W` characters to specify *last weekday of month* `LW` or more complex like `L-5W`.
+**`W`** in day-of-month field is the nearest weekday. Use `W`  with single value (not ranges, steps or `*`) to define *the nearest weekday* to the given day. In this case there are two base rules to determine occurrence: we should shift to **the nearest weekday** and **can't shift to different month**. Thus if given day is Saturday we shift to Friday, if it is Sunday we shift to Monday. **But** if given day is **the 1st day of month** (e.g. `0 0 1W * *`) and it is Saturday we shift to the 3rd Monday, if given day is **last day of month** (`0 0 31W 0 0`) and it is Sunday we shift to that Friday. Mix `L` (optionally with offset) and `W` characters to specify *last weekday of month* `LW` or more complex like `L-5W`.
 
 **`#`** in day-of-week field allows to specify constructs such as *second Saturday* (`6#2` or `SAT#2`).
 
@@ -159,23 +162,23 @@ Most expressions you can describe using base characters. If you want to deal wit
 
 You can set both **day-of-month** and **day-of-week**, it allows you to specify constructs such as **Friday the thirteenth**. Thus `0 0 13 * 5` means at 00:00, Friday the thirteenth.
 
-It differs from Unix crontab and Quartz cron implementations. Crontab handles it like `OR` operator: occurrence can happen in given day of month or given day of week. So `0 0 13 * 5` means *at 00:00 AM, every friday or every the 13th of a month*. Quartz doesn't allow specify both day-of-month and day-of-week.
+It differs from Unix crontab and Quartz cron implementations. Crontab handles it like `OR` operator: occurrence can happen in given day of month or given day of week. So `0 0 13 * 5` means *at 00:00 AM, every friday or every the 13th of a month*. Quartz doesn't allow specifying both day-of-month and day-of-week.
 
 ### Macro
 
 A macro is a string starting with `@` and representing a shortcut for simple cases like *every day* or *every minute*.
 
- Macro          | Equivalent    | Comment
-----------------|---------------| -------
-`@every_second` | `* * * * * *` | Run once a second
-`@every_minute` | `* * * * *`   | Run once a minute at the beginning of the minute
-`@hourly`       | `0 * * * *`   | Run once an hour at the beginning of the hour
-`@daily`        | `0 0 * * *`   | Run once a day at midnight
-`@midnight`     | `0 0 * * *`   | Run once a day at midnight
-`@weekly`       | `0 0 * * 0`   | Run once a week at midnight on Sunday morning
-`@monthly`      | `0 0 1 * *`   | Run once a month at midnight of the first day of the month
-`@yearly`       | `0 0 1 1 *`   | Run once a year at midnight of 1 January
-`@annually`     | `0 0 1 1 *`   | Run once a year at midnight of 1 January
+| Macro           | Equivalent    | Comment                                                    |
+|-----------------|---------------|------------------------------------------------------------|
+| `@every_second` | `* * * * * *` | Run once a second                                          |
+| `@every_minute` | `* * * * *`   | Run once a minute at the beginning of the minute           |
+| `@hourly`       | `0 * * * *`   | Run once an hour at the beginning of the hour              |
+| `@daily`        | `0 0 * * *`   | Run once a day at midnight                                 |
+| `@midnight`     | `0 0 * * *`   | Run once a day at midnight                                 |
+| `@weekly`       | `0 0 * * 0`   | Run once a week at midnight on Sunday morning              |
+| `@monthly`      | `0 0 1 * *`   | Run once a month at midnight of the first day of the month |
+| `@yearly`       | `0 0 1 1 *`   | Run once a year at midnight of 1 January                   |
+| `@annually`     | `0 0 1 1 *`   | Run once a year at midnight of 1 January                   |
 
 ### Cron grammar
 
@@ -187,12 +190,12 @@ Cronos parser uses following case-insensitive grammar:
       second ::= field
       minute ::= field
         hour ::= field
-day-of-month ::= '*' [step] | '?' [step] | lastday | value [ 'W' | range [list] ]
+day-of-month ::= '*' [step] | '?' [step] | 'H' [step] | lastday | value [ 'W' | range [list] ]
        month ::= field
- day-of-week ::= '*' [step] | '?' [step] | value [ dowspec | range [list] ]
+ day-of-week ::= '*' [step] | '?' [step] | 'H' [step] | value [ dowspec | range [list] ]
        macro ::= '@every_second' | '@every_minute' | '@hourly' | '@daily' | '@midnight' | '@weekly' | '@monthly'|
                  '@yearly' | '@annually'
-       field ::= '*' [step] | '?' [step] | value [range] [list]
+       field ::= '*' [step] | '?' [step] | 'H' [step] | value [range] [list]
         list ::= { ',' value [range] }
        range ::= '-' value [step] | [step]
         step ::= '/' number
@@ -208,13 +211,13 @@ day-of-month ::= '*' [step] | '?' [step] | lastday | value [ 'W' | range [list] 
 
 ## Daylight Saving Time
 
-Cronos is the only library to handle daylight saving time transitions in intuitive way with the same behavior as Vixie Cron (utility for *nix systems). During a spring transition, we don't skip occurrences scheduled to invalid time during. In an autumn transition we don't get duplicate occurrences for daily expressions, and don't skip interval expressions when the local time is ambiguous.
+Cronos is the only library to handle daylight saving time transitions in an intuitive way with the same behavior as Vixie Cron (utility for *nix systems). During a spring transition, we don't skip occurrences scheduled to invalid time during. In an autumn transition we don't get duplicate occurrences for daily expressions, and don't skip interval expressions when the local time is ambiguous.
 
 ### Transition to Summer time (in spring)
 
 During the transition to Summer time, the clock is moved forward, for example the next minute after `01:59 AM` is `03:00 AM`. So any daily Cron expression that should match `02:30 AM`, points to an invalid time. It doesn't exist, and can't be mapped to UTC.
 
-Cronos adjusts the next occurrence to the next valid time in these cases. If you use Cron to schedule jobs, you may have shorter or longer intervals between runs when this happen, but you'll not lose your jobs:
+Cronos adjusts the next occurrence to the next valid time in these cases. If you use Cron to schedule jobs, you may have shorter or longer intervals between runs when this happens, but you'll not lose your jobs:
 
 ```
 "30 02 * * *" (every day at 02:30 AM)
@@ -257,6 +260,25 @@ Nov 08, 01:30 +04:00 – run
 Nov 08, 01:30 +03:00 – skip
 Nov 09, 01:30 +03:00 – run
 ```
+
+<a name="jitter"></a>
+## Jitter
+
+Cronos supports the ability to distribute cron fields randomly in order to spread out system load over time, a feature called "schedule jitter". You can opt into this capability by passing in a seed for a random number generator and optionally using the special character `H` in a cron expression. Using `H` in an expression while failing to provide a seed will throw an exception.
+
+Just as it is possible to generate impossible combinations in basic cron expressions (e.g. `* * 31 2 *` being February 31st), care should be taken when combining an `H` with other fields. One common protection is built-in: when `H` is used for the day of the month, the range is limited to the first 28 days of the month. However, expressions like `* * 31 H *` (i.e. the 31st day of a random month) share the same limitations as `* * 31 * *` for months that don't have a 31st day. 
+
+The presence of a jitter seed also adjusts the behavior of some macros by offsetting the times by a random amount:
+
+| Macro           | Equivalent    | Comment                                     |
+|-----------------|---------------|---------------------------------------------|
+| `@every_minute` | `H * * * * *` | Run once a minute at an unspecified time    |
+| `@hourly`       | `H H * * * *` | Run once an hour at an unspecified time     |
+| `@daily`        | `H H H * * *` | Run once a day at an unspecified time       |
+| `@weekly`       | `H H H * * H` | Run once a week at an unspecified day/time  |
+| `@monthly`      | `H H H H * *` | Run once a month at an unspecified day/time |
+| `@yearly`       | `H H H H H *` | Run once a year at an unspecified day/time  |
+| `@annually`     | `H H H H H *` | Run once a year at an unspecified day/time  |
 
 ## Benchmarks
 
