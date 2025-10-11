@@ -33,7 +33,7 @@ namespace Cronos
         private const int MaxNthDayOfWeek = 5;
         private const int SundayBits = 0b1000_0001;
 
-        public static unsafe CronExpression Parse(string expression, CronFormat format, Random? rng)
+        public static unsafe CronExpression Parse(string expression, CronFormat format, int? jitterSeed = null)
         {
             fixed (char* value = expression)
             {
@@ -43,7 +43,7 @@ namespace Cronos
 
                 if (Accept(ref pointer, '@'))
                 {
-                    var cronExpression = ParseMacro(ref pointer, rng);
+                    var cronExpression = ParseMacro(ref pointer, jitterSeed);
                     SkipWhiteSpaces(ref pointer);
 
                     if (ReferenceEquals(cronExpression, null) || !IsEndOfString(*pointer)) ThrowFormatException("Macro: Unexpected character '{0}' on position {1}.", *pointer, pointer - value);
@@ -56,6 +56,8 @@ namespace Cronos
 
                 CronExpressionFlag flags = default;
                 
+                Random? rng = jitterSeed == null ? null : new Random(jitterSeed.Value);
+
                 if (format == CronFormat.IncludeSeconds)
                 {
                     second = ParseField(CronField.Seconds, ref pointer, ref flags, rng);
@@ -120,7 +122,7 @@ namespace Cronos
         }
 
         [SuppressMessage("SonarLint", "S1764:IdenticalExpressionsShouldNotBeUsedOnBothSidesOfOperators", Justification = "Expected, as the AcceptCharacter method produces side effects.")]
-        private static unsafe CronExpression? ParseMacro(ref char* pointer, Random? rng)
+        private static unsafe CronExpression? ParseMacro(ref char* pointer, int? jitterSeed)
         {
             switch (ToUpper(*pointer++))
             {
@@ -132,18 +134,18 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Yearly
-                            : CronExpression.YearlyWithJitter(rng);
+                            : CronExpression.YearlyWithJitter(jitterSeed.Value);
                     return null;
                 case 'D':
                     if (AcceptCharacter(ref pointer, 'A') &&
                         AcceptCharacter(ref pointer, 'I') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Daily
-                            : CronExpression.DailyWithJitter(rng);
+                            : CronExpression.DailyWithJitter(jitterSeed.Value);
                     return null;
                 case 'E':
                     if (AcceptCharacter(ref pointer, 'V') &&
@@ -158,9 +160,9 @@ namespace Cronos
                             AcceptCharacter(ref pointer, 'U') &&
                             AcceptCharacter(ref pointer, 'T') &&
                             AcceptCharacter(ref pointer, 'E'))
-                            return rng == null
+                            return jitterSeed == null
                                 ? CronExpression.EveryMinute
-                                : CronExpression.EveryMinuteWithJitter(rng);
+                                : CronExpression.EveryMinuteWithJitter(jitterSeed.Value);
 
                         if (*(pointer - 1) != '_') return null;
 
@@ -180,9 +182,9 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'R') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Hourly
-                            : CronExpression.HourlyWithJitter(rng);
+                            : CronExpression.HourlyWithJitter(jitterSeed.Value);
 
                     return null;
                 case 'M':
@@ -192,9 +194,9 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'H') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Monthly
-                            : CronExpression.MonthlyWithJitter(rng);
+                            : CronExpression.MonthlyWithJitter(jitterSeed.Value);
 
                     if (ToUpper(*(pointer - 1)) == 'M' &&
                         AcceptCharacter(ref pointer, 'I') &&
@@ -204,9 +206,9 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'G') &&
                         AcceptCharacter(ref pointer, 'H') &&
                         AcceptCharacter(ref pointer, 'T'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Daily
-                            : CronExpression.DailyWithJitter(rng);
+                            : CronExpression.DailyWithJitter(jitterSeed.Value);
 
                     return null;
                 case 'W':
@@ -215,9 +217,9 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'K') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Weekly
-                            : CronExpression.WeeklyWithJitter(rng);
+                            : CronExpression.WeeklyWithJitter(jitterSeed.Value);
 
                     return null;
                 case 'Y':
@@ -226,9 +228,9 @@ namespace Cronos
                         AcceptCharacter(ref pointer, 'R') &&
                         AcceptCharacter(ref pointer, 'L') &&
                         AcceptCharacter(ref pointer, 'Y'))
-                        return rng == null
+                        return jitterSeed == null
                             ? CronExpression.Yearly
-                            : CronExpression.YearlyWithJitter(rng);
+                            : CronExpression.YearlyWithJitter(jitterSeed.Value);
 
                     return null;
                 default:

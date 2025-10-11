@@ -20,12 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-
 namespace Cronos
 {
     /// <summary>
-    /// Defines the cron format options that customize string parsing for <see cref="CronExpression.Parse(string, CronFormat, Random?)"/>.
+    /// Defines the cron format options that customize string parsing for <see cref="CronExpression.Parse(string, CronFormat, int?)"/>.
     /// </summary>
     public enum CronFormat
     {
