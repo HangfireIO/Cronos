@@ -25,7 +25,7 @@ using System;
 namespace Cronos
 {
     /// <summary>
-    /// Defines the cron format options that customize string parsing for <see cref="CronExpression.Parse(string, CronFormat, int?)"/>.
+    /// Defines the cron format options that customize string parsing for <see cref="CronExpression.Parse(string, CronFormat)"/>.
     /// </summary>
     [Flags]
     public enum CronFormat

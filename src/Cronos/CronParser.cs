@@ -247,11 +247,7 @@ namespace Cronos
                 return ParseStar(field, ref pointer);
             }
             
-            if (Accept(ref pointer, 'H'))
-            {
-                if (field.CanDefineInterval) flags |= CronExpressionFlag.Interval;
-                return ParseHash(field, ref pointer, rng);
-            }
+            if (Accept(ref pointer, 'H')) return ParseHash(field, ref pointer, ref flags, rng);
 
             var num = ParseValue(field, ref pointer);
 
@@ -267,7 +263,7 @@ namespace Cronos
 
             if (Accept(ref pointer, '*') || Accept(ref pointer, '?')) return ParseStar(field, ref pointer);
             
-            if (Accept(ref pointer, 'H')) return ParseHash(field, ref pointer, rng);
+            if (Accept(ref pointer, 'H')) return ParseHash(field, ref pointer, ref flags, rng);
 
             if (AcceptCharacter(ref pointer, 'L')) return ParseLastDayOfMonth(field, ref pointer, ref flags, ref lastDayOffset);
 
@@ -290,7 +286,7 @@ namespace Cronos
             var field = CronField.DaysOfWeek;
             if (Accept(ref pointer, '*') || Accept(ref pointer, '?')) return ParseStar(field, ref pointer);
             
-            if (Accept(ref pointer, 'H')) return ParseHash(field, ref pointer, rng);
+            if (Accept(ref pointer, 'H')) return ParseHash(field, ref pointer, ref flags, rng);
 
             var dayOfWeek = ParseValue(field, ref pointer);
 
@@ -311,17 +307,21 @@ namespace Cronos
         }
 
         [SuppressMessage("Security", "CA5394:Do not use insecure randomness")]
-        private static unsafe ulong ParseHash(CronField field, ref char* pointer, Random? rng)
+        private static unsafe ulong ParseHash(CronField field, ref char* pointer, ref CronExpressionFlag flags, Random? rng)
         {
             // prior to this point in parsing, it has been valid to not pass in a jitter seed.
-            if (rng == null) throw new ArgumentNullException(nameof(rng), "Using H in the format requires providing a jitter seed");
+            if (rng == null) throw new MissingSeedException();
 
             // Prevent against calculating the 31st of February
             var maxValueInclusive = field == CronField.DaysOfMonth
                 ? CronField.LastCommonDayOfMonth
                 : field.Last;
 
-            if (Accept(ref pointer, '/')) return ParseHashStep(field, ref pointer, field.First, maxValueInclusive, rng);
+            if (Accept(ref pointer, '/'))
+            {
+                if (field.CanDefineInterval) flags |= CronExpressionFlag.Interval;
+                return ParseHashStep(field, ref pointer, field.First, maxValueInclusive, rng);
+            }
             
             var jitter = rng.Next(field.First, maxValueInclusive + 1);
             return GetBit(jitter);
@@ -366,7 +366,7 @@ namespace Cronos
         [SuppressMessage("Security", "CA5394:Do not use insecure randomness")]
         private static unsafe ulong ParseHashStep(CronField field, ref char* pointer, int low, int high, Random rng)
         {
-            // field range may have been truncated, e.g. day of month
+            // field range may have been truncated, e.g., day of month
             var step = ParseNumber(field, ref pointer, 1, high);
             
             // rather than generate an offset somewhere in the field's range, we'll instead generate an offset in the 

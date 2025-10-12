@@ -174,7 +174,18 @@ namespace Cronos
         /// minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, int? jitterSeed = null)
+        public static CronExpression Parse(string expression)
+        {
+            return Parse(expression, CronFormat.Standard);
+        }
+
+        ///<summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified
+        /// cron expression and jitter seed. Its supported expressions consist of 5 fields:
+        /// minute, hour, day of month, month, day of week. 
+        /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
+        /// </summary>
+        public static CronExpression Parse(string expression, int jitterSeed)
         {
             return Parse(expression, CronFormat.Standard, jitterSeed);
         }
@@ -185,7 +196,24 @@ namespace Cronos
         /// second (optional), minute, hour, day of month, month, day of week. 
         /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
         /// </summary>
-        public static CronExpression Parse(string expression, CronFormat format, int? jitterSeed = null)
+        public static CronExpression Parse(string expression, CronFormat format)
+        {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(expression);
+#else
+            if (expression == null) throw new ArgumentNullException(nameof(expression));
+#endif
+
+            return CronParser.Parse(expression, format);
+        }
+
+        ///<summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified
+        /// cron expression and jitter seed. Its supported expressions consist of 5 or 6 fields:
+        /// second (optional), minute, hour, day of month, month, day of week. 
+        /// See more: <a href="https://github.com/HangfireIO/Cronos">https://github.com/HangfireIO/Cronos</a>
+        /// </summary>
+        public static CronExpression Parse(string expression, CronFormat format, int jitterSeed)
         {
 #if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(expression);
@@ -207,6 +235,16 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the
+        /// <see cref="CronFormat.Standard"/> format.
+        /// A return value indicates whether the operation succeeded.
+        /// </summary>
+        public static bool TryParse(string expression, int jitterSeed, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
+        {
+            return TryParse(expression, CronFormat.Standard, jitterSeed, out cronExpression);
+        }
+
+        /// <summary>
         /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the specified
         /// <paramref name="format"/>.
         /// A return value indicates whether the operation succeeded.
@@ -225,6 +263,41 @@ namespace Cronos
                 return true;
             }
             catch (CronFormatException)
+            {
+                cronExpression = null;
+                return false;
+            }
+            catch (MissingSeedException)
+            {
+                cronExpression = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the specified
+        /// <paramref name="format"/>.
+        /// A return value indicates whether the operation succeeded.
+        /// </summary>
+        public static bool TryParse(string expression, CronFormat format, int jitterSeed, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
+        {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(expression);
+#else
+            if (expression == null) throw new ArgumentNullException(nameof(expression));
+#endif
+
+            try
+            {
+                cronExpression = Parse(expression, format, jitterSeed);
+                return true;
+            }
+            catch (CronFormatException)
+            {
+                cronExpression = null;
+                return false;
+            }
+            catch (MissingSeedException)
             {
                 cronExpression = null;
                 return false;

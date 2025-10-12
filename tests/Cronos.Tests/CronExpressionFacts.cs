@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -498,9 +499,7 @@ namespace Cronos.Tests
         [Fact]
         public void Parse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse("H * * * *"));
-            Assert.Equal("rng", exception.ParamName);
-            Assert.StartsWith("Using H in the format requires providing a jitter seed", exception.Message);
+            Assert.Throws<MissingSeedException>(() => CronExpression.Parse("H * * * *"));
         }
 
         [Fact]
@@ -554,11 +553,10 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void TryParse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        public void TryParse_ReturnsFalse_WhenHashIsPresentAndNoRandomIsProvided()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse("H * * * *", out _));
-            Assert.Equal("rng", exception.ParamName);
-            Assert.StartsWith("Using H in the format requires providing a jitter seed", exception.Message);
+            var result = CronExpression.TryParse("H * * * *", out _);
+            Assert.False(result);
         }
 
         [Theory]
