@@ -235,8 +235,8 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the
-        /// <see cref="CronFormat.Standard"/> format.
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression and jitter seed with
+        /// the <see cref="CronFormat.Standard"/> format.
         /// A return value indicates whether the operation succeeded.
         /// </summary>
         public static bool TryParse(string expression, int jitterSeed, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
@@ -275,8 +275,8 @@ namespace Cronos
         }
 
         /// <summary>
-        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression with the specified
-        /// <paramref name="format"/>.
+        /// Constructs a new <see cref="CronExpression"/> based on the specified cron expression and jitter seed with
+        /// the specified <paramref name="format"/>.
         /// A return value indicates whether the operation succeeded.
         /// </summary>
         public static bool TryParse(string expression, CronFormat format, int jitterSeed, [MaybeNullWhen(returnValue: false)] out CronExpression cronExpression)
