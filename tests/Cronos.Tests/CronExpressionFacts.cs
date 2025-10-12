@@ -1201,9 +1201,22 @@ namespace Cronos.Tests
         [InlineData("0 0,59 *      *  *  *    ", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", false)]
 
         [InlineData("0 30   *      *  3  SUN#2", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", false)]
+        
+        // Run twice for hashes with intervals -- hash offset resolves to 8 minutes
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:08 -05:00", "2016-03-13 01:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:38 -05:00", "2016-03-13 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", true)] // documented limitation
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:15 -04:00", "2016-03-13 03:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:38 -04:00", "2016-03-13 03:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:45 -04:00", "2016-03-13 04:08 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:08 -05:00", "2016-03-13 01:38 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:38 -05:00", "2016-03-13 03:00 -04:00", false)] // documented limitation
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:08 -04:00", "2016-03-13 03:38 -04:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:38 -04:00", "2016-03-13 04:08 -04:00", false)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+            var jitterSeed = 3;
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds, jitterSeed);
 
             var fromInstant = GetInstant(fromString);
             var expectedInstant = GetInstant(expectedString);
@@ -1347,6 +1360,18 @@ namespace Cronos.Tests
         [InlineData("0 */30 *   * * *", "2016-11-06 01:30 -04:00", "2016-11-06 01:00 -05:00", false)]
         [InlineData("0 */30 *   * * *", "2016-11-06 01:00 -05:00", "2016-11-06 01:30 -05:00", false)]
         [InlineData("0 */30 *   * * *", "2016-11-06 01:30 -05:00", "2016-11-06 02:00 -05:00", false)]
+        
+        // Run twice for hashes with intervals -- hash offset resolves to 8 minutes
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -04:00", "2016-11-06 01:08 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -04:00", "2016-11-06 01:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:59 -04:00", "2016-11-06 01:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:15 -05:00", "2016-11-06 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -05:00", "2016-11-06 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:45 -05:00", "2016-11-06 02:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -04:00", "2016-11-06 01:38 -04:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -04:00", "2016-11-06 01:08 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -05:00", "2016-11-06 01:38 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -05:00", "2016-11-06 02:08 -05:00", false)]
 
         [InlineData("0 30   *   * * *", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00", true)]
         [InlineData("0 30   *   * * *", "2016-11-06 01:59 -04:00", "2016-11-06 01:30 -05:00", true)]
@@ -1456,7 +1481,8 @@ namespace Cronos.Tests
         [InlineData("0 0 2 * * *", "2016-11-06 01:45 -05:00", "2016-11-06 02:00 -05:00", false)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+            var jitterSeed = 3;
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds, jitterSeed);
 
             var fromInstant = GetInstant(fromString);
             var expectedInstant = GetInstant(expectedString);
