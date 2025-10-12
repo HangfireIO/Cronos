@@ -494,6 +494,14 @@ namespace Cronos.Tests
         {
             CronExpression.Parse(cronExpression, format);
         }
+        
+        [Fact]
+        public void Parse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.Parse("H * * * *"));
+            Assert.Equal("rng", exception.ParamName);
+            Assert.StartsWith("Using H in the format requires providing a jitter seed", exception.Message);
+        }
 
         [Fact]
         public void TryParse_ThrowsAnException_WhenExpressionIsNull()
@@ -543,6 +551,14 @@ namespace Cronos.Tests
 
             Assert.True(result);
             Assert.Equal(Today.AddSeconds(1), cron!.GetNextOccurrence(Today));
+        }
+
+        [Fact]
+        public void TryParse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse("H * * * *", out _));
+            Assert.Equal("rng", exception.ParamName);
+            Assert.StartsWith("Using H in the format requires providing a jitter seed", exception.Message);
         }
 
         [Theory]
@@ -2457,12 +2473,15 @@ namespace Cronos.Tests
         [InlineData("* * * * H", 3, "2017-03-23 16:46", "2017-03-28 00:00")] // day of week becomes 2/Tuesday
         
         // With steps
-        [InlineData("H/30 * * * *", 3, "2017-03-23 16:46", "2017-03-23 16:47")] // minute offset becomes 17, so 17/47
-        [InlineData("* H/12 * * *", 3, "2017-03-23 16:46", "2017-03-23 19:00")] // hour offset becomes 7, so 7/19
-        [InlineData("* * H/15 * *", 3, "2017-03-23 16:46", "2017-03-25 00:00")] // day of month offset becomes 9, so 10/25 (because low is 1)
-        [InlineData("* * * H/6 *", 3, "2017-03-23 16:46", "2017-05-01 00:00")] // month offset becomes 4, so 5/11 (because low is 1)
-        [InlineData("* * * * H/3", 3, "2017-03-23 16:46", "2017-03-24 00:00")] // day of week offset becomes 2, so 2/5
+        [InlineData("H/30 * * * *", 3, "2017-03-23 16:46", "2017-03-23 17:08")] // minute offset becomes 8, so 8/38
+        [InlineData("* H/12 * * *", 3, "2017-03-23 16:46", "2017-03-24 03:00")] // hour offset becomes 3, so 3/15
+        [InlineData("* * H/15 * *", 3, "2017-03-23 16:46", "2017-04-05 00:00")] // day of month offset becomes 4, so 5/20 (because low is 1)
+        [InlineData("* * * H/6 *", 3, "2017-03-23 16:46", "2017-08-01 00:00")] // month offset becomes 1, so 2/8 (because low is 1)
+        [InlineData("* * * * H/3", 4, "2017-03-23 16:46", "2017-03-24 00:00")] // day of week offset becomes 2, so 2/5
         
+        // 1-based fields where the stepped hash lands on the last value in the range
+        [InlineData("* * H/3 * *", 3, "2017-03-27 16:46", "2017-03-28 00:00")] // day of month offset becomes 9, so 10/28
+        [InlineData("* * * H/3 *", 4, "2017-10-23 16:46", "2017-12-01 00:00")] // month offset becomes 2, so 3/6/9/12
         public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionContainsHash(string cronExpression, int hash, string fromString, string expectedString)
         {
             var expression = CronExpression.Parse(cronExpression, hash);

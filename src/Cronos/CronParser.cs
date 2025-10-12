@@ -310,21 +310,21 @@ namespace Cronos
                 : field.AllBits;
         }
 
+        [SuppressMessage("Security", "CA5394:Do not use insecure randomness")]
         private static unsafe ulong ParseHash(CronField field, ref char* pointer, Random? rng)
         {
+            // prior to this point in parsing, it has been valid to not pass in a jitter seed.
             if (rng == null) throw new ArgumentNullException(nameof(rng), "Using H in the format requires providing a jitter seed");
 
             // Prevent against calculating the 31st of February
             var maxValueInclusive = field == CronField.DaysOfMonth
                 ? CronField.LastCommonDayOfMonth
                 : field.Last;
-#pragma warning disable CA5394
-            var jitter = rng.Next(field.First, maxValueInclusive + 1);
-#pragma warning restore CA5394
 
-            return Accept(ref pointer, '/')
-                ? ParseStep(field, ref pointer, field.First, field.Last, jitter)
-                : GetBit(jitter);
+            if (Accept(ref pointer, '/')) return ParseHashStep(field, ref pointer, field.First, maxValueInclusive, rng);
+            
+            var jitter = rng.Next(field.First, maxValueInclusive + 1);
+            return GetBit(jitter);
         }
 
         private static unsafe ulong ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
@@ -357,14 +357,22 @@ namespace Cronos
             return GetBits(field, low, high, 1);
         }
 
-        private static unsafe ulong ParseStep(CronField field, ref char* pointer, int low, int high, int? jitter = null)
+        private static unsafe ulong ParseStep(CronField field, ref char* pointer, int low, int high)
         {
-            // Get the step size -- note: we don't pass the
-            // names here, because the number is not an
-            // element id, it's a step size.  'low' is
-            // sent as a 0 since there is no offset either.
             var step = ParseNumber(field, ref pointer, 1, field.Last);
-            return GetBits(field, low, high, step, jitter);
+            return GetBits(field, low, high, step);
+        }
+
+        [SuppressMessage("Security", "CA5394:Do not use insecure randomness")]
+        private static unsafe ulong ParseHashStep(CronField field, ref char* pointer, int low, int high, Random rng)
+        {
+            // field range may have been truncated, e.g. day of month
+            var step = ParseNumber(field, ref pointer, 1, high);
+            
+            // rather than generate an offset somewhere in the field's range, we'll instead generate an offset in the 
+            // step range, allowing us to avoid a modulus operation when determining the bits
+            var jitter = rng.Next(0, step);
+            return GetBits(field, low + jitter, high, step);
         }
 
         private static unsafe ulong ParseLastDayOfMonth(CronField field, ref char* pointer, ref CronExpressionFlag flags, ref byte lastMonthOffset)
@@ -431,34 +439,20 @@ namespace Cronos
             return num;
         }
 
-        private static ulong GetBits(CronField field, int num1, int num2, int step, int? jitter = null)
+        private static ulong GetBits(CronField field, int num1, int num2, int step)
         {
-            // a jittered expression can't have an explicit range, so there would be no need to reverse one
             if (num2 < num1) return GetReversedRangeBits(field, num1, num2, step);
             if (step == 1) return (1UL << (num2 + 1)) - (1UL << num1);
 
-            return GetRangeBits(num1, num2, step, jitter);
+            return GetRangeBits(num1, num2, step);
         }
 
-        private static ulong GetRangeBits(int low, int high, int step, int? jitter = null)
+        private static ulong GetRangeBits(int low, int high, int step)
         {
             var bits = 0UL;
-            if (jitter.HasValue)
+            for (var i = low; i <= high; i += step)
             {
-                // we will wrap around the range with modulus, which breaks the calculations when the ranges are reversed
-                var range = high - low + 1;
-                for (var i = low; i <= high; i += step)
-                {
-                    SetBit(ref bits, (i + jitter.Value) % range);
-                }
-            }
-            else
-            {
-                for (var i = low; i <= high; i += step)
-                {
-                    SetBit(ref bits, i);
-                }
-                
+                SetBit(ref bits, i);
             }
 
             return bits;
