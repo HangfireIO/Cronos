@@ -266,6 +266,24 @@ Nov 09, 01:30 +03:00 – run
 
 Cronos supports the ability to distribute cron fields randomly in order to spread out system load over time, a feature called "schedule jitter". You can opt into this capability by passing in a seed for a random number generator and optionally using the special character `H` in a cron expression. Using `H` in an expression while failing to provide a seed will throw an exception.
 
+Example API usages:
+
+```csharp
+// if you're in a job-schedulig scenario, you would probably want to
+// use information from the job itself as a seed, but this can be anything
+var seed = jobId.GetHashCode();
+
+// note that each of these 3 expressions are equivalent
+var hourlyExpressionWithoutJitter = CronExpression.Parse("0 * * * *");
+var hourlyMacroWithoutJitter      = CronExpression.Parse("@hourly");
+var hourlyNamedWithoutJitter      = CronExpression.Hourly;
+
+// and each of these are equivalent because the same seed was used
+var hourlyExpressionWithJitter    = CronExpression.Parse("H H * * * *", CronFormat.IncludeSeconds, seed);
+var hourlyMacroWithJitter         = CronExpression.Parse("@hourly", seed);
+var hourlyNamedWithJitter         = CronExpression.HourlyWithJitter(seed);
+```
+
 Just as it is possible to generate impossible combinations in basic cron expressions (e.g. `* * 31 2 *` being February 31st), care should be taken when combining an `H` with other fields. One common protection is built-in: when `H` is used for the day of the month, the range is limited to the first 28 days of the month. However, expressions like `* * 31 H *` (i.e. the 31st day of a random month) share the same limitations as `* * 31 * *` for months that don't have a 31st day. 
 
 The presence of a jitter seed also adjusts the behavior of some macros by offsetting the times by a random amount:
