@@ -11,4 +11,10 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability -->
+    <!-- Package is not bundled within Cronos, actual version comes with an application -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+  </ItemGroup>
+
 </Project>

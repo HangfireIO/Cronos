@@ -10,12 +10,6 @@
         <NuGetAuditMode>all</NuGetAuditMode>
     </PropertyGroup>
 
-    <ItemGroup>
-        <!-- System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability -->
-        <!-- Package is not bundled within Cronos, actual version comes with an application -->
-        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
-    </ItemGroup>
-
     <PropertyGroup Condition="'$(APPVEYOR)' != ''">
         <RestoreLockedMode>true</RestoreLockedMode>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
