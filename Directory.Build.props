@@ -6,8 +6,15 @@
         <NeutralLanguage>en-US</NeutralLanguage>
         <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Cronos.snk</AssemblyOriginatorKeyFile>
         <LangVersion>9.0</LangVersion>
-        <NuGetAuditMode>direct</NuGetAuditMode>
+        <NuGetAudit>true</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
     </PropertyGroup>
+
+    <ItemGroup>
+        <!-- System.Text.RegularExpressions' 4.3.0 has a known high severity vulnerability -->
+        <!-- Package is not bundled within Cronos, actual version comes with an application -->
+        <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-cmhx-cq75-c4mj" />
+    </ItemGroup>
 
     <PropertyGroup Condition="'$(APPVEYOR)' != ''">
         <RestoreLockedMode>true</RestoreLockedMode>
