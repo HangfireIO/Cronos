@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <VersionPrefix>0.11.2</VersionPrefix>
+        <VersionPrefix>0.12.0</VersionPrefix>
         <BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
         <FileVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(3)).$(BuildNumber)</FileVersion>
         <AssemblyVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(1)).0.0.0</AssemblyVersion>
