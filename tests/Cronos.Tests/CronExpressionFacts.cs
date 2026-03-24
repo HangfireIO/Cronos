@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -494,6 +495,12 @@ namespace Cronos.Tests
         {
             CronExpression.Parse(cronExpression, format);
         }
+        
+        [Fact]
+        public void Parse_ThrowsAnException_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            Assert.Throws<MissingSeedException>(() => CronExpression.Parse("H * * * *"));
+        }
 
         [Fact]
         public void TryParse_ThrowsAnException_WhenExpressionIsNull()
@@ -543,6 +550,13 @@ namespace Cronos.Tests
 
             Assert.True(result);
             Assert.Equal(Today.AddSeconds(1), cron!.GetNextOccurrence(Today));
+        }
+
+        [Fact]
+        public void TryParse_ReturnsFalse_WhenHashIsPresentAndNoRandomIsProvided()
+        {
+            var result = CronExpression.TryParse("H * * * *", out _);
+            Assert.False(result);
         }
 
         [Theory]
@@ -1187,9 +1201,22 @@ namespace Cronos.Tests
         [InlineData("0 0,59 *      *  *  *    ", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", false)]
 
         [InlineData("0 30   *      *  3  SUN#2", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", false)]
+        
+        // Run twice for hashes with intervals -- hash offset resolves to 8 minutes
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:08 -05:00", "2016-03-13 01:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:38 -05:00", "2016-03-13 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:59 -05:00", "2016-03-13 03:00 -04:00", true)] // documented limitation
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:15 -04:00", "2016-03-13 03:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:38 -04:00", "2016-03-13 03:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:45 -04:00", "2016-03-13 04:08 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:08 -05:00", "2016-03-13 01:38 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 01:38 -05:00", "2016-03-13 03:00 -04:00", false)] // documented limitation
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:08 -04:00", "2016-03-13 03:38 -04:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-03-13 03:38 -04:00", "2016-03-13 04:08 -04:00", false)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsForward_And_TimeZoneIsEst(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+            var jitterSeed = 3;
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds, jitterSeed);
 
             var fromInstant = GetInstant(fromString);
             var expectedInstant = GetInstant(expectedString);
@@ -1333,6 +1360,18 @@ namespace Cronos.Tests
         [InlineData("0 */30 *   * * *", "2016-11-06 01:30 -04:00", "2016-11-06 01:00 -05:00", false)]
         [InlineData("0 */30 *   * * *", "2016-11-06 01:00 -05:00", "2016-11-06 01:30 -05:00", false)]
         [InlineData("0 */30 *   * * *", "2016-11-06 01:30 -05:00", "2016-11-06 02:00 -05:00", false)]
+        
+        // Run twice for hashes with intervals -- hash offset resolves to 8 minutes
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -04:00", "2016-11-06 01:08 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -04:00", "2016-11-06 01:38 -04:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:59 -04:00", "2016-11-06 01:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:15 -05:00", "2016-11-06 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -05:00", "2016-11-06 01:38 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:45 -05:00", "2016-11-06 02:08 -05:00", true)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -04:00", "2016-11-06 01:38 -04:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -04:00", "2016-11-06 01:08 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:08 -05:00", "2016-11-06 01:38 -05:00", false)]
+        [InlineData("0 H/30 *   * * *", "2016-11-06 01:38 -05:00", "2016-11-06 02:08 -05:00", false)]
 
         [InlineData("0 30   *   * * *", "2016-11-06 01:30 -04:00", "2016-11-06 01:30 -04:00", true)]
         [InlineData("0 30   *   * * *", "2016-11-06 01:59 -04:00", "2016-11-06 01:30 -05:00", true)]
@@ -1442,7 +1481,8 @@ namespace Cronos.Tests
         [InlineData("0 0 2 * * *", "2016-11-06 01:45 -05:00", "2016-11-06 02:00 -05:00", false)]
         public void GetNextOccurrence_HandleDST_WhenTheClockJumpsBackward(string cronExpression, string fromString, string expectedString, bool inclusive)
         {
-            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds);
+            var jitterSeed = 3;
+            var expression = CronExpression.Parse(cronExpression, CronFormat.IncludeSeconds, jitterSeed);
 
             var fromInstant = GetInstant(fromString);
             var expectedInstant = GetInstant(expectedString);
@@ -2445,6 +2485,61 @@ namespace Cronos.Tests
             var nextOccurrence = cronExpression.GetNextOccurrence(from, EasternTimeZone);
 
             Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), nextOccurrence);
+        }
+
+        [Theory]
+        
+        // Basics
+        [InlineData("H * * * *", 3, "2017-03-23 16:46", "2017-03-23 17:17")] // minute becomes 17
+        [InlineData("* H * * *", 3, "2017-03-23 16:46", "2017-03-24 07:00")] // hour becomes 7
+        [InlineData("* * H * *", 3, "2017-03-23 16:46", "2017-04-09 00:00")] // day of month becomes 9
+        [InlineData("* * * H *", 3, "2017-03-23 16:46", "2017-04-01 00:00")] // month becomes 4
+        [InlineData("* * * * H", 3, "2017-03-23 16:46", "2017-03-28 00:00")] // day of week becomes 2/Tuesday
+        
+        // With steps
+        [InlineData("H/30 * * * *", 3, "2017-03-23 16:46", "2017-03-23 17:08")] // minute offset becomes 8, so 8/38
+        [InlineData("* H/12 * * *", 3, "2017-03-23 16:46", "2017-03-24 03:00")] // hour offset becomes 3, so 3/15
+        [InlineData("* * H/15 * *", 3, "2017-03-23 16:46", "2017-04-05 00:00")] // day of month offset becomes 4, so 5/20 (because low is 1)
+        [InlineData("* * * H/6 *", 3, "2017-03-23 16:46", "2017-08-01 00:00")] // month offset becomes 1, so 2/8 (because low is 1)
+        [InlineData("* * * * H/3", 4, "2017-03-23 16:46", "2017-03-24 00:00")] // day of week offset becomes 2, so 2/5
+        
+        // 1-based fields where the stepped hash lands on the last value in the range
+        [InlineData("* * H/3 * *", 3, "2017-03-27 16:46", "2017-03-28 00:00")] // day of month offset becomes 9, so 10/28
+        [InlineData("* * * H/3 *", 4, "2017-10-23 16:46", "2017-12-01 00:00")] // month offset becomes 2, so 3/6/9/12
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenExpressionContainsHash(string cronExpression, int hash, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression, hash);
+        
+            var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
+        
+            var occurrence = expression.GetNextOccurrence(fromInstant, EasternTimeZone, inclusive: true);
+        
+            Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), occurrence);
+        }
+
+        [Theory]
+        [InlineData("@every_minute", 3, "2017-03-23 16:46", "2017-03-23 16:46:17")]
+        [InlineData("@every_minute", 3, "2017-03-23 16:47", "2017-03-23 16:47:17")] // same day/time
+        [InlineData("@hourly", 3, "2017-03-23 16:46", "2017-03-23 17:41:17")]
+        [InlineData("@hourly", 3, "2017-03-23 17:40", "2017-03-23 17:41:17")] // same day/time
+        [InlineData("@daily", 3, "2017-03-23 16:46", "2017-03-23 20:41:17")]
+        [InlineData("@daily", 3, "2017-03-24 16:46", "2017-03-24 20:41:17")] // same day/time
+        [InlineData("@weekly", 3, "2017-03-23 16:46", "2017-03-27 20:41:17")]
+        [InlineData("@weekly", 3, "2017-03-30 16:46", "2017-04-03 20:41:17")] // same day/time
+        [InlineData("@monthly", 3, "2017-03-23 16:46", "2017-04-06 20:41:17")]
+        [InlineData("@monthly", 3, "2017-04-23 16:46", "2017-05-06 20:41:17")] // same day/time
+        [InlineData("@yearly", 3, "2017-03-23 16:46", "2017-07-06 20:41:17")]
+        [InlineData("@yearly", 3, "2018-03-23 17:40", "2018-07-06 20:41:17")] // same day/time
+        [InlineData("@annually", 3, "2019-03-23 17:40", "2019-07-06 20:41:17")] // same day/time
+        public void GetNextOccurrence_ReturnsCorrectDate_WhenMacroExpressionHasJitterSeed(string cronExpression, int hash, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression, hash);
+        
+            var fromInstant = GetInstantFromLocalTime(fromString, EasternTimeZone);
+        
+            var occurrence = expression.GetNextOccurrence(fromInstant, EasternTimeZone, inclusive: true);
+        
+            Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), occurrence);
         }
 
         [Fact]

@@ -108,6 +108,18 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public CronExpression ParseHash()
+        {
+            return CronExpression.Parse("H * * * *");
+        }
+
+        [Benchmark]
+        public CronExpression ParseMultipleHash()
+        {
+            return CronExpression.Parse("H H H H H");
+        }
+
+        [Benchmark]
         public CronExpression ParseComplex()
         {
             return CronExpression.Parse("*/10 12-20 ? DEC 3");
