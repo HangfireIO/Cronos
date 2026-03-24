@@ -127,116 +127,151 @@ namespace Cronos
             switch (ToUpper(*pointer++))
             {
                 case 'A':
-                    if (AcceptCharacter(ref pointer, 'N') &&
-                        AcceptCharacter(ref pointer, 'N') &&
-                        AcceptCharacter(ref pointer, 'U') &&
-                        AcceptCharacter(ref pointer, 'A') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Yearly
-                            : CronExpression.YearlyWithJitter(jitterSeed.Value);
-                    return null;
+                    return TryParseAnnuallyMacro(ref pointer, jitterSeed);
                 case 'D':
-                    if (AcceptCharacter(ref pointer, 'A') &&
-                        AcceptCharacter(ref pointer, 'I') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Daily
-                            : CronExpression.DailyWithJitter(jitterSeed.Value);
-                    return null;
+                    return TryParseDailyMacro(ref pointer, jitterSeed);
                 case 'E':
-                    if (AcceptCharacter(ref pointer, 'V') &&
-                        AcceptCharacter(ref pointer, 'E') &&
-                        AcceptCharacter(ref pointer, 'R') &&
-                        AcceptCharacter(ref pointer, 'Y') &&
-                        Accept(ref pointer, '_'))
-                    {
-                        if (AcceptCharacter(ref pointer, 'M') &&
-                            AcceptCharacter(ref pointer, 'I') &&
-                            AcceptCharacter(ref pointer, 'N') &&
-                            AcceptCharacter(ref pointer, 'U') &&
-                            AcceptCharacter(ref pointer, 'T') &&
-                            AcceptCharacter(ref pointer, 'E'))
-                            return jitterSeed == null
-                                ? CronExpression.EveryMinute
-                                : CronExpression.EveryMinuteWithJitter(jitterSeed.Value);
-
-                        if (*(pointer - 1) != '_') return null;
-
-                        if (AcceptCharacter(ref pointer, 'S') &&
-                            AcceptCharacter(ref pointer, 'E') &&
-                            AcceptCharacter(ref pointer, 'C') &&
-                            AcceptCharacter(ref pointer, 'O') &&
-                            AcceptCharacter(ref pointer, 'N') &&
-                            AcceptCharacter(ref pointer, 'D'))
-                            return CronExpression.EverySecond;
-                    }
-
-                    return null;
+                    return TryParseEveryMacro(ref pointer, jitterSeed);
                 case 'H':
-                    if (AcceptCharacter(ref pointer, 'O') &&
-                        AcceptCharacter(ref pointer, 'U') &&
-                        AcceptCharacter(ref pointer, 'R') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Hourly
-                            : CronExpression.HourlyWithJitter(jitterSeed.Value);
-
-                    return null;
+                    return TryParseHourlyMacro(ref pointer, jitterSeed);
                 case 'M':
-                    if (AcceptCharacter(ref pointer, 'O') &&
-                        AcceptCharacter(ref pointer, 'N') &&
-                        AcceptCharacter(ref pointer, 'T') &&
-                        AcceptCharacter(ref pointer, 'H') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Monthly
-                            : CronExpression.MonthlyWithJitter(jitterSeed.Value);
-
-                    if (ToUpper(*(pointer - 1)) == 'M' &&
-                        AcceptCharacter(ref pointer, 'I') &&
-                        AcceptCharacter(ref pointer, 'D') &&
-                        AcceptCharacter(ref pointer, 'N') &&
-                        AcceptCharacter(ref pointer, 'I') &&
-                        AcceptCharacter(ref pointer, 'G') &&
-                        AcceptCharacter(ref pointer, 'H') &&
-                        AcceptCharacter(ref pointer, 'T'))
-                        return jitterSeed == null
-                            ? CronExpression.Daily
-                            : CronExpression.DailyWithJitter(jitterSeed.Value);
-
-                    return null;
+                    return TryParseMonthlyOrMidnightMacro(ref pointer, jitterSeed);
                 case 'W':
-                    if (AcceptCharacter(ref pointer, 'E') &&
-                        AcceptCharacter(ref pointer, 'E') &&
-                        AcceptCharacter(ref pointer, 'K') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Weekly
-                            : CronExpression.WeeklyWithJitter(jitterSeed.Value);
-
-                    return null;
+                    return TryParseWeeklyMacro(ref pointer, jitterSeed);
                 case 'Y':
-                    if (AcceptCharacter(ref pointer, 'E') &&
-                        AcceptCharacter(ref pointer, 'A') &&
-                        AcceptCharacter(ref pointer, 'R') &&
-                        AcceptCharacter(ref pointer, 'L') &&
-                        AcceptCharacter(ref pointer, 'Y'))
-                        return jitterSeed == null
-                            ? CronExpression.Yearly
-                            : CronExpression.YearlyWithJitter(jitterSeed.Value);
-
-                    return null;
+                    return TryParseYearlyMacro(ref pointer, jitterSeed);
                 default:
                     pointer--;
                     return null;
             }
+        }
+
+        private static unsafe CronExpression? TryParseYearlyMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'E') &&
+                AcceptCharacter(ref pointer, 'A') &&
+                AcceptCharacter(ref pointer, 'R') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Yearly
+                    : CronExpression.YearlyWithJitter(jitterSeed.Value);
+
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseWeeklyMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'E') &&
+                AcceptCharacter(ref pointer, 'E') &&
+                AcceptCharacter(ref pointer, 'K') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Weekly
+                    : CronExpression.WeeklyWithJitter(jitterSeed.Value);
+
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseMonthlyOrMidnightMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'O') &&
+                AcceptCharacter(ref pointer, 'N') &&
+                AcceptCharacter(ref pointer, 'T') &&
+                AcceptCharacter(ref pointer, 'H') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Monthly
+                    : CronExpression.MonthlyWithJitter(jitterSeed.Value);
+
+            if (ToUpper(*(pointer - 1)) == 'M' &&
+                AcceptCharacter(ref pointer, 'I') &&
+                AcceptCharacter(ref pointer, 'D') &&
+                AcceptCharacter(ref pointer, 'N') &&
+                AcceptCharacter(ref pointer, 'I') &&
+                AcceptCharacter(ref pointer, 'G') &&
+                AcceptCharacter(ref pointer, 'H') &&
+                AcceptCharacter(ref pointer, 'T'))
+                return jitterSeed == null
+                    ? CronExpression.Daily
+                    : CronExpression.DailyWithJitter(jitterSeed.Value);
+
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseHourlyMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'O') &&
+                AcceptCharacter(ref pointer, 'U') &&
+                AcceptCharacter(ref pointer, 'R') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Hourly
+                    : CronExpression.HourlyWithJitter(jitterSeed.Value);
+
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseEveryMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'V') &&
+                AcceptCharacter(ref pointer, 'E') &&
+                AcceptCharacter(ref pointer, 'R') &&
+                AcceptCharacter(ref pointer, 'Y') &&
+                Accept(ref pointer, '_'))
+            {
+                if (AcceptCharacter(ref pointer, 'M') &&
+                    AcceptCharacter(ref pointer, 'I') &&
+                    AcceptCharacter(ref pointer, 'N') &&
+                    AcceptCharacter(ref pointer, 'U') &&
+                    AcceptCharacter(ref pointer, 'T') &&
+                    AcceptCharacter(ref pointer, 'E'))
+                    return jitterSeed == null
+                        ? CronExpression.EveryMinute
+                        : CronExpression.EveryMinuteWithJitter(jitterSeed.Value);
+
+                if (*(pointer - 1) != '_') return null;
+
+                if (AcceptCharacter(ref pointer, 'S') &&
+                    AcceptCharacter(ref pointer, 'E') &&
+                    AcceptCharacter(ref pointer, 'C') &&
+                    AcceptCharacter(ref pointer, 'O') &&
+                    AcceptCharacter(ref pointer, 'N') &&
+                    AcceptCharacter(ref pointer, 'D'))
+                    return CronExpression.EverySecond;
+            }
+
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseDailyMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'A') &&
+                AcceptCharacter(ref pointer, 'I') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Daily
+                    : CronExpression.DailyWithJitter(jitterSeed.Value);
+            return null;
+        }
+
+        private static unsafe CronExpression? TryParseAnnuallyMacro(ref char* pointer, int? jitterSeed)
+        {
+            if (AcceptCharacter(ref pointer, 'N') &&
+                AcceptCharacter(ref pointer, 'N') &&
+                AcceptCharacter(ref pointer, 'U') &&
+                AcceptCharacter(ref pointer, 'A') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'L') &&
+                AcceptCharacter(ref pointer, 'Y'))
+                return jitterSeed == null
+                    ? CronExpression.Yearly
+                    : CronExpression.YearlyWithJitter(jitterSeed.Value);
+            return null;
         }
 
         private static unsafe ulong ParseField(CronField field, ref char* pointer, ref CronExpressionFlag flags, Random? rng)
