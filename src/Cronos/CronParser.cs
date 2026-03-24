@@ -369,8 +369,9 @@ namespace Cronos
             // field range may have been truncated, e.g., day of month
             var step = ParseNumber(field, ref pointer, 1, high);
             
-            // rather than generate an offset somewhere in the field's range, we'll instead generate an offset in the 
-            // step range, allowing us to avoid a modulus operation when determining the bits
+            // Rather than generate an offset somewhere in the field's range, we'll instead generate an offset in the 
+            // step range, allowing us to avoid a modulus operation when determining the bits. Also, this implementation
+            // significantly improves randomness, comparing to getting a random number for the whole interval.
             var jitter = rng.Next(0, step);
             return GetBits(field, low + jitter, high, step);
         }
