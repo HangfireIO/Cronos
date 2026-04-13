@@ -62,6 +62,22 @@ namespace Cronos
             return new DateTimeOffset(dstTransitionDateTime, dstOffset);
         }
 
+        public static DateTimeOffset GetStandardTimeEnd(TimeZoneInfo zone, DateTime invalidDateTime)
+        {
+            var dstTransitionDateTime = new DateTime(invalidDateTime.Year, invalidDateTime.Month, invalidDateTime.Day,
+                invalidDateTime.Hour, invalidDateTime.Minute, 0, 0, invalidDateTime.Kind);
+
+            while (zone.IsInvalidTime(dstTransitionDateTime))
+            {
+                dstTransitionDateTime = dstTransitionDateTime.AddMinutes(-1);
+            }
+
+            var standardOffset = zone.GetUtcOffset(dstTransitionDateTime);
+            var lastValidSecond = dstTransitionDateTime.AddMinutes(1).AddSeconds(-1);
+
+            return new DateTimeOffset(lastValidSecond, standardOffset);
+        }
+
         public static DateTimeOffset GetStandardTimeStart(TimeZoneInfo zone, DateTime ambiguousTime, TimeSpan daylightOffset)
         {
             var dstTransitionEnd = GetDstTransitionEndDateTime(zone, ambiguousTime);

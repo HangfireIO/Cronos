@@ -144,9 +144,21 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public DateTime? PreviousSimpleDateTime()
+        {
+            return SimpleExpression.GetPreviousOccurrence(DateTimeNow);
+        }
+
+        [Benchmark]
         public DateTime? NextComplexDateTime()
         {
             return ComplexExpression.GetNextOccurrence(DateTimeNow);
+        }
+
+        [Benchmark]
+        public DateTime? PreviousComplexDateTime()
+        {
+            return ComplexExpression.GetPreviousOccurrence(DateTimeNow);
         }
 
         [Benchmark]
@@ -156,9 +168,21 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public DateTimeOffset? PreviousSimpleDateTimeOffset()
+        {
+            return SimpleExpression.GetPreviousOccurrence(DateTimeOffsetNow, UtcTimeZone);
+        }
+
+        [Benchmark]
         public DateTimeOffset? NextComplexDateTimeOffset()
         {
             return ComplexExpression.GetNextOccurrence(DateTimeOffsetNow, UtcTimeZone);
+        }
+
+        [Benchmark]
+        public DateTimeOffset? PreviousComplexDateTimeOffset()
+        {
+            return ComplexExpression.GetPreviousOccurrence(DateTimeOffsetNow, UtcTimeZone);
         }
 
         [Benchmark]
@@ -168,15 +192,34 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public DateTime? PreviousSimpleWithTimeZone()
+        {
+            return SimpleExpression.GetPreviousOccurrence(DateTimeNow, PacificTimeZone);
+        }
+
+        [Benchmark]
         public DateTime? NextComplexWithTimeZone()
         {
             return ComplexExpression.GetNextOccurrence(DateTimeNow, PacificTimeZone);
         }
 
         [Benchmark]
+        public DateTime? PreviousComplexWithTimeZone()
+        {
+            return ComplexExpression.GetPreviousOccurrence(DateTimeNow, PacificTimeZone);
+        }
+
+        [Benchmark]
         public void NextUnreachableSimple()
         {
             var result = SimpleUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
+        public void PreviousUnreachableSimple()
+        {
+            var result = SimpleUnreachableExpression.GetPreviousOccurrence(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 
@@ -188,6 +231,13 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public void PreviousUnreachableComplex()
+        {
+            var result = ComplexUnreachableExpression.GetPreviousOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
         public void NextUnreachableLastDayOfWeek()
         {
             var result = LastDayOfWeekUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
@@ -195,9 +245,23 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public void PreviousUnreachableLastDayOfWeek()
+        {
+            var result = LastDayOfWeekUnreachableExpression.GetPreviousOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
         public void NextUnreachableNthDayOfWeek()
         {
             var result = NthDayOfWeekUnreachableExpression.GetNextOccurrence(DateTimeNow, UtcTimeZone);
+            if (result != null) throw new InvalidOperationException();
+        }
+
+        [Benchmark]
+        public void PreviousUnreachableNthDayOfWeek()
+        {
+            var result = NthDayOfWeekUnreachableExpression.GetPreviousOccurrence(DateTimeNow, UtcTimeZone);
             if (result != null) throw new InvalidOperationException();
         }
 
@@ -211,9 +275,25 @@ namespace Cronos.Benchmarks
         }
 
         [Benchmark]
+        public DateTimeOffset? PreviousHandlesInvalidTime()
+        {
+            var result = SimpleExpression.GetPreviousOccurrence(SecondBeforeInvalidTime, PacificTimeZone);
+            if (result.Value.Hour != 1 || result.Value.Minute != 59 || result.Value.Offset != PacificTimeZone.BaseUtcOffset)
+                throw new InvalidOperationException();
+
+            return result;
+        }
+
+        [Benchmark]
         public DateTimeOffset? NextHandlesAmbiguousDaylight()
         {
             return AmbiguousExpression.GetNextOccurrence(AmbiguousDaylightTime, PacificTimeZone);
+        }
+
+        [Benchmark]
+        public DateTimeOffset? PreviousHandlesAmbiguousDaylight()
+        {
+            return AmbiguousExpression.GetPreviousOccurrence(AmbiguousDaylightTime, PacificTimeZone);
         }
 
         [Benchmark]

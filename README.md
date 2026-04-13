@@ -38,7 +38,7 @@ PM> Install-Package Cronos
 
 We've tried to do our best to make Cronos API as simple and predictable in corner cases as possible. So you can only use `DateTime` with `DateTimeKind.Utc` specified (for example, `DateTime.UtcNow`), or `DateTimeOffset` classes to calculate next occurrences. You **cannot use** local `DateTime` objects (such as `DateTime.Now`), because this may lead to ambiguity during DST transitions, and an exception will be thrown if you attempt to use them.
 
-To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To learn about Cron format, please refer to the next section.
+To calculate the next occurrence, you need to create an instance of the `CronExpression` class, and call its `GetNextOccurrence` method. To search in reverse, use the `GetPreviousOccurrence` method. To learn about Cron format, please refer to the next section.
 
 ```csharp
 using Cronos;
@@ -46,9 +46,10 @@ using Cronos;
 CronExpression expression = CronExpression.Parse("* * * * *");
 
 DateTime? nextUtc = expression.GetNextOccurrence(DateTime.UtcNow);
+DateTime? previousUtc = expression.GetPreviousOccurrence(DateTime.UtcNow);
 ```
 
-The `nextUtc` will contain the next occurrence in UTC, *after the given time*, or `null` value when it is unreachable (for example, Feb 30). If an invalid Cron expression is given, the `CronFormatException` exception is thrown.
+The `nextUtc` will contain the next occurrence in UTC, *after the given time*, or `null` value when it is unreachable (for example, Feb 30). The `previousUtc` will contain the most recent occurrence in UTC, *before the given time*, or `null` when nothing exists. If an invalid Cron expression is given, the `CronFormatException` exception is thrown.
 
 ### Working with time zones
 
@@ -60,6 +61,8 @@ TimeZoneInfo easternTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Stan
 
 DateTime?       next = expression.GetNextOccurrence(DateTime.UtcNow, easternTimeZone);
 DateTimeOffset? next = expression.GetNextOccurrence(DateTimeOffset.UtcNow, easternTimeZone);
+DateTime?       previous = expression.GetPreviousOccurrence(DateTime.UtcNow, easternTimeZone);
+DateTimeOffset? previous = expression.GetPreviousOccurrence(DateTimeOffset.UtcNow, easternTimeZone);
 ```
 
 If you passed a `DateTime` object, resulting time will be in UTC. If you used `DateTimeOffset`, resulting object will contain the **correct offset**, so don't forget to use it especially during DST transitions (see below).
@@ -97,7 +100,17 @@ IEnumerable<DateTime> occurrences = expression.GetOccurrences(
     toInclusive: false);
 ```
 
-There are different overloads for this method to support `DateTimeOffset` arguments or time zones.
+To enumerate matches in reverse order, use the `GetOccurrencesDescending` method. The descending overloads treat the `from` argument as the upper bound and the `to` argument as the lower bound.
+
+```csharp
+IEnumerable<DateTime> previousOccurrences = expression.GetOccurrencesDescending(
+    DateTime.UtcNow,
+    DateTime.UtcNow.AddDays(-7),
+    fromInclusive: true,
+    toInclusive: false);
+```
+
+There are different overloads for these methods to support `DateTimeOffset` arguments or time zones.
 
 ## Cron format
 
