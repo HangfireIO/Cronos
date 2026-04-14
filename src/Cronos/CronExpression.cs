@@ -774,7 +774,14 @@ namespace Cronos
 
             if (zone.IsInvalidTime(occurrence))
             {
-                return TimeZoneHelper.GetStandardTimeEnd(zone, occurrence);
+                var previousValidTime = TimeZoneHelper.GetStandardTimeEnd(zone, occurrence);
+                if (previousValidTime.Date < occurrence.Date)
+                {
+                    var daylightTimeStart = TimeZoneHelper.GetDaylightTimeStart(zone, occurrence);
+                    return new DateTimeOffset(occurrence, daylightTimeStart.Offset);
+                }
+
+                return previousValidTime;
             }
 
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
