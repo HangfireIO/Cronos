@@ -142,6 +142,21 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetPreviousOccurrence_ReturnsCorrectDate_WhenExpressionContainsHash()
+        {
+            var expression = CronExpression.Parse("H * * * *", 3);
+            var from = GetLocalInstant("2017-03-23 17:18:00", EasternTimeZone);
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
+            var next = expression.GetNextOccurrence(previous!.Value, EasternTimeZone);
+
+            Assert.Equal(GetLocalInstant("2017-03-23 17:17:00", EasternTimeZone), previous);
+            Assert.Equal(GetLocalInstant("2017-03-23 18:17:00", EasternTimeZone), next);
+            Assert.True(previous < from);
+            Assert.True(next > from);
+        }
+
+        [Fact]
         public void GetPreviousOccurrence_ReturnsNull_WhenCronExpressionIsUnreachable()
         {
             var expression = CronExpression.Parse("* * 31 2 *");
