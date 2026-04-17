@@ -303,6 +303,17 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetPreviousOccurrence_UsesSingleOccurrenceForAmbiguousNonIntervalHashTime()
+        {
+            var expression = CronExpression.Parse("0 H 1 * * *", CronFormat.IncludeSeconds, 3);
+            var from = GetInstant("2017-11-05 03:00:00 -05:00");
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
+
+            Assert.Equal(GetInstant("2017-11-05 01:17:00 -04:00"), previous);
+        }
+
+        [Fact]
         public void GetPreviousOccurrence_PreservesAmbiguousIntervalOccurrencesInReverseOrder()
         {
             var expression = CronExpression.Parse("*/30 1 5 11 *");
@@ -318,9 +329,35 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetPreviousOccurrence_PreservesAmbiguousHashIntervalOccurrencesInReverseOrder()
+        {
+            var expression = CronExpression.Parse("0 H/30 1 * * *", CronFormat.IncludeSeconds, 3);
+            var from = GetInstant("2017-11-05 02:00:00 -05:00");
+
+            var first = expression.GetPreviousOccurrence(from, EasternTimeZone);
+            var second = expression.GetPreviousOccurrence(first!.Value, EasternTimeZone);
+            var third = expression.GetPreviousOccurrence(second!.Value, EasternTimeZone);
+
+            Assert.Equal(GetInstant("2017-11-05 01:38:00 -05:00"), first);
+            Assert.Equal(GetInstant("2017-11-05 01:08:00 -05:00"), second);
+            Assert.Equal(GetInstant("2017-11-05 01:38:00 -04:00"), third);
+        }
+
+        [Fact]
         public void GetPreviousOccurrence_AdjustsInvalidTimeBackwardAcrossSpringForward()
         {
             var expression = CronExpression.Parse("30 2 * * *");
+            var from = GetInstant("2017-03-12 04:00:00 -04:00");
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
+
+            Assert.Equal(GetInstant("2017-03-12 01:59:59 -05:00"), previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_AdjustsInvalidHashTimeBackwardAcrossSpringForward()
+        {
+            var expression = CronExpression.Parse("0 H 2 * * *", CronFormat.IncludeSeconds, 3);
             var from = GetInstant("2017-03-12 04:00:00 -04:00");
 
             var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
