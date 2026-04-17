@@ -319,6 +319,20 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates previous occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in UTC time zone.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public DateTime? GetPreviousOccurrence(DateTime fromUtc, bool inclusive = false)
+        {
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+
+            var found = FindPreviousOccurrence(fromUtc.Ticks, inclusive);
+            if (found == NotFound) return null;
+
+            return new DateTime(found, DateTimeKind.Utc);
+        }
+
+        /// <summary>
         /// Calculates next occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -345,6 +359,32 @@ namespace Cronos
         }
 
         /// <summary>
+        /// Calculates previous occurrence starting with <paramref name="fromUtc"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public DateTime? GetPreviousOccurrence(DateTime fromUtc, TimeZoneInfo zone, bool inclusive = false)
+        {
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
+
+            if (ReferenceEquals(zone, UtcTimeZone))
+            {
+                var found = FindPreviousOccurrence(fromUtc.Ticks, inclusive);
+                if (found == NotFound) return null;
+
+                return new DateTime(found, DateTimeKind.Utc);
+            }
+
+            var fromOffset = new DateTimeOffset(fromUtc);
+
+#pragma warning disable CA1062
+            var occurrence = GetPreviousOccurrenceConsideringTimeZone(fromOffset, zone, inclusive);
+#pragma warning restore CA1062
+
+            return occurrence?.UtcDateTime;
+        }
+
+        /// <summary>
         /// Calculates next occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -362,6 +402,27 @@ namespace Cronos
 
 #pragma warning disable CA1062
             return GetOccurrenceConsideringTimeZone(from, zone, inclusive);
+#pragma warning restore CA1062
+        }
+
+        /// <summary>
+        /// Calculates previous occurrence starting with <paramref name="from"/> (optionally <paramref name="inclusive"/>) in given <paramref name="zone"/>
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public DateTimeOffset? GetPreviousOccurrence(DateTimeOffset from, TimeZoneInfo zone, bool inclusive = false)
+        {
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
+
+            if (ReferenceEquals(zone, UtcTimeZone))
+            {
+                var found = FindPreviousOccurrence(from.UtcTicks, inclusive);
+                if (found == NotFound) return null;
+
+                return new DateTimeOffset(found, TimeSpan.Zero);
+            }
+
+#pragma warning disable CA1062
+            return GetPreviousOccurrenceConsideringTimeZone(from, zone, inclusive);
 #pragma warning restore CA1062
         }
 
@@ -435,6 +496,75 @@ namespace Cronos
                 // ReSharper disable once RedundantArgumentDefaultValue
                 // ReSharper disable once ArgumentsStyleLiteral
                 occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the list of previous occurrences within the given date/time range,
+        /// including <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/>
+        /// by default, and UTC time zone. When none of the occurrences found, an
+        /// empty list is returned.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public IEnumerable<DateTime> GetOccurrencesDescending(
+            DateTime fromUtc,
+            DateTime toUtc,
+            bool fromInclusive = true,
+            bool toInclusive = false)
+        {
+            if (fromUtc < toUtc) ThrowFromShouldBeGreaterThanToException(nameof(fromUtc), nameof(toUtc));
+
+            for (var occurrence = GetPreviousOccurrence(fromUtc, fromInclusive);
+                occurrence > toUtc || occurrence == toUtc && toInclusive;
+                occurrence = GetPreviousOccurrence(occurrence.Value, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the list of previous occurrences within the given date/time range, including
+        /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and
+        /// specified time zone. When none of the occurrences found, an empty list is returned.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public IEnumerable<DateTime> GetOccurrencesDescending(
+            DateTime fromUtc,
+            DateTime toUtc,
+            TimeZoneInfo zone,
+            bool fromInclusive = true,
+            bool toInclusive = false)
+        {
+            if (fromUtc < toUtc) ThrowFromShouldBeGreaterThanToException(nameof(fromUtc), nameof(toUtc));
+
+            for (var occurrence = GetPreviousOccurrence(fromUtc, zone, fromInclusive);
+                occurrence > toUtc || occurrence == toUtc && toInclusive;
+                occurrence = GetPreviousOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        /// <summary>
+        /// Returns the list of previous occurrences within the given date/time offset range,
+        /// including <paramref name="from"/> and excluding <paramref name="to"/> by default.
+        /// When none of the occurrences found, an empty list is returned.
+        /// </summary>
+        /// <exception cref="ArgumentException"/>
+        public IEnumerable<DateTimeOffset> GetOccurrencesDescending(
+            DateTimeOffset from,
+            DateTimeOffset to,
+            TimeZoneInfo zone,
+            bool fromInclusive = true,
+            bool toInclusive = false)
+        {
+            if (from < to) ThrowFromShouldBeGreaterThanToException(nameof(from), nameof(to));
+
+            for (var occurrence = GetPreviousOccurrence(from, zone, fromInclusive);
+                occurrence > to || occurrence == to && toInclusive;
+                occurrence = GetPreviousOccurrence(occurrence.Value, zone, inclusive: false))
             {
                 yield return occurrence.Value;
             }
@@ -595,11 +725,92 @@ namespace Cronos
             return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
         }
 
+        private DateTimeOffset? GetPreviousOccurrenceConsideringTimeZone(DateTimeOffset fromUtc, TimeZoneInfo zone, bool inclusive)
+        {
+            if (!DateTimeHelper.IsRound(fromUtc))
+            {
+                fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
+            }
+
+            var from = TimeZoneInfo.ConvertTime(fromUtc, zone);
+            var fromLocal = from.DateTime;
+
+            if (TimeZoneHelper.IsAmbiguousTime(zone, fromLocal))
+            {
+                var currentOffset = from.Offset;
+                var standardOffset = zone.GetUtcOffset(fromLocal);
+                var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, fromLocal);
+                var ambiguousIntervalStart = TimeZoneHelper.GetStandardTimeStart(zone, fromLocal, daylightOffset).DateTime;
+
+                if (standardOffset == currentOffset)
+                {
+                    if (HasFlag(CronExpressionFlag.Interval))
+                    {
+                        var foundInStandardOffset = FindPreviousOccurrence(fromLocal.Ticks, ambiguousIntervalStart.Ticks, inclusive);
+                        if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
+                    }
+
+                    var daylightTimeLocalEnd = TimeZoneHelper.GetDaylightTimeEnd(zone, fromLocal, daylightOffset).DateTime;
+                    var foundInDaylightOffset = FindPreviousOccurrence(daylightTimeLocalEnd.Ticks, ambiguousIntervalStart.Ticks, true);
+                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
+
+                    fromLocal = ambiguousIntervalStart.AddTicks(-1);
+                    inclusive = true;
+                }
+                else
+                {
+                    var foundInDaylightOffset = FindPreviousOccurrence(fromLocal.Ticks, ambiguousIntervalStart.Ticks, inclusive);
+                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
+
+                    fromLocal = ambiguousIntervalStart.AddTicks(-1);
+                    inclusive = true;
+                }
+            }
+
+            var occurrenceTicks = FindPreviousOccurrence(fromLocal.Ticks, inclusive);
+            if (occurrenceTicks == NotFound) return null;
+
+            var occurrence = new DateTime(occurrenceTicks, DateTimeKind.Unspecified);
+
+            if (zone.IsInvalidTime(occurrence))
+            {
+                var previousValidTime = TimeZoneHelper.GetStandardTimeEnd(zone, occurrence);
+                if (previousValidTime.Date < occurrence.Date)
+                {
+                    var daylightTimeStart = TimeZoneHelper.GetDaylightTimeStart(zone, occurrence);
+                    return new DateTimeOffset(occurrence, daylightTimeStart.Offset);
+                }
+
+                return previousValidTime;
+            }
+
+            if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
+            {
+                var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
+                if (HasFlag(CronExpressionFlag.Interval))
+                {
+                    return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+                }
+
+                return new DateTimeOffset(occurrence, daylightOffset);
+            }
+
+            return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+        }
+
         private long FindOccurrence(long startTimeTicks, long endTimeTicks, bool startInclusive)
         {
             var found = FindOccurrence(startTimeTicks, startInclusive);
 
             if (found == NotFound || found > endTimeTicks) return NotFound;
+            return found;
+        }
+
+        private long FindPreviousOccurrence(long startTimeTicks, long endTimeTicks, bool startInclusive)
+        {
+            var found = FindPreviousOccurrence(startTimeTicks, startInclusive);
+
+            if (found == NotFound || found < endTimeTicks) return NotFound;
             return found;
         }
 
@@ -681,6 +892,79 @@ namespace Cronos
             goto Retry;
         }
 
+        private long FindPreviousOccurrence(long ticks, bool startInclusive)
+        {
+            if (!startInclusive)
+            {
+                if (ticks == DateTime.MinValue.Ticks) return NotFound;
+                ticks--;
+            }
+
+            CalendarHelper.FillDateTimeParts(
+                ticks,
+                out int startSecond,
+                out int startMinute,
+                out int startHour,
+                out int startDay,
+                out int startMonth,
+                out int startYear);
+
+            if (ticks % TimeSpan.TicksPerSecond != 0) startSecond--;
+
+            var maxMatchedDay = HasFlag(CronExpressionFlag.DayOfMonthLast) || HasFlag(CronExpressionFlag.NearestWeekday)
+                ? CronField.DaysOfMonth.Last
+                : GetLastSet(_dayOfMonth);
+
+            var second = startSecond;
+            var minute = startMinute;
+            var hour = startHour;
+            var day = startDay;
+            var month = startMonth;
+            var year = startYear;
+
+            if (!GetBit(_second, second) && !MoveBack(_second, ref second)) minute--;
+            if (minute < CronField.Minutes.First || !GetBit(_minute, minute) && !MoveBack(_minute, ref minute)) hour--;
+            if (hour < CronField.Hours.First || !GetBit(_hour, hour) && !MoveBack(_hour, ref hour)) day--;
+
+            if (!GetBit(_month, month)) goto RetryMonth;
+
+            Retry:
+
+            if (!TryGetPreviousDay(year, month, day, out var lastCheckedDay, out var actualDay)) goto RetryMonth;
+
+            if (CalendarHelper.IsGreaterThan(startYear, startMonth, startDay, year, month, actualDay)) goto RolloverDay;
+            if (hour < startHour) goto RolloverHour;
+            if (minute < startMinute) goto RolloverMinute;
+            goto ReturnResult;
+
+            RolloverDay: hour = GetLastSet(_hour);
+            RolloverHour: minute = GetLastSet(_minute);
+            RolloverMinute: second = GetLastSet(_second);
+
+            ReturnResult:
+
+            var found = CalendarHelper.DateTimeToTicks(year, month, actualDay, hour, minute, second);
+            if (found <= ticks) return found;
+
+            day = lastCheckedDay;
+            if (MoveBackDay(ref day)) goto Retry;
+
+            RetryMonth:
+
+            if (!MoveBack(_month, ref month))
+            {
+                year--;
+                if (year < DateTime.MinValue.Year)
+                {
+                    return NotFound;
+                }
+            }
+
+            day = maxMatchedDay;
+
+            goto Retry;
+        }
+
         private static bool Move(ulong fieldBits, ref int fieldValue)
         {
             if (fieldBits >> ++fieldValue == 0)
@@ -691,6 +975,164 @@ namespace Cronos
 
             fieldValue += GetFirstSet(fieldBits >> fieldValue);
             return true;
+        }
+
+        private static bool MoveBack(ulong fieldBits, ref int fieldValue)
+        {
+            var eligibleBits = GetBitsAtOrBelow(fieldBits, fieldValue - 1);
+            if (eligibleBits == 0)
+            {
+                fieldValue = GetLastSet(fieldBits);
+                return false;
+            }
+
+            fieldValue = GetLastSet(eligibleBits);
+            return true;
+        }
+
+        private bool TryGetPreviousDay(int year, int month, int dayLimit, out int day, out int actualDay)
+        {
+            var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
+            var maxDay = dayLimit > lastDayOfMonth ? lastDayOfMonth : dayLimit;
+
+            if (HasFlag(CronExpressionFlag.NearestWeekday))
+            {
+                day = HasFlag(CronExpressionFlag.DayOfMonthLast)
+                    ? GetLastDayOfMonth(year, month)
+                    : GetFirstSet(_dayOfMonth);
+
+                actualDay = CalendarHelper.MoveToNearestWeekDay(year, month, day);
+                return actualDay <= maxDay && IsDayOfWeekMatch(year, month, actualDay);
+            }
+
+            if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                day = GetLastDayOfMonth(year, month);
+                actualDay = day;
+                return actualDay <= maxDay && IsDayOfWeekMatch(year, month, actualDay);
+            }
+
+            if (_dayOfMonth == CronField.DaysOfMonth.AllBits &&
+                !HasFlag(CronExpressionFlag.DayOfWeekLast) &&
+                !HasFlag(CronExpressionFlag.NthDayOfWeek))
+            {
+                day = maxDay;
+                actualDay = day;
+
+                if (_dayOfWeek == CronField.DaysOfWeek.AllBits)
+                {
+                    return true;
+                }
+
+                var dayOfWeek = (int)CalendarHelper.GetDayOfWeek(year, month, day);
+
+                for (var delta = 0; delta < 7 && day - delta >= CronField.DaysOfMonth.First; delta++)
+                {
+                    var candidateDayOfWeek = dayOfWeek - delta;
+                    if (candidateDayOfWeek < 0) candidateDayOfWeek += 7;
+
+                    if (((_dayOfWeek >> candidateDayOfWeek) & 1) == 0) continue;
+
+                    day -= delta;
+                    actualDay = day;
+                    return true;
+                }
+
+                actualDay = default;
+                return false;
+            }
+
+            day = maxDay;
+
+            if (!GetBit(_dayOfMonth, day) && !MoveBackDay(ref day))
+            {
+                actualDay = default;
+                return false;
+            }
+
+            Retry:
+
+            if (day > lastDayOfMonth)
+            {
+                if (MoveBackDay(ref day)) goto Retry;
+
+                actualDay = default;
+                return false;
+            }
+
+            actualDay = day;
+            if (IsDayOfWeekMatch(year, month, actualDay))
+            {
+                return true;
+            }
+
+            if (MoveBackDay(ref day))
+            {
+                goto Retry;
+            }
+
+            actualDay = default;
+            return false;
+        }
+
+        private bool MoveBackDay(ref int day)
+        {
+            if (HasFlag(CronExpressionFlag.NearestWeekday) || HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                return false;
+            }
+
+            if (_dayOfMonth == CronField.DaysOfMonth.AllBits)
+            {
+                if (day <= CronField.DaysOfMonth.First)
+                {
+                    day = CronField.DaysOfMonth.Last;
+                    return false;
+                }
+
+                day--;
+                return true;
+            }
+
+            return MoveBack(_dayOfMonth, ref day);
+        }
+
+        private bool IsDayMatch(int year, int month, int day)
+        {
+            bool dayOfMonthMatch;
+
+            if (HasFlag(CronExpressionFlag.NearestWeekday))
+            {
+                dayOfMonthMatch = false;
+                var lastDay = CalendarHelper.GetDaysInMonth(year, month);
+
+                if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+                {
+                    var targetDay = GetLastDayOfMonth(year, month);
+                    dayOfMonthMatch = CalendarHelper.MoveToNearestWeekDay(year, month, targetDay) == day;
+                }
+                else
+                {
+                    for (var targetDay = CronField.DaysOfMonth.First; targetDay <= lastDay; targetDay++)
+                    {
+                        if (!GetBit(_dayOfMonth, targetDay)) continue;
+                        if (CalendarHelper.MoveToNearestWeekDay(year, month, targetDay) != day) continue;
+
+                        dayOfMonthMatch = true;
+                        break;
+                    }
+                }
+            }
+            else if (HasFlag(CronExpressionFlag.DayOfMonthLast))
+            {
+                dayOfMonthMatch = GetLastDayOfMonth(year, month) == day;
+            }
+            else
+            {
+                dayOfMonthMatch = GetBit(_dayOfMonth, day);
+            }
+
+            return dayOfMonthMatch && IsDayOfWeekMatch(year, month, day);
         }
 
         private int GetLastDayOfMonth(int year, int month)
@@ -718,6 +1160,31 @@ namespace Cronos
             // TODO: Add description and source
             ulong res = unchecked((ulong)((long)value & -(long)value) * 0x022fdd63cc95386d) >> 58;
             return DeBruijnPositions[res];
+        }
+
+        private static int GetLastSet(ulong value)
+        {
+            var index = 0;
+
+            while ((value >>= 1) != 0)
+            {
+                index++;
+            }
+
+            return index;
+        }
+
+        private static int GetLastSetWithin(ulong fieldBits, int maxValue)
+        {
+            return GetLastSet(GetBitsAtOrBelow(fieldBits, maxValue));
+        }
+
+        private static ulong GetBitsAtOrBelow(ulong fieldBits, int maxValue)
+        {
+            if (maxValue < 0) return 0;
+            if (maxValue >= 63) return fieldBits;
+
+            return fieldBits & ((1UL << (maxValue + 1)) - 1);
         }
 
         private bool HasFlag(CronExpressionFlag value)
@@ -772,6 +1239,13 @@ namespace Cronos
         private static void ThrowFromShouldBeLessThanToException(string fromName, string toName)
         {
             throw new ArgumentException($"The value of the {fromName} argument should be less than the value of the {toName} argument.", fromName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DoesNotReturn]
+        private static void ThrowFromShouldBeGreaterThanToException(string fromName, string toName)
+        {
+            throw new ArgumentException($"The value of the {fromName} argument should be greater than or equal to the value of the {toName} argument.", fromName);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
