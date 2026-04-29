@@ -14,7 +14,17 @@
     <icon>icon.png</icon>
     <readme>README.md</readme>
     <tags>Cronos Cron Recurring</tags>
-    <releaseNotes>https://github.com/HangfireIO/Cronos/releases</releaseNotes>
+    <releaseNotes><![CDATA[https://github.com/HangfireIO/Cronos/releases
+
+0.13.0
+• Added – Add support for retrieving previous occurrences in Cron expressions (by @israellot).
+
+0.12.0
+• Added – Support schedule jitter with the `H` character (by @epicoxymoron).
+• Changed – Use unsigned types instead of signed ones internally (in collaboration with @joesdu).
+• Project – Replace `netcoreapp3.1` platform with `net8.0` in tests.
+
+]]></releaseNotes>
     <dependencies>
       <group targetFramework="net40">
       </group>

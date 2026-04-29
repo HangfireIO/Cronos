@@ -8,6 +8,7 @@
         <LangVersion>9.0</LangVersion>
         <NuGetAudit>true</NuGetAudit>
         <NuGetAuditMode>all</NuGetAuditMode>
+        <VersionPrefix>0.13.0</VersionPrefix>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(APPVEYOR)' != ''">
@@ -19,7 +20,6 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <VersionPrefix>0.12.0</VersionPrefix>
         <BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
         <FileVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(3)).$(BuildNumber)</FileVersion>
         <AssemblyVersion>$([System.Version]::Parse("$(VersionPrefix)").ToString(1)).0.0.0</AssemblyVersion>
