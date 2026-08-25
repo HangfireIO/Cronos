@@ -60,6 +60,8 @@ namespace Cronos
 
                 if (format == CronFormat.IncludeSeconds)
                 {
+                    flags |= CronExpressionFlag.SecondsIncluded;
+
                     second = ParseField(CronField.Seconds, ref pointer, ref flags, rng);
                     ParseWhiteSpace(CronField.Seconds, ref pointer);
                 }

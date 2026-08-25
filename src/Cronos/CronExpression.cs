@@ -146,6 +146,10 @@ namespace Cronos
 
         private readonly CronExpressionFlag _flags;
 
+        // Flags that only affect the string representation of an expression and not its
+        // occurrences, so they shouldn't take part in equality comparisons.
+        private const CronExpressionFlag FormatFlags = CronExpressionFlag.SecondsIncluded;
+
         internal CronExpression(
             ulong second,
             ulong minute,
@@ -575,7 +579,7 @@ namespace Cronos
         {
             var expressionBuilder = new StringBuilder();
 
-            if (_second != 1UL)
+            if (_second != 1UL || HasFlag(CronExpressionFlag.SecondsIncluded))
             {
                 AppendFieldValue(expressionBuilder, CronField.Seconds, _second).Append(' ');
             }
@@ -608,7 +612,7 @@ namespace Cronos
                    _dayOfWeek == other._dayOfWeek &&
                    _nthDayOfWeek == other._nthDayOfWeek &&
                    _lastMonthOffset == other._lastMonthOffset &&
-                   _flags == other._flags;
+                   (_flags & ~FormatFlags) == (other._flags & ~FormatFlags);
         }
 
         /// <summary>
@@ -641,7 +645,7 @@ namespace Cronos
                 hashCode = (hashCode * 397) ^ _dayOfWeek.GetHashCode();
                 hashCode = (hashCode * 397) ^ _nthDayOfWeek.GetHashCode();
                 hashCode = (hashCode * 397) ^ _lastMonthOffset.GetHashCode();
-                hashCode = (hashCode * 397) ^ (int)_flags;
+                hashCode = (hashCode * 397) ^ (int)(_flags & ~FormatFlags);
 
                 return hashCode;
             }
