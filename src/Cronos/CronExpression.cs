@@ -670,6 +670,8 @@ namespace Cronos
                 inclusive = false;
             }
 
+            if (!inclusive && fromUtc.UtcTicks == DateTime.MaxValue.Ticks - TimeSpan.TicksPerSecond + 1) return null;
+
             var from = TimeZoneInfo.ConvertTime(fromUtc, zone);
 
             var fromLocal = from.DateTime;
@@ -686,7 +688,7 @@ namespace Cronos
 
                     // Early period, try to find anything here.
                     var foundInDaylightOffset = FindOccurrence(fromLocal.Ticks, daylightTimeLocalEnd.Ticks, inclusive);
-                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
+                    if (foundInDaylightOffset != NotFound) return CreateDateTimeOffsetOrNull(foundInDaylightOffset, daylightOffset);
 
                     fromLocal = TimeZoneHelper.GetStandardTimeStart(zone, fromLocal, daylightOffset).DateTime;
                     inclusive = true;
@@ -698,7 +700,7 @@ namespace Cronos
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
                     var foundInStandardOffset = FindOccurrence(fromLocal.Ticks, ambiguousIntervalLocalEnd.Ticks - 1, inclusive);
-                    if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
+                    if (foundInStandardOffset != NotFound) return CreateDateTimeOffsetOrNull(foundInStandardOffset, standardOffset);
                 }
 
                 fromLocal = ambiguousIntervalLocalEnd;
@@ -719,10 +721,10 @@ namespace Cronos
             if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
             {
                 var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
-                return new DateTimeOffset(occurrence, daylightOffset);
+                return CreateDateTimeOffsetOrNull(occurrence.Ticks, daylightOffset);
             }
 
-            return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+            return CreateDateTimeOffsetOrNull(occurrence.Ticks, zone.GetUtcOffset(occurrence));
         }
 
         private DateTimeOffset? GetPreviousOccurrenceConsideringTimeZone(DateTimeOffset fromUtc, TimeZoneInfo zone, bool inclusive)
@@ -731,6 +733,8 @@ namespace Cronos
             {
                 fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
             }
+
+            if (!inclusive && fromUtc.UtcTicks == DateTime.MinValue.Ticks) return null;
 
             var from = TimeZoneInfo.ConvertTime(fromUtc, zone);
             var fromLocal = from.DateTime;
@@ -747,12 +751,12 @@ namespace Cronos
                     if (HasFlag(CronExpressionFlag.Interval))
                     {
                         var foundInStandardOffset = FindPreviousOccurrence(fromLocal.Ticks, ambiguousIntervalStart.Ticks, inclusive);
-                        if (foundInStandardOffset != NotFound) return new DateTimeOffset(foundInStandardOffset, standardOffset);
+                        if (foundInStandardOffset != NotFound) return CreateDateTimeOffsetOrNull(foundInStandardOffset, standardOffset);
                     }
 
                     var daylightTimeLocalEnd = TimeZoneHelper.GetDaylightTimeEnd(zone, fromLocal, daylightOffset).DateTime;
                     var foundInDaylightOffset = FindPreviousOccurrence(daylightTimeLocalEnd.Ticks, ambiguousIntervalStart.Ticks, true);
-                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
+                    if (foundInDaylightOffset != NotFound) return CreateDateTimeOffsetOrNull(foundInDaylightOffset, daylightOffset);
 
                     fromLocal = ambiguousIntervalStart.AddTicks(-1);
                     inclusive = true;
@@ -760,7 +764,7 @@ namespace Cronos
                 else
                 {
                     var foundInDaylightOffset = FindPreviousOccurrence(fromLocal.Ticks, ambiguousIntervalStart.Ticks, inclusive);
-                    if (foundInDaylightOffset != NotFound) return new DateTimeOffset(foundInDaylightOffset, daylightOffset);
+                    if (foundInDaylightOffset != NotFound) return CreateDateTimeOffsetOrNull(foundInDaylightOffset, daylightOffset);
 
                     fromLocal = ambiguousIntervalStart.AddTicks(-1);
                     inclusive = true;
@@ -778,7 +782,7 @@ namespace Cronos
                 if (previousValidTime.Date < occurrence.Date)
                 {
                     var daylightTimeStart = TimeZoneHelper.GetDaylightTimeStart(zone, occurrence);
-                    return new DateTimeOffset(occurrence, daylightTimeStart.Offset);
+                    return CreateDateTimeOffsetOrNull(occurrence.Ticks, daylightTimeStart.Offset);
                 }
 
                 return previousValidTime;
@@ -789,13 +793,21 @@ namespace Cronos
                 var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
                 if (HasFlag(CronExpressionFlag.Interval))
                 {
-                    return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+                    return CreateDateTimeOffsetOrNull(occurrence.Ticks, zone.GetUtcOffset(occurrence));
                 }
 
-                return new DateTimeOffset(occurrence, daylightOffset);
+                return CreateDateTimeOffsetOrNull(occurrence.Ticks, daylightOffset);
             }
 
-            return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+            return CreateDateTimeOffsetOrNull(occurrence.Ticks, zone.GetUtcOffset(occurrence));
+        }
+
+        private static DateTimeOffset? CreateDateTimeOffsetOrNull(long ticks, TimeSpan offset)
+        {
+            var utcTicks = ticks - offset.Ticks;
+            if (utcTicks < DateTime.MinValue.Ticks || utcTicks > DateTime.MaxValue.Ticks) return null;
+
+            return new DateTimeOffset(ticks, offset);
         }
 
         private long FindOccurrence(long startTimeTicks, long endTimeTicks, bool startInclusive)
@@ -870,7 +882,10 @@ namespace Cronos
                 ReturnResult:
 
                 var found = CalendarHelper.DateTimeToTicks(year, month, day, hour, minute, second);
-                if (found >= ticks) return found;
+                if (found >= ticks)
+                {
+                    return found <= DateTime.MaxValue.Ticks ? found : NotFound;
+                }
             }
 
             day = lastCheckedDay;
@@ -944,7 +959,10 @@ namespace Cronos
             ReturnResult:
 
             var found = CalendarHelper.DateTimeToTicks(year, month, actualDay, hour, minute, second);
-            if (found <= ticks) return found;
+            if (found <= ticks)
+            {
+                return found >= DateTime.MinValue.Ticks ? found : NotFound;
+            }
 
             day = lastCheckedDay;
             if (MoveBackDay(ref day)) goto Retry;
