@@ -1872,6 +1872,31 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetNextOccurrence_ReturnsNull_WhenFromIsDateTimeMaxValue()
+        {
+            var expression = CronExpression.Parse("0 0 * * *");
+            var from = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+
+            var occurrence = expression.GetNextOccurrence(from);
+
+            Assert.Null(occurrence);
+        }
+
+        [Fact]
+        public void GetNextOccurrence_ReturnsNull_WhenTimeZoneOffsetPushesOccurrenceOutOfMaxRange()
+        {
+            var expression = CronExpression.Parse("0 19 31 12 *");
+            var negativeZone = TimeZoneInfo.CreateCustomTimeZone("UTC-05", TimeSpan.FromHours(-5), "UTC-05", "UTC-05");
+            var positiveZone = TimeZoneInfo.CreateCustomTimeZone("UTC+05", TimeSpan.FromHours(5), "UTC+05", "UTC+05");
+            var from = DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
+
+            Assert.Null(expression.GetNextOccurrence(from, negativeZone));
+            Assert.Null(expression.GetNextOccurrence(new DateTimeOffset(from), negativeZone));
+            Assert.Null(expression.GetNextOccurrence(from, positiveZone));
+            Assert.Null(expression.GetNextOccurrence(new DateTimeOffset(from), positiveZone));
+        }
+
+        [Fact]
         public void GetNextOccurrence_VeryLastResult()
         {
             var expression = CronExpression.Parse("* * * * * *", CronFormat.IncludeSeconds);

@@ -422,6 +422,31 @@ namespace Cronos.Tests
             Assert.Equal(from, previous);
         }
 
+        [Fact]
+        public void GetPreviousOccurrence_ReturnsNull_WhenEarlierOccurrenceIsOutOfRange()
+        {
+            var expression = CronExpression.Parse("42 37 13 * * *", CronFormat.IncludeSeconds);
+            var from = DateTime.SpecifyKind(DateTime.MinValue.Add(new TimeSpan(0, 13, 37, 42)), DateTimeKind.Utc);
+
+            var previous = expression.GetPreviousOccurrence(from);
+
+            Assert.Null(previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_ReturnsNull_WhenTimeZoneOffsetPushesOccurrenceOutOfMinRange()
+        {
+            var expression = CronExpression.Parse("0 4 1 1 *");
+            var positiveZone = TimeZoneInfo.CreateCustomTimeZone("UTC+05", TimeSpan.FromHours(5), "UTC+05", "UTC+05");
+            var negativeZone = TimeZoneInfo.CreateCustomTimeZone("UTC-05", TimeSpan.FromHours(-5), "UTC-05", "UTC-05");
+            var from = DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+
+            Assert.Null(expression.GetPreviousOccurrence(from, positiveZone));
+            Assert.Null(expression.GetPreviousOccurrence(new DateTimeOffset(from), positiveZone));
+            Assert.Null(expression.GetPreviousOccurrence(from, negativeZone));
+            Assert.Null(expression.GetPreviousOccurrence(new DateTimeOffset(from), negativeZone));
+        }
+
         private static DateTime GetUtcDateTime(string dateTimeString)
         {
             var dateTime = DateTime.ParseExact(
