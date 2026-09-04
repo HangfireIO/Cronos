@@ -995,6 +995,15 @@ namespace Cronos
             var lastDayOfMonth = CalendarHelper.GetDaysInMonth(year, month);
             var maxDay = dayLimit > lastDayOfMonth ? lastDayOfMonth : dayLimit;
 
+            // Rolling back past the 1st can drop maxDay below the first valid day,
+            // and the "*" fast path would then underflow into the previous month.
+            if (maxDay < CronField.DaysOfMonth.First)
+            {
+                day = default;
+                actualDay = default;
+                return false;
+            }
+
             if (HasFlag(CronExpressionFlag.NearestWeekday))
             {
                 day = HasFlag(CronExpressionFlag.DayOfMonthLast)
