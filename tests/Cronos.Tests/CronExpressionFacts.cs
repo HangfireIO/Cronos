@@ -503,6 +503,15 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void TryParse_DoesNotOverflowTheStack_WhenListIsVeryLong()
+        {
+            var list = string.Join(",", System.Linq.Enumerable.Repeat("1", 100_000));
+
+            Assert.True(CronExpression.TryParse("0 0 1 1 " + list, out var expression));
+            Assert.Equal(CronExpression.Parse("0 0 1 1 1"), expression);
+        }
+
+        [Fact]
         public void TryParse_ThrowsAnException_WhenExpressionIsNull()
         {
             var exception = Assert.Throws<ArgumentNullException>(() => CronExpression.TryParse(null!, out _));
@@ -2577,6 +2586,24 @@ namespace Cronos.Tests
         }
 
         [Fact]
+        public void GetOccurrences_ThrowsAnException_BeforeEnumeration_WhenArgumentsAreInvalid()
+        {
+            var expression = CronExpression.Parse("* * * * *");
+            var now = DateTime.UtcNow;
+            var local = DateTime.Now;
+
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrences(now, now.AddHours(-5)));
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrences(now, now.AddHours(-5), EasternTimeZone));
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrences(local, local.AddHours(5)));
+            Assert.Throws<ArgumentNullException>(() => expression.GetOccurrences(now, now.AddHours(5), null!));
+
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrencesDescending(now, now.AddHours(5)));
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrencesDescending(now, now.AddHours(5), EasternTimeZone));
+            Assert.Throws<ArgumentException>(() => expression.GetOccurrencesDescending(local, local.AddHours(-5)));
+            Assert.Throws<ArgumentNullException>(() => expression.GetOccurrencesDescending(now, now.AddHours(-5), null!));
+        }
+
+        [Fact]
         public void GetOccurrences_DateTime_ThrowsAnException_WhenFromGreaterThanTo()
         {
             var expression = CronExpression.Parse("* * * * *");
@@ -2862,6 +2889,11 @@ namespace Cronos.Tests
         [InlineData("* * * * FRI-TUE", "* * * * SUN-TUE,FRI-SUN")]
         [InlineData("* * * * FRI-TUE", "* * * * SUN-TUE,FRI-SAT")]
         [InlineData("* * * * FRI-TUE", "* * * * MON-TUE,FRI-SUN")]
+
+        [InlineData("* * * * 0-1",     "* * * * 7-1  ")]
+        [InlineData("* * * * 0-3/2",   "* * * * 7-3/2")]
+        [InlineData("* * * * 0",       "* * * * 7-1/2")]
+        [InlineData("* * * * 0-3/2",   "* * * * SUN-WED/2")]
         public void Equals_ReturnsTrue_WhenCronExpressionsAreEqual(string leftExpression, string rightExpression)
         {
             var leftCronExpression = CronExpression.Parse(leftExpression);
