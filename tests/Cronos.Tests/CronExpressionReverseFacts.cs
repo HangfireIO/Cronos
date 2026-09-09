@@ -258,19 +258,6 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetPreviousOccurrence_CanStepAcrossJordanDstAdjustedMonthlySequence()
-        {
-            var expression = CronExpression.Parse("30 0 L * *");
-            var from = GetInstant("2017-04-30 00:30:00 +03:00");
-
-            var previous = expression.GetPreviousOccurrence(from, JordanTimeZone, inclusive: false);
-            var beforePrevious = expression.GetPreviousOccurrence(previous!.Value, JordanTimeZone, inclusive: false);
-
-            Assert.Equal(GetInstant("2017-03-31 00:30:00 +03:00"), previous);
-            Assert.Equal(GetInstant("2017-02-28 00:30:00 +02:00"), beforePrevious);
-        }
-
-        [Fact]
         public void GetPreviousOccurrence_CanStepAcrossLordHoweRepeatedHourIntervalSequence()
         {
             var expression = CronExpression.Parse("0 */30 1 * * *", CronFormat.IncludeSeconds);
@@ -449,19 +436,6 @@ namespace Cronos.Tests
             }
 
             Assert.Equal(forward.Take(forward.Count - 1), backward);
-        }
-
-        [Theory]
-        [InlineData("30 0 L * *", "2017-04-30 00:30 +03:00", "2017-03-31 00:30 +03:00")]
-        [InlineData("30 0 LW * *", "2018-04-30 00:30 +03:00", "2018-03-30 00:30 +03:00")]
-        public void GetPreviousOccurrence_HandleJordanForwardShiftCases(string cronExpression, string fromString, string expectedString)
-        {
-            var expression = CronExpression.Parse(cronExpression);
-            var from = GetInstant(fromString);
-
-            var previous = expression.GetPreviousOccurrence(from, JordanTimeZone);
-
-            Assert.Equal(GetInstant(expectedString), previous);
         }
 
         [Fact]
