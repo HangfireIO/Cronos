@@ -128,6 +128,27 @@ namespace Cronos.Tests
             Assert.Equal(GetUtcDateTime(expectedString), previous);
         }
 
+        [Theory]
+
+        // Rolling back past midnight of the 1st must skip to the previous allowed
+        // month, not land in the preceding disallowed one.
+        [InlineData("0 17 * 7 *", "2017-07-01 14:00:00", "2016-07-31 17:00:00")]
+        [InlineData("37-57/3 17-21 * 7 *", "2017-07-01 14:20:00", "2016-07-31 21:55:00")]
+        [InlineData("0 0 * 3 *", "2020-03-01 00:00:00", "2019-03-31 00:00:00")]
+
+        // Control: an unrestricted month field must still roll back normally.
+        [InlineData("0 17 * * *", "2017-07-01 14:00:00", "2017-06-30 17:00:00")]
+        public void GetPreviousOccurrence_DoesNotReturnDayInDisallowedMonth_WhenTimeRollsBackPastFirstOfMonth(
+            string cronExpression, string fromString, string expectedString)
+        {
+            var expression = CronExpression.Parse(cronExpression, CronFormat.Standard);
+            var from = GetUtcDateTime(fromString);
+
+            var previous = expression.GetPreviousOccurrence(from, inclusive: false);
+
+            Assert.Equal(GetUtcDateTime(expectedString), previous);
+        }
+
         [Fact]
         public void GetPreviousOccurrence_ReturnsCorrectDate_WhenMacroExpressionHasJitterSeed()
         {
