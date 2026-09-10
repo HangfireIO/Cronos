@@ -500,6 +500,12 @@ namespace Cronos
             // Skip one of the Sundays.
             if (field == CronField.DaysOfWeek) high--;
 
+            // 7 and 0 both mean Sunday, so a reversed day-of-week range that starts
+            // at 7 (e.g. 7-1) is the same as the forward range from 0. Without this
+            // the range below iterates GetRangeBits(7, 6, ...) which is empty and a
+            // negative modulo corrupts the phase, dropping Sunday (7-1/2 never fires).
+            if (field == CronField.DaysOfWeek && num1 > high) return GetRangeBits(field.First, num2, step);
+
             var bits = GetRangeBits(num1, high, step);
             
             num1 = field.First + step - (high - num1) % step - 1;

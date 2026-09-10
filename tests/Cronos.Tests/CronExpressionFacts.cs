@@ -1148,6 +1148,22 @@ namespace Cronos.Tests
             Assert.Equal(GetInstantFromLocalTime(expectedString, EasternTimeZone), occurrence);
         }
 
+        [Fact]
+        public void GetNextOccurrence_HandlesReversedDayOfWeekRangeStartingAtSeven()
+        {
+            // 7 and 0 both mean Sunday, so 7-1/2 must behave like 0-1/2 and fire
+            // on Sundays -- it used to compile to a schedule that never fired.
+            var from = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var seven = CronExpression.Parse("0 0 * * 7-1/2", CronFormat.Standard);
+            var zero = CronExpression.Parse("0 0 * * 0-1/2", CronFormat.Standard);
+
+            var occurrence = seven.GetNextOccurrence(from, TimeZoneInfo.Utc, inclusive: false);
+
+            Assert.NotNull(occurrence);
+            Assert.Equal(DayOfWeek.Sunday, occurrence.Value.DayOfWeek);
+            Assert.Equal(zero.GetNextOccurrence(from, TimeZoneInfo.Utc, inclusive: false), occurrence);
+        }
+
         [Theory]
         [InlineData(true, 00001)]
         [InlineData(true, 09999)]
