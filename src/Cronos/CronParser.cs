@@ -364,15 +364,15 @@ namespace Cronos
 
         private static unsafe ulong ParseList(CronField field, ref char* pointer, ref CronExpressionFlag flags)
         {
-            var num = ParseValue(field, ref pointer);
-            var bits = ParseRange(field, ref pointer, num, ref flags);
+            var bits = 0UL;
 
             do
             {
-                if (!Accept(ref pointer, ',')) return bits;
+                var num = ParseValue(field, ref pointer);
+                bits |= ParseRange(field, ref pointer, num, ref flags);
+            } while (Accept(ref pointer, ','));
 
-                bits |= ParseList(field, ref pointer, ref flags);
-            } while (true);
+            return bits;
         }
 
         private static unsafe ulong ParseRange(CronField field, ref char* pointer, int low, ref CronExpressionFlag flags)
@@ -477,6 +477,10 @@ namespace Cronos
 
         private static ulong GetBits(CronField field, int num1, int num2, int step)
         {
+            // "7-x" in the day-of-week field starts at Sunday, which is also 0, so it is an ordinary
+            // range; treating it as reversed would compute the wrap-around from a start beyond `high`.
+            if (num2 < num1 && field == CronField.DaysOfWeek && num1 == field.Last) num1 = field.First;
+
             if (num2 < num1) return GetReversedRangeBits(field, num1, num2, step);
             if (step == 1) return (1UL << (num2 + 1)) - (1UL << num1);
 

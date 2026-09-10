@@ -440,20 +440,14 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
-                occurrence < toUtc || occurrence == toUtc && toInclusive;
-                // ReSharper disable once RedundantArgumentDefaultValue
-                // ReSharper disable once ArgumentsStyleLiteral
-                occurrence = GetNextOccurrence(occurrence.Value, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
+            return EnumerateOccurrences(fromUtc, toUtc, fromInclusive, toInclusive);
         }
 
         /// <summary>
         /// Returns the list of next occurrences within the given date/time range, including
-        /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and 
+        /// <paramref name="fromUtc"/> and excluding <paramref name="toUtc"/> by default, and
         /// specified time zone. When none of the occurrences found, an empty list is returned.
         /// </summary>
         /// <exception cref="ArgumentException"/>
@@ -465,15 +459,10 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc > toUtc) ThrowFromShouldBeLessThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
-            for (var occurrence = GetNextOccurrence(fromUtc, zone, fromInclusive);
-                occurrence < toUtc || occurrence == toUtc && toInclusive;
-                // ReSharper disable once RedundantArgumentDefaultValue
-                // ReSharper disable once ArgumentsStyleLiteral
-                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
+            return EnumerateOccurrences(fromUtc, toUtc, zone, fromInclusive, toInclusive);
         }
 
         /// <summary>
@@ -490,15 +479,9 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (from > to) ThrowFromShouldBeLessThanToException(nameof(from), nameof(to));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
-            for (var occurrence = GetNextOccurrence(from, zone, fromInclusive);
-                occurrence < to || occurrence == to && toInclusive;
-                // ReSharper disable once RedundantArgumentDefaultValue
-                // ReSharper disable once ArgumentsStyleLiteral
-                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
+            return EnumerateOccurrences(from, to, zone, fromInclusive, toInclusive);
         }
 
         /// <summary>
@@ -515,13 +498,9 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc < toUtc) ThrowFromShouldBeGreaterThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
 
-            for (var occurrence = GetPreviousOccurrence(fromUtc, fromInclusive);
-                occurrence > toUtc || occurrence == toUtc && toInclusive;
-                occurrence = GetPreviousOccurrence(occurrence.Value, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
+            return EnumerateOccurrencesDescending(fromUtc, toUtc, fromInclusive, toInclusive);
         }
 
         /// <summary>
@@ -538,13 +517,10 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (fromUtc < toUtc) ThrowFromShouldBeGreaterThanToException(nameof(fromUtc), nameof(toUtc));
+            if (fromUtc.Kind != DateTimeKind.Utc) ThrowWrongDateTimeKindException(nameof(fromUtc));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
-            for (var occurrence = GetPreviousOccurrence(fromUtc, zone, fromInclusive);
-                occurrence > toUtc || occurrence == toUtc && toInclusive;
-                occurrence = GetPreviousOccurrence(occurrence.Value, zone, inclusive: false))
-            {
-                yield return occurrence.Value;
-            }
+            return EnumerateOccurrencesDescending(fromUtc, toUtc, zone, fromInclusive, toInclusive);
         }
 
         /// <summary>
@@ -561,7 +537,72 @@ namespace Cronos
             bool toInclusive = false)
         {
             if (from < to) ThrowFromShouldBeGreaterThanToException(nameof(from), nameof(to));
+            if (ReferenceEquals(zone, null)) ThrowArgumentNullException(nameof(zone));
 
+            return EnumerateOccurrencesDescending(from, to, zone, fromInclusive, toInclusive);
+        }
+
+        // The public GetOccurrences* methods validate their arguments eagerly and delegate to these iterators,
+        // so that an ArgumentException surfaces at the call site rather than on the first MoveNext().
+
+        private IEnumerable<DateTime> EnumerateOccurrences(DateTime fromUtc, DateTime toUtc, bool fromInclusive, bool toInclusive)
+        {
+            for (var occurrence = GetNextOccurrence(fromUtc, fromInclusive);
+                occurrence < toUtc || occurrence == toUtc && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        private IEnumerable<DateTime> EnumerateOccurrences(DateTime fromUtc, DateTime toUtc, TimeZoneInfo zone, bool fromInclusive, bool toInclusive)
+        {
+            for (var occurrence = GetNextOccurrence(fromUtc, zone, fromInclusive);
+                occurrence < toUtc || occurrence == toUtc && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        private IEnumerable<DateTimeOffset> EnumerateOccurrences(DateTimeOffset from, DateTimeOffset to, TimeZoneInfo zone, bool fromInclusive, bool toInclusive)
+        {
+            for (var occurrence = GetNextOccurrence(from, zone, fromInclusive);
+                occurrence < to || occurrence == to && toInclusive;
+                // ReSharper disable once RedundantArgumentDefaultValue
+                // ReSharper disable once ArgumentsStyleLiteral
+                occurrence = GetNextOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        private IEnumerable<DateTime> EnumerateOccurrencesDescending(DateTime fromUtc, DateTime toUtc, bool fromInclusive, bool toInclusive)
+        {
+            for (var occurrence = GetPreviousOccurrence(fromUtc, fromInclusive);
+                occurrence > toUtc || occurrence == toUtc && toInclusive;
+                occurrence = GetPreviousOccurrence(occurrence.Value, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        private IEnumerable<DateTime> EnumerateOccurrencesDescending(DateTime fromUtc, DateTime toUtc, TimeZoneInfo zone, bool fromInclusive, bool toInclusive)
+        {
+            for (var occurrence = GetPreviousOccurrence(fromUtc, zone, fromInclusive);
+                occurrence > toUtc || occurrence == toUtc && toInclusive;
+                occurrence = GetPreviousOccurrence(occurrence.Value, zone, inclusive: false))
+            {
+                yield return occurrence.Value;
+            }
+        }
+
+        private IEnumerable<DateTimeOffset> EnumerateOccurrencesDescending(DateTimeOffset from, DateTimeOffset to, TimeZoneInfo zone, bool fromInclusive, bool toInclusive)
+        {
             for (var occurrence = GetPreviousOccurrence(from, zone, fromInclusive);
                 occurrence > to || occurrence == to && toInclusive;
                 occurrence = GetPreviousOccurrence(occurrence.Value, zone, inclusive: false))
@@ -729,6 +770,9 @@ namespace Cronos
         {
             if (!DateTimeHelper.IsRound(fromUtc))
             {
+                // Occurrences are whole seconds, so the floored second is strictly earlier than the original
+                // value and remains a valid answer regardless of the inclusivity requested by the caller.
+                inclusive = true;
                 fromUtc = DateTimeHelper.FloorToSeconds(fromUtc);
             }
 
@@ -930,6 +974,7 @@ namespace Cronos
             if (minute < CronField.Minutes.First || !GetBit(_minute, minute) && !MoveBack(_minute, ref minute)) hour--;
             if (hour < CronField.Hours.First || !GetBit(_hour, hour) && !MoveBack(_hour, ref hour)) day--;
 
+            if (day < CronField.DaysOfMonth.First) goto RetryMonth;
             if (!GetBit(_month, month)) goto RetryMonth;
 
             Retry:
@@ -1005,6 +1050,12 @@ namespace Cronos
                     ? GetLastDayOfMonth(year, month)
                     : GetFirstSet(_dayOfMonth);
 
+                if (day < CronField.DaysOfMonth.First || day > lastDayOfMonth)
+                {
+                    actualDay = default;
+                    return false;
+                }
+
                 actualDay = CalendarHelper.MoveToNearestWeekDay(year, month, day);
                 return actualDay <= maxDay && IsDayOfWeekMatch(year, month, actualDay);
             }
@@ -1013,7 +1064,7 @@ namespace Cronos
             {
                 day = GetLastDayOfMonth(year, month);
                 actualDay = day;
-                return actualDay <= maxDay && IsDayOfWeekMatch(year, month, actualDay);
+                return day >= CronField.DaysOfMonth.First && actualDay <= maxDay && IsDayOfWeekMatch(year, month, actualDay);
             }
 
             if (_dayOfMonth == CronField.DaysOfMonth.AllBits &&

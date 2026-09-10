@@ -118,6 +118,20 @@ namespace Cronos.Tests
         [InlineData("0 0 L-1 * *", "2016-12-30 00:00:00", "2016-11-29 00:00:00", CronFormat.Standard)]
         [InlineData("0 0 L-2W * *", "2017-03-01 00:00:00", "2017-02-27 00:00:00", CronFormat.Standard)]
         [InlineData("0 0 * * SUN#1", "2017-02-05 00:00:00", "2017-01-01 00:00:00", CronFormat.Standard)]
+
+        // Day rolls back to 0 on the 1st: must move to the previous *matching* month, not wrap into February.
+        [InlineData("0 1 * 3 *", "2017-03-01 00:30:00", "2016-03-31 01:00:00", CronFormat.Standard)]
+        [InlineData("0 0 * 2 *", "2017-02-01 00:00:30", "2017-02-01 00:00:00", CronFormat.Standard)]
+        [InlineData("0 1 * 2 *", "2017-02-01 00:30:00", "2016-02-29 01:00:00", CronFormat.Standard)]
+
+        // L-n where n exceeds the month length must skip the month instead of wrapping to the previous one.
+        [InlineData("0 0 L-28 * *", "2017-03-01 00:00:00", "2017-01-03 00:00:00", CronFormat.Standard)]
+        [InlineData("0 0 L-30 * *", "2017-05-01 00:00:00", "2017-03-01 00:00:00", CronFormat.Standard)]
+        [InlineData("0 0 L-28W * *", "2017-03-01 00:00:00", "2017-01-03 00:00:00", CronFormat.Standard)]
+
+        // W on a day that doesn't exist in the month must skip the month, as the forward search does.
+        [InlineData("0 0 31W * *", "2027-05-15 00:00:00", "2027-03-31 00:00:00", CronFormat.Standard)]
+        [InlineData("0 0 31W * *", "2027-05-01 00:00:00", "2027-03-31 00:00:00", CronFormat.Standard)]
         public void GetPreviousOccurrence_ReturnsCorrectDate_ForBroaderUtcMatrix(string cronExpression, string fromString, string expectedString, CronFormat format)
         {
             var expression = CronExpression.Parse(cronExpression, format);
@@ -208,6 +222,54 @@ namespace Cronos.Tests
             var previous = expression.GetPreviousOccurrence(from);
 
             Assert.Equal(GetUtcDateTime(expectedString), previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_ReturnsFlooredSecond_WhenFromIsNonRoundAndExclusive()
+        {
+            var from = GetInstant("2017-03-22 10:00:00.5000000 +00:00");
+
+            var previous = CronExpression.EverySecond.GetPreviousOccurrence(from, EasternTimeZone, inclusive: false);
+
+            Assert.Equal(GetInstant("2017-03-22 06:00:00 -04:00"), previous);
+            Assert.Equal(CronExpression.EverySecond.GetPreviousOccurrence(from.UtcDateTime), previous?.UtcDateTime);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_ReturnsNull_WhenNoOccurrenceExistsBeforeFromInFirstYear()
+        {
+            var expression = CronExpression.Parse("0 1 * * *");
+            var from = new DateTime(1, 1, 1, 0, 30, 0, DateTimeKind.Utc);
+
+            Assert.Null(expression.GetPreviousOccurrence(from));
+        }
+
+        [Theory]
+        [InlineData("0 1 * 3 *")]
+        [InlineData("0 1 * 3 1-5")]
+        [InlineData("0 0 31W * *")]
+        [InlineData("0 0 30W 2 *")]
+        [InlineData("0 0 L-28 * *")]
+        [InlineData("0 0 L-30 * *")]
+        [InlineData("0 0 L-2W * *")]
+        [InlineData("0 0 * * 6#3")]
+        [InlineData("0 0 * * 5L")]
+        [InlineData("0 0 29 2 *")]
+        [InlineData("0 0 1 * 7-1/2")]
+        public void GetOccurrencesDescending_ReturnsReverseOfForwardCollection_ForSpecialDayExpressions(string cronExpression)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+            var from = GetUtcDateTime("2026-01-01 00:00:00");
+            var to = GetUtcDateTime("2037-01-01 00:00:00");
+
+            var ascendingUtc = expression.GetOccurrences(from, to, fromInclusive: true, toInclusive: true).Reverse().ToArray();
+            var descendingUtc = expression.GetOccurrencesDescending(to, from, fromInclusive: true, toInclusive: true).ToArray();
+
+            var ascendingZoned = expression.GetOccurrences(from, to, EasternTimeZone, fromInclusive: true, toInclusive: true).Reverse().ToArray();
+            var descendingZoned = expression.GetOccurrencesDescending(to, from, EasternTimeZone, fromInclusive: true, toInclusive: true).ToArray();
+
+            Assert.Equal(ascendingUtc, descendingUtc);
+            Assert.Equal(ascendingZoned, descendingZoned);
         }
 
         [Fact]
