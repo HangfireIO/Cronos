@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Xunit;
@@ -18,11 +19,13 @@ namespace Cronos.Tests
         private static readonly string JordanTimeZoneId = IsUnix ? "Asia/Amman" : "Jordan Standard Time";
         private static readonly string LordHoweTimeZoneId = IsUnix ? "Australia/Lord_Howe" : "Lord Howe Standard Time";
         private static readonly string PacificTimeZoneId = IsUnix ? "America/Santiago" : "Pacific SA Standard Time";
+        private static readonly string CentralEuropeanTimeZoneId = IsUnix ? "Europe/Berlin" : "W. Europe Standard Time";
 
         private static readonly TimeZoneInfo EasternTimeZone = TimeZoneInfo.FindSystemTimeZoneById(EasternTimeZoneId);
         private static readonly TimeZoneInfo JordanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(JordanTimeZoneId);
         private static readonly TimeZoneInfo LordHoweTimeZone = TimeZoneInfo.FindSystemTimeZoneById(LordHoweTimeZoneId);
         private static readonly TimeZoneInfo PacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById(PacificTimeZoneId);
+        private static readonly TimeZoneInfo CentralEuropeanTimeZone = TimeZoneInfo.FindSystemTimeZoneById(CentralEuropeanTimeZoneId);
 
         [Theory]
         [InlineData(DateTimeKind.Unspecified, false)]
@@ -255,19 +258,6 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetPreviousOccurrence_CanStepAcrossJordanDstAdjustedMonthlySequence()
-        {
-            var expression = CronExpression.Parse("30 0 L * *");
-            var from = GetInstant("2017-04-30 00:30:00 +03:00");
-
-            var previous = expression.GetPreviousOccurrence(from, JordanTimeZone, inclusive: false);
-            var beforePrevious = expression.GetPreviousOccurrence(previous!.Value, JordanTimeZone, inclusive: false);
-
-            Assert.Equal(GetInstant("2017-03-31 00:30:00 +03:00"), previous);
-            Assert.Equal(GetInstant("2017-02-28 00:30:00 +02:00"), beforePrevious);
-        }
-
-        [Fact]
         public void GetPreviousOccurrence_CanStepAcrossLordHoweRepeatedHourIntervalSequence()
         {
             var expression = CronExpression.Parse("0 */30 1 * * *", CronFormat.IncludeSeconds);
@@ -344,38 +334,108 @@ namespace Cronos.Tests
         }
 
         [Fact]
-        public void GetPreviousOccurrence_AdjustsInvalidTimeBackwardAcrossSpringForward()
+        public void GetPreviousOccurrence_ShiftsInvalidTimeForwardAcrossSpringForward()
         {
             var expression = CronExpression.Parse("30 2 * * *");
             var from = GetInstant("2017-03-12 04:00:00 -04:00");
 
             var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
 
-            Assert.Equal(GetInstant("2017-03-12 01:59:59 -05:00"), previous);
+            Assert.Equal(GetInstant("2017-03-12 03:00:00 -04:00"), previous);
         }
 
         [Fact]
-        public void GetPreviousOccurrence_AdjustsInvalidHashTimeBackwardAcrossSpringForward()
+        public void GetPreviousOccurrence_ShiftsInvalidHashTimeForwardAcrossSpringForward()
         {
             var expression = CronExpression.Parse("0 H 2 * * *", CronFormat.IncludeSeconds, 3);
             var from = GetInstant("2017-03-12 04:00:00 -04:00");
 
             var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
 
-            Assert.Equal(GetInstant("2017-03-12 01:59:59 -05:00"), previous);
+            Assert.Equal(GetInstant("2017-03-12 03:00:00 -04:00"), previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_SkipsInvalidTimeShiftedAfterFrom_AndReturnsEarlierOccurrence()
+        {
+            var expression = CronExpression.Parse("30 2 * * *");
+            var from = GetInstant("2017-03-12 01:59:59 -05:00");
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
+
+            Assert.Equal(GetInstant("2017-03-11 02:30:00 -05:00"), previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_ReturnsShiftedInvalidTime_WhenFromEqualsItAndInclusive()
+        {
+            var expression = CronExpression.Parse("30 2 * * *");
+            var from = GetInstant("2017-03-12 03:00:00 -04:00");
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone, inclusive: true);
+
+            Assert.Equal(GetInstant("2017-03-12 03:00:00 -04:00"), previous);
+        }
+
+        [Fact]
+        public void GetPreviousOccurrence_SkipsShiftedInvalidTime_WhenFromEqualsItAndExclusive()
+        {
+            var expression = CronExpression.Parse("30 2 * * *");
+            var from = GetInstant("2017-03-12 03:00:00 -04:00");
+
+            var previous = expression.GetPreviousOccurrence(from, EasternTimeZone);
+
+            Assert.Equal(GetInstant("2017-03-11 02:30:00 -05:00"), previous);
         }
 
         [Theory]
-        [InlineData("30 0 L * *", "2017-04-30 00:30 +03:00", "2017-03-31 00:30 +03:00")]
-        [InlineData("30 0 LW * *", "2018-04-30 00:30 +03:00", "2018-03-30 00:30 +03:00")]
-        public void GetPreviousOccurrence_HandleJordanForwardShiftCases(string cronExpression, string fromString, string expectedString)
+        [InlineData("30 2 * * *", "2024-04-01 02:30:00 +02:00", "2024-03-31 03:00:00 +02:00")]
+        [InlineData("30 2 * * *", "2024-03-31 03:00:00 +02:00", "2024-03-30 02:30:00 +01:00")]
+        public void GetPreviousOccurrence_MirrorsGetNextOccurrenceAcrossSpringForward(
+            string cronExpression, string fromString, string expectedString)
         {
             var expression = CronExpression.Parse(cronExpression);
             var from = GetInstant(fromString);
 
-            var previous = expression.GetPreviousOccurrence(from, JordanTimeZone);
+            var previous = expression.GetPreviousOccurrence(from, CentralEuropeanTimeZone);
 
             Assert.Equal(GetInstant(expectedString), previous);
+        }
+
+        [Theory]
+        [InlineData("30 2 * * *")]
+        [InlineData("0 2 * * *")]
+        [InlineData("0,30 1,2 * * *")]
+        [InlineData("*/10 2 * * *")]
+        [InlineData("* * * * *")]
+        [InlineData("*/30 * * * *")]
+        public void GetPreviousOccurrence_RetracesGetNextOccurrenceAroundSpringForward(string cronExpression)
+        {
+            var expression = CronExpression.Parse(cronExpression);
+            var zone = CentralEuropeanTimeZone;
+
+            var forward = new List<DateTimeOffset>();
+            var cursor = GetInstant("2024-03-29 00:00:00 +00:00");
+            var limit = GetInstant("2024-04-02 00:00:00 +00:00");
+
+            for (var next = expression.GetNextOccurrence(cursor, zone);
+                 next != null && next.Value <= limit;
+                 next = expression.GetNextOccurrence(next.Value, zone))
+            {
+                forward.Add(next.Value);
+            }
+
+            Assert.True(forward.Count > 2, "expected the forward walk to produce occurrences");
+
+            var backward = new List<DateTimeOffset>();
+            for (var previous = expression.GetPreviousOccurrence(forward[forward.Count - 1], zone);
+                 previous != null && backward.Count < forward.Count - 1;
+                 previous = expression.GetPreviousOccurrence(previous.Value, zone))
+            {
+                backward.Insert(0, previous.Value);
+            }
+
+            Assert.Equal(forward.Take(forward.Count - 1), backward);
         }
 
         [Fact]

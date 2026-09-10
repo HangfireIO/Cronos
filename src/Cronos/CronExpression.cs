@@ -767,35 +767,39 @@ namespace Cronos
                 }
             }
 
-            var occurrenceTicks = FindPreviousOccurrence(fromLocal.Ticks, inclusive);
-            if (occurrenceTicks == NotFound) return null;
-
-            var occurrence = new DateTime(occurrenceTicks, DateTimeKind.Unspecified);
-
-            if (zone.IsInvalidTime(occurrence))
+            while (true)
             {
-                var previousValidTime = TimeZoneHelper.GetStandardTimeEnd(zone, occurrence);
-                if (previousValidTime.Date < occurrence.Date)
+                var occurrenceTicks = FindPreviousOccurrence(fromLocal.Ticks, inclusive);
+                if (occurrenceTicks == NotFound) return null;
+
+                var occurrence = new DateTime(occurrenceTicks, DateTimeKind.Unspecified);
+
+                if (zone.IsInvalidTime(occurrence))
                 {
+                    // Occurrences scheduled to invalid time are shifted forward to the moment when daylight saving
+                    // time starts, exactly as GetNextOccurrence does, so both directions agree on the same instant.
                     var daylightTimeStart = TimeZoneHelper.GetDaylightTimeStart(zone, occurrence);
-                    return new DateTimeOffset(occurrence, daylightTimeStart.Offset);
+                    if (daylightTimeStart < fromUtc || (inclusive && daylightTimeStart == fromUtc)) return daylightTimeStart;
+
+                    // The shifted occurrence isn't in the past, so continue searching right before the invalid interval.
+                    fromLocal = TimeZoneHelper.GetStandardTimeEnd(zone, occurrence).DateTime;
+                    inclusive = true;
+                    continue;
                 }
 
-                return previousValidTime;
-            }
-
-            if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
-            {
-                var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
-                if (HasFlag(CronExpressionFlag.Interval))
+                if (TimeZoneHelper.IsAmbiguousTime(zone, occurrence))
                 {
-                    return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+                    var daylightOffset = TimeZoneHelper.GetDaylightOffset(zone, occurrence);
+                    if (HasFlag(CronExpressionFlag.Interval))
+                    {
+                        return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
+                    }
+
+                    return new DateTimeOffset(occurrence, daylightOffset);
                 }
 
-                return new DateTimeOffset(occurrence, daylightOffset);
+                return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
             }
-
-            return new DateTimeOffset(occurrence, zone.GetUtcOffset(occurrence));
         }
 
         private long FindOccurrence(long startTimeTicks, long endTimeTicks, bool startInclusive)
