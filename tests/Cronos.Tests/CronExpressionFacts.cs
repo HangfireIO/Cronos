@@ -2926,7 +2926,7 @@ namespace Cronos.Tests
         // Second specified.
         
         [InlineData("*      * * * * *", "*                * * * * *", CronFormat.IncludeSeconds)]
-        [InlineData("0      * * * * *", "                 * * * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0      * * * * *", "0                * * * * *", CronFormat.IncludeSeconds)]
         [InlineData("1,2    * * * * *", "1,2              * * * * *", CronFormat.IncludeSeconds)]
         [InlineData("1-3    * * * * *", "1,2,3            * * * * *", CronFormat.IncludeSeconds)]
         [InlineData("57-3   * * * * *", "0,1,2,3,57,58,59 * * * * *", CronFormat.IncludeSeconds)]
@@ -3102,6 +3102,49 @@ namespace Cronos.Tests
         {
             var expression = CronExpression.Parse("* * * * *");
             Assert.Equal("* * * * *", expression.ToString());
+        }
+
+        [Theory]
+
+        // Seconds are zero, so the seconds field is not distinguishable from the default one.
+        [InlineData("0 0 12 * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0 * * * * *", CronFormat.IncludeSeconds)]
+
+        // Seconds are non-zero.
+        [InlineData("30 0 12 * * *", CronFormat.IncludeSeconds)]
+        [InlineData("* * * * * *", CronFormat.IncludeSeconds)]
+
+        // Seconds are defined by a range or by a step.
+        [InlineData("0-30 0 12 * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0/15 0 12 * * *", CronFormat.IncludeSeconds)]
+        [InlineData("0-30/10 0 12 * * *", CronFormat.IncludeSeconds)]
+
+        // Standard format should still produce five fields only.
+        [InlineData("0 12 * * *", CronFormat.Standard)]
+        [InlineData("* * * * *", CronFormat.Standard)]
+        [InlineData("30 12 L * 5#1", CronFormat.Standard)]
+        public void ToString_ReturnsStringThatCanBeParsedBack_WhenTheSameFormatIsUsed(string cronExpression, CronFormat format)
+        {
+            var expression = CronExpression.Parse(cronExpression, format);
+            var expressionString = expression.ToString();
+
+            // The resulting string should be accepted by the very same format it was parsed with.
+            var parsedBack = CronExpression.Parse(expressionString, format);
+
+            Assert.Equal(format == CronFormat.IncludeSeconds ? 6 : 5, expressionString.Split(' ').Length);
+            Assert.Equal(expressionString, parsedBack.ToString());
+        }
+
+        [Fact]
+        public void Equals_ReturnsTrue_WhenOnlyTheParsedFormatDiffers()
+        {
+            var withSeconds = CronExpression.Parse("0 * * * * *", CronFormat.IncludeSeconds);
+            var standard = CronExpression.Parse("* * * * *", CronFormat.Standard);
+
+            Assert.True(withSeconds.Equals(standard));
+            Assert.True(standard.Equals(withSeconds));
+            Assert.True(withSeconds == standard);
+            Assert.Equal(withSeconds.GetHashCode(), standard.GetHashCode());
         }
 
         public static IEnumerable<object[]> GetTimeZones()
