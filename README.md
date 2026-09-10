@@ -282,7 +282,7 @@ Cronos supports the ability to distribute cron fields randomly in order to sprea
 Example API usages:
 
 ```csharp
-// if you're in a job-schedulig scenario, you would probably want to
+// if you're in a job-scheduling scenario, you would probably want to
 // use information from the job itself as a seed, but this can be anything
 var seed = jobId.GetHashCode();
 
